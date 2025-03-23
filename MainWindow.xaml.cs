@@ -12,6 +12,12 @@ using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+using System.Windows;
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
+using Windows.Graphics;
+using WinRT.Interop;
+
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -23,14 +29,55 @@ namespace DrinkDb_Auth
     /// </summary>
     public sealed partial class MainWindow : Window
     {
+        private AppWindow m_appWindow;
+
         public MainWindow()
         {
             this.InitializeComponent();
+            Title = "DrinkDb - Sign In";
+
+            // Get AppWindow
+            IntPtr hWnd = WindowNative.GetWindowHandle(this);
+            WindowId wndId = Win32Interop.GetWindowIdFromWindow(hWnd);
+            m_appWindow = AppWindow.GetFromWindowId(wndId);
+
+            // Set window to full screen
+            var displayArea = DisplayArea.GetFromWindowId(wndId, DisplayAreaFallback.Primary);
+            if (displayArea != null)
+            {
+                var size = new SizeInt32
+                {
+                    Width = displayArea.WorkArea.Width,
+                    Height = displayArea.WorkArea.Height
+                };
+                m_appWindow.Resize(size);
+                m_appWindow.Move(new PointInt32(0, 0));
+            }
         }
 
-        private void myButton_Click(object sender, RoutedEventArgs e)
+        private void SignInButton_Click(object sender, RoutedEventArgs e)
         {
-            myButton.Content = "Clicked";
+            string username = UsernameTextBox.Text;
+            string password = PasswordBox.Password;
+
+            // Basic validation
+            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+            {
+                // Navigate to success page
+                MainFrame.Navigate(typeof(SuccessPage));
+            }
+            else
+            {
+                ContentDialog errorDialog = new ContentDialog
+                {
+                    Title = "Validation Error",
+                    Content = "Please enter both username and password.",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot
+                };
+
+                _ = errorDialog.ShowAsync();
+            }
         }
     }
 }
