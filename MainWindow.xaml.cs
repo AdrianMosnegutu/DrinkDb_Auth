@@ -1,17 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
+using Microsoft.UI.Windowing;
+using Windows.Graphics;
+
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -26,11 +17,38 @@ namespace DrinkDb_Auth
         public MainWindow()
         {
             this.InitializeComponent();
+            Title = "DrinkDb - Sign In";
+
+            this.AppWindow.Resize(new SizeInt32 {
+                Width = DisplayArea.Primary.WorkArea.Width,
+                Height = DisplayArea.Primary.WorkArea.Height
+            });
+            this.AppWindow.Move(new PointInt32(0, 0));
         }
 
-        private void myButton_Click(object sender, RoutedEventArgs e)
+        private void SignInButton_Click(object sender, RoutedEventArgs e)
         {
-            myButton.Content = "Clicked";
+            string username = UsernameTextBox.Text;
+            string password = PasswordBox.Password;
+
+            // Basic validation
+            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+            {
+                // Navigate to success page
+                MainFrame.Navigate(typeof(SuccessPage));
+            }
+            else
+            {
+                ContentDialog errorDialog = new ContentDialog
+                {
+                    Title = "Validation Error",
+                    Content = "Please enter both username and password.",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot
+                };
+
+                _ = errorDialog.ShowAsync();
+            }
         }
     }
 }
