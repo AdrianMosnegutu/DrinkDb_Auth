@@ -1,0 +1,63 @@
+<Page
+    x:Class="DrinkDb_Auth.UserPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:DrinkDb_Auth"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <!-- Use the same accent brush (pink) as in the sign-in page -->
+    <Grid Background="{ThemeResource SystemAccentColor}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT COLUMN -->
+        <StackPanel Grid.Column="0" Padding="20" Spacing="10"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+
+            <!-- Profile picture placeholder -->
+            <Ellipse Width="100" Height="100" Fill="Gray" />
+
+            <!-- Edit account button -->
+            <Button x:Name="EditAccountButton"
+                    Content="Edit Account"
+                    Click="EditAccountButton_Click" />
+
+            <!-- Status text -->
+            <TextBlock x:Name="StatusTextBlock"
+                       Text="Status: ..." 
+                       FontSize="16" />
+        </StackPanel>
+
+        <!-- RIGHT COLUMN -->
+        <StackPanel Grid.Column="1" Padding="20" Spacing="10">
+            <!-- Name & Username -->
+            <TextBlock x:Name="NameTextBlock"
+                       FontSize="24" 
+                       FontWeight="Bold" />
+            <TextBlock x:Name="UsernameTextBlock"
+                       FontSize="18" 
+                       Foreground="DarkGray" />
+
+            <!-- Reviews header -->
+            <TextBlock Text="Reviews"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Margin="0,10,0,0" />
+            <!-- Display reviews -->
+            <ItemsControl x:Name="ReviewsItemsControl" />
+
+            <!-- Drinklist header -->
+            <TextBlock Text="Drinklist"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Margin="0,10,0,0" />
+            <!-- Display drinklist items -->
+            <ItemsControl x:Name="DrinklistItemsControl" />
+        </StackPanel>
+    </Grid>
+</Page>
