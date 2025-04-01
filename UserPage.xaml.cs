@@ -1,5 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 
@@ -15,7 +16,7 @@ namespace DrinkDb_Auth
 
         private void LoadMockUserData()
         {
-            // Create a mock user with dummy data
+            // Create mock user data
             var mockUser = new UserModel
             {
                 Name = "Serginio",
@@ -23,8 +24,18 @@ namespace DrinkDb_Auth
                 Status = "Online",
                 Reviews = new List<ReviewModel>
                 {
-                    new ReviewModel { Date = DateTime.Now.AddDays(-2), Rating = 4, Comment = "Really good taste!" },
-                    new ReviewModel { Date = DateTime.Now.AddDays(-10), Rating = 2, Comment = "Could be better" }
+                    new ReviewModel
+                    {
+                        Date = DateTime.Now.AddDays(-2),
+                        Rating = 4,
+                        Comment = "Really good taste!"
+                    },
+                    new ReviewModel
+                    {
+                        Date = DateTime.Now.AddDays(-10),
+                        Rating = 2,
+                        Comment = "Could be better"
+                    }
                 },
                 Drinklist = new List<string>
                 {
@@ -34,89 +45,102 @@ namespace DrinkDb_Auth
                 }
             };
 
-            // Display basic info
+            // Show user info
             NameTextBlock.Text = mockUser.Name;
             UsernameTextBlock.Text = "@" + mockUser.Username;
             StatusTextBlock.Text = $"Status: {mockUser.Status}";
 
-            // Display reviews with stars
+            // Display each review in the ReviewsItemsControl
             foreach (var review in mockUser.Reviews)
             {
-                var reviewPanel = new StackPanel { Orientation = Orientation.Vertical, Spacing = 4 };
+                // Create a simple border "card"
+                var border = new Border
+                {
+                    BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Black),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8),
+                    Margin = new Thickness(0, 0, 0, 10),
+                    Padding = new Thickness(12)
+                };
 
-                // Create a stars string: filled star "★", empty star "☆"
+                // A small stack to hold rating, date, and comment
+                var reviewStack = new StackPanel { Spacing = 4 };
+
+                // Star rating
                 string stars = new string('★', review.Rating) + new string('☆', 5 - review.Rating);
-
-                // Star rating display
                 var starsText = new TextBlock
                 {
                     Text = stars,
                     FontSize = 20,
-                    Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gold)
+                    Foreground = new SolidColorBrush(Microsoft.UI.Colors.Gold)
                 };
-                reviewPanel.Children.Add(starsText);
+                reviewStack.Children.Add(starsText);
 
-                // Date display
+                // Date
                 var dateText = new TextBlock
                 {
                     Text = review.Date.ToShortDateString(),
                     FontSize = 12,
-                    Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray)
+                    Foreground = new SolidColorBrush(Microsoft.UI.Colors.Gray)
                 };
-                reviewPanel.Children.Add(dateText);
+                reviewStack.Children.Add(dateText);
 
-                // Comment display
+                // Comment
                 var commentText = new TextBlock
                 {
                     Text = review.Comment,
                     FontSize = 14
                 };
-                reviewPanel.Children.Add(commentText);
+                reviewStack.Children.Add(commentText);
 
-                ReviewsItemsControl.Items.Add(reviewPanel);
+                border.Child = reviewStack;
+                ReviewsItemsControl.Items.Add(border);
             }
 
-            // Display drinklist items
+            // Display each drink in the DrinklistItemsControl
             foreach (var drink in mockUser.Drinklist)
             {
+                // Just display each drink as a TextBlock
                 var drinkText = new TextBlock
                 {
                     Text = drink,
-                    FontSize = 16
+                    FontSize = 14,
+                    Margin = new Thickness(0, 0, 0, 4)
                 };
                 DrinklistItemsControl.Items.Add(drinkText);
             }
         }
 
-        private void EditAccountButton_Click(object sender, RoutedEventArgs e)
+        private async void EditAccountButton_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new ContentDialog
             {
                 Title = "Edit Account",
                 Content = "Account editing is not implemented yet.",
                 CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot
+                XamlRoot = this.Content.XamlRoot,
+                Background = new SolidColorBrush(Microsoft.UI.Colors.White),
+                Foreground = new SolidColorBrush(Microsoft.UI.Colors.Black)
             };
 
-            _ = dialog.ShowAsync();
+            await dialog.ShowAsync();
         }
     }
 
-    // Simple user model for mock data
+    // User model with default values for non-nullable properties
     public class UserModel
     {
-        public string Name { get; set; }
-        public string Username { get; set; }
-        public string Status { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
         public List<ReviewModel> Reviews { get; set; } = new List<ReviewModel>();
         public List<string> Drinklist { get; set; } = new List<string>();
     }
 
-    // Simple review model for mock data
     public class ReviewModel
     {
-        public DateTime Date { get; set; }
-        public int Rating { get; set; }
-        public string Comment { get; set; }
+        public DateTime Date { get; set; } = DateTime.Now;
+        public int Rating { get; set; } = 0;
+        public string Comment { get; set; } = string.Empty;
     }
 }
