@@ -2,9 +2,9 @@
 using System.Data.SqlClient;
 using DrinkDb_Auth.Model;
 
-namespace DrinkDb_Auth.DataAccess
+namespace DrinkDb_Auth.Adapter
 {
-    public class UserRepository
+    public class UserAdapter
     {
         /// <summary>
         /// Calls your T-SQL function fnGetUserById(@userId) 
@@ -12,7 +12,7 @@ namespace DrinkDb_Auth.DataAccess
         /// </summary>
         public User GetUserById(Guid userId)
         {
-            using (SqlConnection conn = DatabaseHelper.GetConnection())
+            using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             {
                 string sql = "SELECT * FROM fnGetUserById(@userId);";
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
@@ -48,7 +48,7 @@ namespace DrinkDb_Auth.DataAccess
         /// </summary>
         public User GetUserByUsername(string username)
         {
-            using (SqlConnection conn = DatabaseHelper.GetConnection())
+            using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             {
                 string sql = "SELECT * FROM fnGetUserByUsername(@username);";
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
@@ -118,7 +118,7 @@ namespace DrinkDb_Auth.DataAccess
         /// </summary>
         public bool ValidateAction(Guid userId, string resource, string action)
         {
-            using (SqlConnection conn = DatabaseHelper.GetConnection())
+            using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             {
                 // The function returns BIT: 1 (true) or 0 (false)
                 string sql = "SELECT dbo.fnValidateAction(@userId, @resource, @action) as Allowed;";

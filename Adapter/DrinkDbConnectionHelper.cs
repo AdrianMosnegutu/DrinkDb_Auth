@@ -2,9 +2,9 @@
 using System.Configuration;
 using System.Data.SqlClient;
 
-namespace DrinkDb_Auth.DataAccess
+namespace DrinkDb_Auth.Adapter
 {
-    public static class DatabaseHelper
+    public static class DrinkDbConnectionHelper
     {
         /// <summary>
         /// Reads the DrinkDbConnection string from App.config, opens a SqlConnection, and returns it.
