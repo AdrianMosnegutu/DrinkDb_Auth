@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.Adapter
 {

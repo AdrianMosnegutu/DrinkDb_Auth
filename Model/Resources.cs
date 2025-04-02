@@ -1,4 +1,4 @@
-﻿namespace DrinkDb_Auth.Adapter
+﻿namespace DrinkDb_Auth.Model
 {
     public class Resource
     {

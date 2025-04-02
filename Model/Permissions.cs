@@ -1,10 +1,10 @@
 ﻿using System;
 
-namespace DrinkDb_Auth.Adapter
+namespace DrinkDb_Auth.Model
 {
     public class Permission
     {
-        public Guid PermissionId { get; set; }
+        public int Id { get; set; }
         public string PermissionName { get; set; }
         public string Resource { get; set; }
         public string Action { get; set; }
