@@ -1,16 +1,16 @@
 ﻿using System;
-using DrinkDb_Auth.DataAccess;
+using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.Service
 {
     public class UserService
     {
-        private readonly UserRepository _userRepository;
+        private readonly UserAdapter _userRepository;
 
         public UserService()
         {
-            _userRepository = new UserRepository();
+            _userRepository = new UserAdapter();
         }
 
         public User GetUserById(Guid userId)
