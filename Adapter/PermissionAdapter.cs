@@ -62,7 +62,6 @@ namespace DrinkDb_Auth.Adapter
 
         public Permission GetPermissionById(int id)
         {
-            Permission permission = null;
             string query = "SELECT Id, permissionName, resource, action FROM Permissions WHERE Id=@Id";
             using (SqlConnection conn = new SqlConnection(connectionString))
             using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -73,7 +72,7 @@ namespace DrinkDb_Auth.Adapter
                 {
                     if (reader.Read())
                     {
-                        permission = new Permission
+                        return new Permission
                         {
                             Id = reader.GetInt32(0),
                             PermissionName = reader.GetString(1),
@@ -83,7 +82,7 @@ namespace DrinkDb_Auth.Adapter
                     }
                 }
             }
-            return permission;
+            throw new Exception("Permission not found");
         }
 
         public List<Permission> GetPermissions()
