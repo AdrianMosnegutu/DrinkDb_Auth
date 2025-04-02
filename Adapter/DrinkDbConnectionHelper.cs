@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Configuration;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Protocols;
 
 namespace DrinkDb_Auth.Adapter
 {
