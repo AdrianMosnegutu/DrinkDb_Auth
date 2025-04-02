@@ -1,6 +1,6 @@
 using System;
 using System.Data;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.Adapter
@@ -9,7 +9,7 @@ namespace DrinkDb_Auth.Adapter
     {
         public Session CreateSession(Guid userId)
         {
-            using var connection = DrinkDbConnectionHelper.CreateConnection();
+            using var connection = DrinkDbConnectionHelper.GetConnection();
             using var command = new SqlCommand("create_session", connection);
             command.CommandType = CommandType.StoredProcedure;
             
@@ -26,7 +26,7 @@ namespace DrinkDb_Auth.Adapter
 
         public bool EndSession(Guid sessionId, Guid userId)
         {
-            using var connection = DrinkDbConnectionHelper.CreateConnection();
+            using var connection = DrinkDbConnectionHelper.GetConnection();
             using var command = new SqlCommand("end_session", connection);
             command.CommandType = CommandType.StoredProcedure;
             command.Parameters.Add("@sessionId", SqlDbType.UniqueIdentifier).Value = sessionId;
@@ -42,7 +42,7 @@ namespace DrinkDb_Auth.Adapter
 
         public Session GetSession(Guid sessionId)
         {
-            using var connection = DrinkDbConnectionHelper.CreateConnection();
+            using var connection = DrinkDbConnectionHelper.GetConnection();
             using var command = new SqlCommand(
                 "SELECT userId FROM Sessions WHERE sessionId = @sessionId", 
                 connection);
