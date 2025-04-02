@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.Adapter
