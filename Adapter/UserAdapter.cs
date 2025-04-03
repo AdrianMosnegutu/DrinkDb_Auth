@@ -85,6 +85,7 @@ namespace DrinkDb_Auth.Adapter
         {
             List<Permission> permissions = new List<Permission>();
 
+            // SQL query joining Users -> UserRoles -> Roles -> RolePermissions -> Permissions
             string sql = @"
         SELECT p.permissionId, p.permissionName, p.resource, p.action
         FROM Users u
@@ -92,20 +93,23 @@ namespace DrinkDb_Auth.Adapter
         JOIN Roles r ON ur.roleId = r.roleId
         JOIN RolePermissions rp ON r.roleId = rp.roleId
         JOIN Permissions p ON rp.permissionId = p.permissionId
-        WHERE u.userId = @userId;";
+        WHERE u.userId = @userId;
+    ";
 
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             using (SqlCommand cmd = new SqlCommand(sql, conn))
             {
                 cmd.Parameters.AddWithValue("@userId", userId);
+
                 conn.Open();
+
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
                         Permission permission = new Permission
                         {
-                            PermissionId = reader.GetGuid(reader.GetOrdinal("permissionId")),
+                            Id = reader.GetGuid(reader.GetOrdinal("permissionId")).ToString(),
                             PermissionName = reader.GetString(reader.GetOrdinal("permissionName")),
                             Resource = reader.GetString(reader.GetOrdinal("resource")),
                             Action = reader.GetString(reader.GetOrdinal("action"))
@@ -117,6 +121,30 @@ namespace DrinkDb_Auth.Adapter
 
             return permissions;
         }
+
+        public bool ValidateAction(Guid userId, string resource, string action)
+        {
+            bool result = false;
+            string sql = "SELECT dbo.fnValidateAction(@userId, @resource, @action)";
+
+            using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
+            using (SqlCommand cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@resource", resource);
+                cmd.Parameters.AddWithValue("@action", action);
+
+                conn.Open();
+                var scalarResult = cmd.ExecuteScalar();
+                if (scalarResult != null && scalarResult != DBNull.Value)
+                {
+                    result = Convert.ToBoolean(scalarResult);
+                }
+            }
+
+            return result;
+        }
+
 
     }
 }
