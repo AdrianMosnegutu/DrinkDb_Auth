@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using Microsoft.UI.Dispatching;
+using System.Text.Json.Serialization;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
@@ -118,39 +119,139 @@ namespace DrinkDb_Auth.OAuthProviders
                 
                 if (tokenResponse.IsSuccessStatusCode)
                 {
-                    var tokenResult = await tokenResponse.Content.ReadFromJsonAsync<TokenResponse>();
-                    System.Diagnostics.Debug.WriteLine("Successfully obtained token from Google");
-                    
-                    // Return success as soon as we have a token, without fetching user info
-                    return new AuthResponse
+                    try 
                     {
-                        AuthSuccessful = true,
-                        SessionToken = tokenResult.AccessToken,
-                        NewAccount = false
-                    };
-
-                    // The code below is temporarily commented out for testing
-                    /*
-                    // Get user info with the access token
-                    _httpClient.DefaultRequestHeaders.Authorization = 
-                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
-                    
-                    System.Diagnostics.Debug.WriteLine($"Fetching user info from {UserInfoEndpoint}");
-                    System.Diagnostics.Debug.WriteLine($"Using token: {tokenResult.AccessToken.Substring(0, 15)}...");
-                    
-                    var userInfoResponse = await _httpClient.GetAsync(UserInfoEndpoint);
-                    var userInfoContent = await userInfoResponse.Content.ReadAsStringAsync();
-                    
-                    System.Diagnostics.Debug.WriteLine($"User info response status: {userInfoResponse.StatusCode}");
-                    System.Diagnostics.Debug.WriteLine($"User info response: {userInfoContent}");
-                    
-                    if (userInfoResponse.IsSuccessStatusCode)
-                    {
+                        TokenResponse tokenResult = null;
+                        
                         try
                         {
-                            var userInfo = await userInfoResponse.Content.ReadFromJsonAsync<UserInfoResponse>();
-                            System.Diagnostics.Debug.WriteLine($"User authenticated: {userInfo.Email} ({userInfo.Name})");
+                            // Try the default deserialization
+                            tokenResult = await tokenResponse.Content.ReadFromJsonAsync<TokenResponse>();
+                            System.Diagnostics.Debug.WriteLine("Successfully deserialized token response");
+                        }
+                        catch (Exception jsonEx)
+                        {
+                            // If deserialization fails, try manual parsing
+                            System.Diagnostics.Debug.WriteLine($"Automatic deserialization failed: {jsonEx.Message}");
+                            System.Diagnostics.Debug.WriteLine("Attempting manual JSON parsing");
                             
+                            try
+                            {
+                                // Parse the JSON manually
+                                var options = new System.Text.Json.JsonSerializerOptions
+                                {
+                                    PropertyNameCaseInsensitive = true
+                                };
+                                
+                                tokenResult = System.Text.Json.JsonSerializer.Deserialize<TokenResponse>(responseContent, options);
+                                
+                                if (tokenResult != null)
+                                {
+                                    System.Diagnostics.Debug.WriteLine("Manual parsing succeeded");
+                                }
+                            }
+                            catch (Exception manualEx)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Manual parsing also failed: {manualEx.Message}");
+                                throw; // Let the outer catch handle it
+                            }
+                        }
+                        
+                        // Debug the token values
+                        if (tokenResult != null)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Token values: AccessToken={tokenResult.AccessToken?.Length ?? 0 } chars, " +
+                                                             $"TokenType={tokenResult.TokenType}, " +
+                                                             $"ExpiresIn={tokenResult.ExpiresIn}, " +
+                                                             $"RefreshToken={tokenResult.RefreshToken?.Length ?? 0} chars");
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine("Token result is null after both deserialization attempts");
+                        }
+                        
+                        // Verify we got a valid access token
+                        if (tokenResult == null || string.IsNullOrEmpty(tokenResult.AccessToken))
+                        {
+                            System.Diagnostics.Debug.WriteLine("ERROR: Token result was null or access token was empty");
+                            System.Diagnostics.Debug.WriteLine($"Raw response content: {responseContent}");
+                            return new AuthResponse
+                            {
+                                AuthSuccessful = false,
+                                SessionToken = string.Empty,
+                                NewAccount = false
+                            };
+                        }
+                        
+                        // Get user info with the access token
+                        try
+                        {
+                            // Create a new HttpClient just for this request to ensure clean headers
+                            using (var userInfoClient = new HttpClient())
+                            {
+                                // Set the authorization header correctly
+                                userInfoClient.DefaultRequestHeaders.Authorization = 
+                                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
+                                
+                                System.Diagnostics.Debug.WriteLine($"Fetching user info from {UserInfoEndpoint}");
+                                System.Diagnostics.Debug.WriteLine($"Using access token: {tokenResult.AccessToken.Substring(0, Math.Min(15, tokenResult.AccessToken.Length))}...");
+                                
+                                // Add a small delay to allow token propagation
+                                await Task.Delay(500);
+                                
+                                var userInfoResponse = await userInfoClient.GetAsync(UserInfoEndpoint);
+                                var userInfoContent = await userInfoResponse.Content.ReadAsStringAsync();
+                                
+                                System.Diagnostics.Debug.WriteLine($"User info response status: {userInfoResponse.StatusCode}");
+                                
+                                if (userInfoResponse.IsSuccessStatusCode)
+                                {
+                                    var userInfo = await userInfoResponse.Content.ReadFromJsonAsync<UserInfoResponse>();
+                                    System.Diagnostics.Debug.WriteLine($"User authenticated: {userInfo.Email} ({userInfo.Name})");
+                                    
+                                    return new AuthResponse
+                                    {
+                                        AuthSuccessful = true,
+                                        SessionToken = tokenResult.AccessToken,
+                                        NewAccount = false
+                                    };
+                                }
+                                else
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"User info request failed: {userInfoContent}");
+                                    
+                                    // Try to extract basic info from ID token if available
+                                    if (!string.IsNullOrEmpty(tokenResult.IdToken))
+                                    {
+                                        try
+                                        {
+                                            var basicUserInfo = ExtractUserInfoFromIdToken(tokenResult.IdToken);
+                                            if (basicUserInfo != null)
+                                            {
+                                                System.Diagnostics.Debug.WriteLine($"Extracted user info from ID token: {basicUserInfo.Email} ({basicUserInfo.Name})");
+                                            }
+                                        }
+                                        catch (Exception idEx)
+                                        {
+                                            System.Diagnostics.Debug.WriteLine($"Failed to extract info from ID token: {idEx.Message}");
+                                        }
+                                    }
+                                    
+                                    // If we couldn't get user info but have a valid token, still return success
+                                    return new AuthResponse
+                                    {
+                                        AuthSuccessful = true,
+                                        SessionToken = tokenResult.AccessToken,
+                                        NewAccount = false
+                                    };
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error getting user info: {ex.Message}");
+                            
+                            // If we couldn't get user info but have a valid token, still return success
                             return new AuthResponse
                             {
                                 AuthSuccessful = true,
@@ -158,12 +259,17 @@ namespace DrinkDb_Auth.OAuthProviders
                                 NewAccount = false
                             };
                         }
-                        catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Error deserializing user info: {ex.Message}");
-                        }
                     }
-                    */
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error processing token response: {ex.Message}");
+                        return new AuthResponse
+                        {
+                            AuthSuccessful = false,
+                            SessionToken = string.Empty,
+                            NewAccount = false
+                        };
+                    }
                 }
                 else
                 {
@@ -453,26 +559,90 @@ namespace DrinkDb_Auth.OAuthProviders
             
             return await tcs.Task;
         }
+
+        private UserInfoResponse ExtractUserInfoFromIdToken(string idToken)
+        {
+            // This is a simple JWT parser that doesn't validate signatures
+            var parts = idToken.Split('.');
+            if (parts.Length != 3)
+            {
+                System.Diagnostics.Debug.WriteLine("Invalid JWT format");
+                return null;
+            }
+            
+            try
+            {
+                // Get the payload (second part)
+                var payload = parts[1];
+                
+                // Add padding if needed
+                while (payload.Length % 4 != 0)
+                {
+                    payload += '=';
+                }
+                
+                // Decode the Base64Url encoded JSON
+                var jsonBytes = Convert.FromBase64String(payload.Replace('-', '+').Replace('_', '/'));
+                var json = Encoding.UTF8.GetString(jsonBytes);
+                
+                // Parse the JSON
+                var options = new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                
+                return System.Text.Json.JsonSerializer.Deserialize<UserInfoResponse>(json, options);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error parsing JWT: {ex.Message}");
+                return null;
+            }
+        }
     }
 
     internal class TokenResponse
     {
+        [JsonPropertyName("access_token")]
         public string AccessToken { get; set; }
+        
+        [JsonPropertyName("token_type")]
         public string TokenType { get; set; }
+        
+        [JsonPropertyName("expires_in")]
         public int ExpiresIn { get; set; }
+        
+        [JsonPropertyName("refresh_token")]
         public string RefreshToken { get; set; }
+        
+        [JsonPropertyName("id_token")]
         public string IdToken { get; set; }
     }
 
     internal class UserInfoResponse
     {
+        [JsonPropertyName("sub")]
         public string Sub { get; set; }
+        
+        [JsonPropertyName("name")]
         public string Name { get; set; }
+        
+        [JsonPropertyName("given_name")]
         public string GivenName { get; set; }
+        
+        [JsonPropertyName("family_name")]
         public string FamilyName { get; set; }
+        
+        [JsonPropertyName("picture")]
         public string Picture { get; set; }
+        
+        [JsonPropertyName("email")]
         public string Email { get; set; }
+        
+        [JsonPropertyName("email_verified")]
         public bool EmailVerified { get; set; }
+        
+        [JsonPropertyName("locale")]
         public string Locale { get; set; }
     }
 } 
