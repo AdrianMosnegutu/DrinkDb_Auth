@@ -4,9 +4,9 @@ namespace DrinkDb_Auth.Model
 {
     public class Permission
     {
-        public int Id { get; set; }
-        public string PermissionName { get; set; }
-        public string Resource { get; set; }
-        public string Action { get; set; }
+        public required string Id { get; set; }
+        public required string PermissionName { get; set; }
+        public required string Resource { get; set; }
+        public required string Action { get; set; }
     }
 }

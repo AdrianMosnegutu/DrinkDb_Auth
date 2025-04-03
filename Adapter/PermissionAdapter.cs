@@ -19,12 +19,12 @@ namespace DrinkDb_Auth.Adapter
         public void CreatePermission(Permission permission)
         {
             string query = @"INSERT INTO Permissions (permissionName, resource, action)
-                             VALUES (@PermissionName, @Resource, @Action)";
+                             VALUES (@PermissionName, @Role, @Action)";
             using (SqlConnection conn = new SqlConnection(connectionString))
             using (SqlCommand cmd = new SqlCommand(query, conn))
             {
                 cmd.Parameters.AddWithValue("@PermissionName", permission.PermissionName);
-                cmd.Parameters.AddWithValue("@Resource", permission.Resource);
+                cmd.Parameters.AddWithValue("@Role", permission.Resource);
                 cmd.Parameters.AddWithValue("@Action", permission.Action);
                 conn.Open();
                 cmd.ExecuteNonQuery();
@@ -34,13 +34,13 @@ namespace DrinkDb_Auth.Adapter
         public void UpdatePermission(Permission permission)
         {
             string query = @"UPDATE Permissions 
-                             SET permissionName=@PermissionName, resource=@Resource, action=@Action 
+                             SET permissionName=@PermissionName, resource=@Role, action=@Action 
                              WHERE Id=@Id";
             using (SqlConnection conn = new SqlConnection(connectionString))
             using (SqlCommand cmd = new SqlCommand(query, conn))
             {
                 cmd.Parameters.AddWithValue("@PermissionName", permission.PermissionName);
-                cmd.Parameters.AddWithValue("@Resource", permission.Resource);
+                cmd.Parameters.AddWithValue("@Role", permission.Resource);
                 cmd.Parameters.AddWithValue("@Action", permission.Action);
                 cmd.Parameters.AddWithValue("@Id", permission.Id);
                 conn.Open();

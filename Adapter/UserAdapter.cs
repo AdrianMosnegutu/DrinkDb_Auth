@@ -12,7 +12,7 @@ namespace DrinkDb_Auth.Adapter
         /// which returns a row from the Users table.
         /// </summary>
         /// 
-        public User GetUserById(Guid userId)
+        public Users GetUserById(Guid userId)
         {
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             {
@@ -25,7 +25,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         if (reader.Read())
                         {
-                            return new User
+                            return new Users
                             {
                                 UserId = reader.GetGuid(reader.GetOrdinal("userId")),
                                 Username = reader.GetString(reader.GetOrdinal("userName")),
@@ -48,7 +48,7 @@ namespace DrinkDb_Auth.Adapter
         /// <summary>
         /// Calls fnGetUserByUsername(@username).
         /// </summary>
-        public User GetUserByUsername(string username)
+        public Users GetUserByUsername(string username)
         {
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             {
@@ -61,7 +61,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         if (reader.Read())
                         {
-                            return new User
+                            return new Users
                             {
                                 UserId = reader.GetGuid(reader.GetOrdinal("userId")),
                                 Username = reader.GetString(reader.GetOrdinal("userName")),

@@ -3,7 +3,7 @@ using DrinkDb_Auth.Adapter;
 
 namespace DrinkDb_Auth.Model
 {
-    public class User
+    public class Users
     {
         private static readonly UserAdapter _userAdapter = new();
 
@@ -17,7 +17,7 @@ namespace DrinkDb_Auth.Model
         {
             if (string.IsNullOrEmpty(resource))
             {
-                throw new ArgumentException("Resource cannot be null or empty.", nameof(resource));
+                throw new ArgumentException("Role cannot be null or empty.", nameof(resource));
             }
             if (string.IsNullOrEmpty(action))
             {

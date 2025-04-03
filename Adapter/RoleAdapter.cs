@@ -17,7 +17,7 @@ namespace DrinkDb_Auth.Database
             connectionString = ConfigurationManager.ConnectionStrings["DrinkDbConnection"].ConnectionString;
         }
 
-        public void CreateResource(Resource resource)
+        public void CreateResource(Roles resource)
         {
             string query = "INSERT INTO Resources (Name, Description) VALUES (@Name, @Description)";
             using (SqlConnection conn = new SqlConnection(connectionString))
@@ -30,7 +30,7 @@ namespace DrinkDb_Auth.Database
             }
         }
 
-        public void UpdateResource(Resource resource)
+        public void UpdateResource(Roles resource)
         {
             string query = "UPDATE Resources SET Name=@Name, Description=@Description WHERE Id=@Id";
             using (SqlConnection conn = new SqlConnection(connectionString))
@@ -44,7 +44,7 @@ namespace DrinkDb_Auth.Database
             }
         }
 
-        public void DeleteResource(Resource resource)
+        public void DeleteResource(Roles resource)
         {
             string query = "DELETE FROM Resources WHERE Id=@Id";
             using (SqlConnection conn = new SqlConnection(connectionString))
@@ -56,9 +56,9 @@ namespace DrinkDb_Auth.Database
             }
         }
 
-        public Resource GetResourceById(int id)
+        public Roles GetResourceById(int id)
         {
-            Resource resource = null;
+            Roles resource = null;
             string query = "SELECT Id, Name, Description FROM Resources WHERE Id=@Id";
             using (SqlConnection conn = new SqlConnection(connectionString))
             using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -69,7 +69,7 @@ namespace DrinkDb_Auth.Database
                 {
                     if (reader.Read())
                     {
-                        resource = new Resource
+                        resource = new Roles
                         {
                             Id = reader.GetInt32(0),
                             Name = reader.GetString(1),
@@ -81,9 +81,9 @@ namespace DrinkDb_Auth.Database
             return resource;
         }
 
-        public List<Resource> GetResources()
+        public List<Roles> GetResources()
         {
-            List<Resource> resources = new List<Resource>();
+            List<Roles> resources = new List<Roles>();
             string query = "SELECT Id, Name, Description FROM Resources";
             using (SqlConnection conn = new SqlConnection(connectionString))
             using (SqlCommand cmd = new SqlCommand(query, conn))
@@ -93,7 +93,7 @@ namespace DrinkDb_Auth.Database
                 {
                     while (reader.Read())
                     {
-                        Resource resource = new Resource
+                        Roles resource = new Roles
                         {
                             Id = reader.GetInt32(0),
                             Name = reader.GetString(1),
