@@ -12,16 +12,11 @@ namespace DrinkDb_Auth
 
         private void ContinueButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Navigate to the main app page
-            // For now, we'll just show a message
-            var dialog = new ContentDialog
+            // Navigate from SuccessPage to UserPage
+            if (this.Frame != null)
             {
-                Title = "Coming Soon",
-                Content = "Main application is under development",
-                CloseButtonText = "OK",
-                XamlRoot = Content.XamlRoot
-            };
-            _ = dialog.ShowAsync();
+                this.Frame.Navigate(typeof(UserPage));
+            }
         }
     }
 } 
