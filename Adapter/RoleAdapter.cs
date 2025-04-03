@@ -8,11 +8,11 @@ using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.Database
 {
-    public class ResourceAdapter : IResourceAdapter
+    public class RoleAdapter : IRoleAdapter
     {
         private readonly string connectionString;
 
-        public ResourceAdapter()
+        public RoleAdapter()
         {
             connectionString = ConfigurationManager.ConnectionStrings["DrinkDbConnection"].ConnectionString;
         }

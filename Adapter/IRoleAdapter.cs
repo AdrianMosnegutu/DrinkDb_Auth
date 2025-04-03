@@ -7,7 +7,7 @@ using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.Adapter
 {
-    internal interface IResourceAdapter
+    internal interface IRoleAdapter
     {
         public void CreateResource(Resource resource);
         public void UpdateResource(Resource resource);

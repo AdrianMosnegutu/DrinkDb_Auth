@@ -13,7 +13,17 @@ BEGIN
     CREATE TABLE Roles (
         roleId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
         roleName NVARCHAR(50) NOT NULL UNIQUE,
+        FOREIGN KEY (permissionId) REFERENCES Permissions(permissionId)
+    );
+END
+
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='RolePermissions' AND xtype='U')
+BEGIN
+    CREATE TABLE RolePermissions (
+        roleId UNIQUEIDENTIFIER NOT NULL,
         permissionId UNIQUEIDENTIFIER NOT NULL,
+        PRIMARY KEY (roleId, permissionId),
+        FOREIGN KEY (roleId) REFERENCES Roles(roleId),
         FOREIGN KEY (permissionId) REFERENCES Permissions(permissionId)
     );
 END
