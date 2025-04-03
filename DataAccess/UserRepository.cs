@@ -79,6 +79,40 @@ namespace DrinkDb_Auth.DataAccess
             }
         }
 
+        public bool UpdateUser(User user)
+        {
+            using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
+            string sql = "UPDATE Users SET userName = @username, passwordHash = @passwordHash, twoFASecret = @twoFASecret WHERE userId = @userId;";
+            using (SqlCommand cmd = new(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@userId", user.UserId);
+                cmd.Parameters.AddWithValue("@username", user.Username);
+                cmd.Parameters.AddWithValue("@passwordHash", user.PasswordHash);
+                cmd.Parameters.AddWithValue("@twoFASecret", (object)user.TwoFASecret ?? DBNull.Value);
+                return cmd.ExecuteNonQuery() > 0;
+            }
+        }
+        public bool DeleteUser(Guid userId)
+        {
+            using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
+            string sql = "DELETE FROM Users WHERE userId = @userId;";
+            using SqlCommand cmd = new(sql, conn);
+            cmd.Parameters.AddWithValue("@userId", userId);
+            return cmd.ExecuteNonQuery() > 0;
+        }
+
+        public bool CreateUser(User user)
+        {
+            using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
+            string sql = "INSERT INTO Users (userId, userName, passwordHash, twoFASecret) VALUES (@userId, @username, @passwordHash, @twoFASecret);";
+            using SqlCommand cmd = new(sql, conn);
+            cmd.Parameters.AddWithValue("@userId", user.UserId);
+            cmd.Parameters.AddWithValue("@username", user.Username);
+            cmd.Parameters.AddWithValue("@passwordHash", user.PasswordHash);
+            cmd.Parameters.AddWithValue("@twoFASecret", (object)user.TwoFASecret ?? DBNull.Value);
+            return cmd.ExecuteNonQuery() > 0;
+        }
+
         /// <summary>
         /// Calls fnValidateAction(@userId, @resource, @action) which returns BIT.
         /// </summary>
