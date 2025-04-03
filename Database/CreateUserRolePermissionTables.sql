@@ -1,7 +1,4 @@
-﻿-- ==========================================
--- Permissions table
--- ==========================================
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Permissions' AND xtype='U')
+﻿IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Permissions' AND xtype='U')
 BEGIN
     CREATE TABLE Permissions (
         permissionId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
@@ -11,9 +8,6 @@ BEGIN
     );
 END
 
--- ==========================================
--- Roles table (one permission → many roles)
--- ==========================================
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Roles' AND xtype='U')
 BEGIN
     CREATE TABLE Roles (
@@ -24,9 +18,15 @@ BEGIN
     );
 END
 
--- ==========================================
--- Users table (one role → many users)
--- ==========================================
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='UserRoles' AND xtype='U')
+BEGIN
+    CREATE TABLE UserRoles (
+        userId UNIQUEIDENTIFIER NOT NULL,
+        roleId UNIQUEIDENTIFIER NOT NULL,
+        PRIMARY KEY (userId, roleId),
+    );
+END
+
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Users' AND xtype='U')
 BEGIN
     CREATE TABLE Users (

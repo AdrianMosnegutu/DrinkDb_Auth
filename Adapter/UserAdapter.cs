@@ -1,15 +1,17 @@
 ﻿using System;
 using Microsoft.Data.SqlClient;
 using DrinkDb_Auth.Model;
+using System.Collections.Generic;
 
 namespace DrinkDb_Auth.Adapter
 {
-    public class UserAdapter
+    public class UserAdapter : IUserAdapter
     {
         /// <summary>
         /// Calls your T-SQL function fnGetUserById(@userId) 
         /// which returns a row from the Users table.
         /// </summary>
+        /// 
         public User GetUserById(Guid userId)
         {
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
@@ -79,30 +81,7 @@ namespace DrinkDb_Auth.Adapter
             }
         }
 
-        /// <summary>
-        /// Calls fnValidateAction(@userId, @resource, @action) which returns BIT.
-        /// </summary>
-        public bool ValidateAction(Guid userId, string resource, string action)
-        {
-            using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
-            {
-                // The function returns BIT: 1 (true) or 0 (false)
-                string sql = "SELECT dbo.fnValidateAction(@userId, @resource, @action) as Allowed;";
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("@userId", userId);
-                    cmd.Parameters.AddWithValue("@resource", resource);
-                    cmd.Parameters.AddWithValue("@action", action);
+        private List<Permission> GetPermissionsForUser(Guid userId) { }
 
-                    object result = cmd.ExecuteScalar();
-                    if (result != null && result != DBNull.Value)
-                    {
-                        int allowed = Convert.ToInt32(result);
-                        return (allowed == 1);
-                    }
-                    return false;
-                }
-            }
-        }
     }
 }
