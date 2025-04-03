@@ -81,6 +81,19 @@ namespace DrinkDb_Auth.Adapter
             }
         }
 
+        public bool ValidateActionForUser(Guid userId, string resource, string action)
+        {
+            List<Permission> permissions = GetPermissionsForUser(userId);
+            foreach (var permission in permissions)
+            {
+                if (permission.Resource == resource && permission.Action == action)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private List<Permission> GetPermissionsForUser(Guid userId) { }
 
     }
