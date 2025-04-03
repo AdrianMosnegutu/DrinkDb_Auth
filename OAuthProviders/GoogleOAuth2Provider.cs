@@ -20,7 +20,7 @@ namespace DrinkDb_Auth.OAuthProviders
         // These values should be loaded from configuration, not hard-coded
         private string ClientId { get; }
         private string ClientSecret { get; }
-        private const string RedirectUri = "http://127.0.0.1:8080";
+        private const string RedirectUri = "urn:ietf:wg:oauth:2.0:oob";
         private const string AuthorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
         private const string TokenEndpoint = "https://oauth2.googleapis.com/token";
         private const string UserInfoEndpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
@@ -35,6 +35,22 @@ namespace DrinkDb_Auth.OAuthProviders
             // Load credentials from app configuration
             ClientId = System.Configuration.ConfigurationManager.AppSettings["GoogleClientId"] ?? "YOUR_CLIENT_ID";
             ClientSecret = System.Configuration.ConfigurationManager.AppSettings["GoogleClientSecret"] ?? "YOUR_CLIENT_SECRET";
+            
+            // Debug: Log the loaded credentials
+            System.Diagnostics.Debug.WriteLine($"Loaded Google ClientId: {ClientId}");
+            System.Diagnostics.Debug.WriteLine($"Loaded Google ClientSecret: {ClientSecret.Substring(0, 4)}..."); // Show only first few chars for security
+            
+            // Check if using default/placeholder credentials
+            if (ClientId == "YOUR_CLIENT_ID" || ClientSecret == "YOUR_CLIENT_SECRET")
+            {
+                System.Diagnostics.Debug.WriteLine("WARNING: Using placeholder Google OAuth credentials. Authentication will fail!");
+                System.Diagnostics.Debug.WriteLine("Please configure proper Google OAuth credentials in App.config");
+            }
+            
+            if (ClientId.Contains("apps.googleusercontent.com") == false)
+            {
+                System.Diagnostics.Debug.WriteLine("WARNING: Client ID doesn't have the expected format (ending with apps.googleusercontent.com)");
+            }
         }
 
         public AuthResponse Authenticate(string userId, string token)
@@ -65,7 +81,10 @@ namespace DrinkDb_Auth.OAuthProviders
             };
 
             var queryString = string.Join("&", queryParameters.Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));
-            return $"{AuthorizationEndpoint}?{queryString}";
+            var authUrl = $"{AuthorizationEndpoint}?{queryString}";
+            
+            System.Diagnostics.Debug.WriteLine($"Generated authorization URL: {authUrl}");
+            return authUrl;
         }
 
         public async Task<AuthResponse> ExchangeCodeForTokenAsync(string code)
@@ -79,35 +98,83 @@ namespace DrinkDb_Auth.OAuthProviders
                 { "grant_type", "authorization_code" }
             };
 
-            var tokenResponse = await _httpClient.PostAsync(
-                TokenEndpoint,
-                new FormUrlEncodedContent(tokenRequestParameters)
-            );
+            // Debug: Log FULL request parameters (for troubleshooting only!)
+            System.Diagnostics.Debug.WriteLine("Token request parameters (DO NOT SHARE THESE VALUES!):");
+            System.Diagnostics.Debug.WriteLine($"  - code: {code}");
+            System.Diagnostics.Debug.WriteLine($"  - client_id: {ClientId}");
+            System.Diagnostics.Debug.WriteLine($"  - client_secret: {ClientSecret}"); // SECURITY NOTE: Only log this during development!
+            System.Diagnostics.Debug.WriteLine($"  - redirect_uri: {RedirectUri}");
+            System.Diagnostics.Debug.WriteLine($"  - grant_type: authorization_code");
 
-            if (tokenResponse.IsSuccessStatusCode)
+            try
             {
-                var tokenResult = await tokenResponse.Content.ReadFromJsonAsync<TokenResponse>();
+                // Alternative approach using HttpClient with form content
+                var content = new FormUrlEncodedContent(tokenRequestParameters);
+                var tokenResponse = await _httpClient.PostAsync(TokenEndpoint, content);
                 
-                // Get user info with the access token
-                _httpClient.DefaultRequestHeaders.Authorization = 
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
+                var responseContent = await tokenResponse.Content.ReadAsStringAsync();
+                System.Diagnostics.Debug.WriteLine($"Response status: {tokenResponse.StatusCode}");
+                System.Diagnostics.Debug.WriteLine($"Response content: {responseContent}");
                 
-                var userInfoResponse = await _httpClient.GetAsync(UserInfoEndpoint);
-                if (userInfoResponse.IsSuccessStatusCode)
+                if (tokenResponse.IsSuccessStatusCode)
                 {
-                    var userInfo = await userInfoResponse.Content.ReadFromJsonAsync<UserInfoResponse>();
+                    var tokenResult = await tokenResponse.Content.ReadFromJsonAsync<TokenResponse>();
+                    System.Diagnostics.Debug.WriteLine("Successfully obtained token from Google");
                     
-                    // In a real implementation, you would check if the user exists in your database
-                    // and create a new account if needed
-                    var isNewAccount = false; // This would be determined by database lookup
-                    
+                    // Return success as soon as we have a token, without fetching user info
                     return new AuthResponse
                     {
                         AuthSuccessful = true,
                         SessionToken = tokenResult.AccessToken,
-                        NewAccount = isNewAccount
+                        NewAccount = false
                     };
+
+                    // The code below is temporarily commented out for testing
+                    /*
+                    // Get user info with the access token
+                    _httpClient.DefaultRequestHeaders.Authorization = 
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
+                    
+                    System.Diagnostics.Debug.WriteLine($"Fetching user info from {UserInfoEndpoint}");
+                    System.Diagnostics.Debug.WriteLine($"Using token: {tokenResult.AccessToken.Substring(0, 15)}...");
+                    
+                    var userInfoResponse = await _httpClient.GetAsync(UserInfoEndpoint);
+                    var userInfoContent = await userInfoResponse.Content.ReadAsStringAsync();
+                    
+                    System.Diagnostics.Debug.WriteLine($"User info response status: {userInfoResponse.StatusCode}");
+                    System.Diagnostics.Debug.WriteLine($"User info response: {userInfoContent}");
+                    
+                    if (userInfoResponse.IsSuccessStatusCode)
+                    {
+                        try
+                        {
+                            var userInfo = await userInfoResponse.Content.ReadFromJsonAsync<UserInfoResponse>();
+                            System.Diagnostics.Debug.WriteLine($"User authenticated: {userInfo.Email} ({userInfo.Name})");
+                            
+                            return new AuthResponse
+                            {
+                                AuthSuccessful = true,
+                                SessionToken = tokenResult.AccessToken,
+                                NewAccount = false
+                            };
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error deserializing user info: {ex.Message}");
+                        }
+                    }
+                    */
                 }
+                else
+                {
+                    // Log the error response
+                    System.Diagnostics.Debug.WriteLine($"Token request failed: {tokenResponse.StatusCode}");
+                    System.Diagnostics.Debug.WriteLine($"Error details: {responseContent}");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Exception during token exchange: {ex.Message}");
             }
             
             return new AuthResponse
@@ -120,118 +187,268 @@ namespace DrinkDb_Auth.OAuthProviders
 
         public async Task<AuthResponse> SignInWithGoogleAsync(Window parentWindow)
         {
-            // Create a dialog to host the WebView2 control
-            ContentDialog dialog = new ContentDialog
-            {
-                Title = "Sign in with Google",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = parentWindow.Content.XamlRoot
-            };
-
-            var webView = new WebView2();
-            webView.Width = 450;
-            webView.Height = 600;
-            
             var tcs = new TaskCompletionSource<AuthResponse>();
-            var httpListener = new HttpListener();
             
             try
             {
-                // Start HTTP listener for the redirect
-                httpListener.Prefixes.Add(RedirectUri + "/");
-                httpListener.Start();
+                // Create and show the WebView dialog for Google sign-in
+                ContentDialog webViewDialog = new ContentDialog
+                {
+                    Title = "Sign in with Google",
+                    CloseButtonText = "Cancel",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = parentWindow.Content.XamlRoot
+                };
+
+                var webView = new WebView2();
+                webView.Width = 450;
+                webView.Height = 600;
+                webViewDialog.Content = webView;
+
+                // Initialize WebView and navigate to auth URL
+                await webView.EnsureCoreWebView2Async();
                 
-                // Start listening for the redirect in a separate task
-                _ = Task.Run(async () =>
+                bool authCodeFound = false;
+                
+                // Monitor document changes to automatically extract the authorization code
+                webView.CoreWebView2.DOMContentLoaded += async (sender, args) =>
                 {
                     try
                     {
-                        // Wait for the redirect request
-                        var context = await httpListener.GetContextAsync();
-                        var request = context.Request;
+                        // Get the current source URL
+                        var currentUrl = webView.CoreWebView2.Source;
                         
-                        // Parse the query string
-                        var code = request.QueryString["code"];
+                        // Check if this is the success page with the auth code
+                        var title = await webView.CoreWebView2.ExecuteScriptAsync("document.title");
+                        System.Diagnostics.Debug.WriteLine($"Page title: {title}");
                         
-                        // Send a response to close the browser
-                        using (var response = context.Response)
+                        // For the OAuth approval page, we need a more specific approach
+                        if (currentUrl.Contains("accounts.google.com/o/oauth2/approval"))
                         {
-                            string responseString = "<html><head><title>Authentication Completed</title></head>" +
-                                "<body>Authentication completed. You can close this window and return to the application.</body></html>";
-                            var buffer = Encoding.UTF8.GetBytes(responseString);
-                            response.ContentLength64 = buffer.Length;
-                            response.ContentType = "text/html";
-                            await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
-                        }
-                        
-                        // Process the authentication code
-                        if (!string.IsNullOrEmpty(code))
-                        {
-                            var response = await ExchangeCodeForTokenAsync(code);
+                            var codeBoxContent = await webView.CoreWebView2.ExecuteScriptAsync(@"
+                                (function() {
+                                    // Look for code specifically in Google's OAuth approval page
+                                    const codeElement = document.querySelector('textarea.kHn9Lb');
+                                    if (codeElement) return codeElement.textContent;
+                                    
+                                    // Try to find code in any element with a specific class or input
+                                    const possibleCodeElements = document.querySelectorAll('code, pre, textarea, input[readonly]');
+                                    for (const el of possibleCodeElements) {
+                                        const content = el.textContent || el.value;
+                                        if (content && content.length > 10) return content;
+                                    }
+                                    
+                                    return '';
+                                })()
+                            ");
                             
-                            // Use the dispatcher to close the dialog from the UI thread
-                            parentWindow.DispatcherQueue.TryEnqueue(() =>
+                            // Clean up the result (remove quotes from JS)
+                            var code = codeBoxContent.Trim('"');
+                            if (!string.IsNullOrEmpty(code) && code != "null" && !authCodeFound)
                             {
-                                dialog.Hide();
-                                tcs.SetResult(response);
-                            });
-                        }
-                        else
-                        {
-                            parentWindow.DispatcherQueue.TryEnqueue(() =>
-                            {
-                                dialog.Hide();
-                                tcs.SetResult(new AuthResponse
+                                System.Diagnostics.Debug.WriteLine($"Found authorization code in OAuth approval page: {code.Substring(0, Math.Min(10, code.Length))}...");
+                                authCodeFound = true;
+                                
+                                // Process the code
+                                var response = await ExchangeCodeForTokenAsync(code);
+                                System.Diagnostics.Debug.WriteLine($"Auth result: {response.AuthSuccessful}");
+                                
+                                // Close dialog and return
+                                parentWindow.DispatcherQueue.TryEnqueue(() =>
                                 {
-                                    AuthSuccessful = false,
-                                    SessionToken = string.Empty,
-                                    NewAccount = false
+                                    try { webViewDialog.Hide(); } catch { }
+                                    tcs.SetResult(response);
                                 });
-                            });
+                                
+                                return; // Exit early once we've found the code
+                            }
+                        }
+                        
+                        // The auth code page has "Success code=" in the title, or the code might be in the page content
+                        if (title.Contains("Success") || title.Contains("code"))
+                        {
+                            string code = null;
+                            
+                            // Try to get code from title
+                            if (title.Contains("Success code="))
+                            {
+                                // Remove quotes that come from JS
+                                title = title.Replace("\"", "");
+                                code = title.Substring(title.IndexOf("Success code=") + "Success code=".Length);
+                                System.Diagnostics.Debug.WriteLine($"Found code in title: {code.Substring(0, Math.Min(10, code.Length))}...");
+                            }
+                            
+                            // Try to extract code from page if not in title
+                            if (string.IsNullOrEmpty(code))
+                            {
+                                // Try to extract from the page content
+                                var pageText = await webView.CoreWebView2.ExecuteScriptAsync(
+                                    "document.body.innerText");
+                                
+                                // Look for patterns in the text (this may need adjustment based on actual output)
+                                if (pageText.Contains("code="))
+                                {
+                                    int startIndex = pageText.IndexOf("code=") + 5;
+                                    int endIndex = pageText.IndexOf("\"", startIndex);
+                                    if (endIndex > startIndex)
+                                    {
+                                        code = pageText.Substring(startIndex, endIndex - startIndex);
+                                        System.Diagnostics.Debug.WriteLine($"Found code in page: {code.Substring(0, Math.Min(10, code.Length))}...");
+                                    }
+                                }
+                                
+                                // Try to find code in a code element or input field
+                                var codeElement = await webView.CoreWebView2.ExecuteScriptAsync(
+                                    "document.querySelector('code') ? document.querySelector('code').innerText : ''");
+                                if (!string.IsNullOrEmpty(codeElement) && codeElement != "\"\"")
+                                {
+                                    code = codeElement.Trim('"');
+                                    System.Diagnostics.Debug.WriteLine($"Found code in code element: {code.Substring(0, Math.Min(10, code.Length))}...");
+                                }
+                            }
+                            
+                            // If we found a code, process it
+                            if (!string.IsNullOrEmpty(code) && !authCodeFound)
+                            {
+                                authCodeFound = true;
+                                System.Diagnostics.Debug.WriteLine($"Automatically extracted authorization code");
+                                
+                                // Process the authentication code
+                                var response = await ExchangeCodeForTokenAsync(code);
+                                System.Diagnostics.Debug.WriteLine($"Authentication result: {response.AuthSuccessful}, Token: {(string.IsNullOrEmpty(response.SessionToken) ? "Empty" : "Present")}");
+                                
+                                // Close the dialog and return the result
+                                parentWindow.DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    try
+                                    {
+                                        webViewDialog.Hide();
+                                    }
+                                    catch { /* ignore errors if dialog is already closed */ }
+                                    
+                                    tcs.SetResult(response);
+                                });
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
-                        parentWindow.DispatcherQueue.TryEnqueue(() =>
-                        {
-                            dialog.Hide();
-                            tcs.SetException(ex);
-                        });
+                        System.Diagnostics.Debug.WriteLine($"Error extracting code: {ex.Message}");
                     }
-                    finally
-                    {
-                        httpListener.Stop();
-                    }
-                });
-                
-                // Still monitor WebView navigation to handle any special cases
-                webView.NavigationStarting += (sender, args) =>
-                {
-                    var uri = new Uri(args.Uri);
-                    // Log navigation for debugging
-                    System.Diagnostics.Debug.WriteLine($"Navigating to: {uri.AbsoluteUri}");
                 };
 
-                dialog.Content = webView;
+                // Also listen to navigation events to catch redirects
+                webView.NavigationCompleted += async (sender, args) =>
+                {
+                    try
+                    {
+                        // Use the WebView's Source or CoreWebView2.Source to get the current URI
+                        var uri = webView.Source?.ToString() ?? webView.CoreWebView2.Source;
+                        System.Diagnostics.Debug.WriteLine($"Navigation completed to: {uri}");
+                        
+                        // For Google's OOB flow, check if we're on the approval page
+                        if (uri.Contains("accounts.google.com/o/oauth2/approval") && !authCodeFound)
+                        {
+                            // Try to extract the code from the page
+                            try
+                            {
+                                // Wait a moment for page to fully render
+                                await Task.Delay(500);
+                                
+                                // Try several ways to extract the code
+                                string code = null;
+                                
+                                // Try to get from page text that might contain "code="
+                                var pageText = await webView.CoreWebView2.ExecuteScriptAsync(
+                                    "document.body.innerText");
+                                
+                                if (pageText.Contains("code="))
+                                {
+                                    int startIndex = pageText.IndexOf("code=") + 5;
+                                    int endIndex = pageText.IndexOf(" ", startIndex);
+                                    if (endIndex > startIndex)
+                                    {
+                                        code = pageText.Substring(startIndex, endIndex - startIndex);
+                                        code = code.Replace("\"", "").Trim();
+                                        System.Diagnostics.Debug.WriteLine($"Extracted code from approval page text: {code.Substring(0, Math.Min(10, code.Length))}...");
+                                    }
+                                }
+                                
+                                // Try to find a code element, which often contains the auth code
+                                var codeElements = await webView.CoreWebView2.ExecuteScriptAsync(
+                                    "Array.from(document.querySelectorAll('code, .auth-code, input[readonly]')).map(el => el.innerText || el.value)");
+                                
+                                if (codeElements != "[]" && !string.IsNullOrEmpty(codeElements))
+                                {
+                                    // Parse the JS array result
+                                    var elements = codeElements.Trim('[', ']').Split(',');
+                                    foreach (var element in elements)
+                                    {
+                                        var value = element.Trim('"', ' ');
+                                        if (!string.IsNullOrEmpty(value) && value.Length > 10)
+                                        {
+                                            code = value;
+                                            System.Diagnostics.Debug.WriteLine($"Extracted code from element: {code.Substring(0, Math.Min(10, code.Length))}...");
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                if (!string.IsNullOrEmpty(code) && !authCodeFound)
+                                {
+                                    authCodeFound = true;
+                                    
+                                    // Process the authentication code
+                                    var response = await ExchangeCodeForTokenAsync(code);
+                                    
+                                    // Close the dialog and return the result
+                                    parentWindow.DispatcherQueue.TryEnqueue(() =>
+                                    {
+                                        try
+                                        {
+                                            webViewDialog.Hide();
+                                        }
+                                        catch { /* ignore errors if dialog is already closed */ }
+                                        
+                                        tcs.SetResult(response);
+                                    });
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Error extracting code from approval page: {ex.Message}");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Navigation completed event error: {ex.Message}");
+                    }
+                };
                 
-                // Initialize the WebView2
-                await webView.EnsureCoreWebView2Async();
-                
-                // Navigate to the Google authorization URL
                 var authUrl = GetAuthorizationUrl();
+                System.Diagnostics.Debug.WriteLine($"Navigating to OAuth URL: {authUrl}");
                 webView.CoreWebView2.Navigate(authUrl);
                 
-                // Show the dialog and wait for the result
-                await dialog.ShowAsync();
+                // Show the dialog
+                var dialogResult = await webViewDialog.ShowAsync();
+                
+                // If user closed the dialog manually and we haven't processed a code yet
+                if (!tcs.Task.IsCompleted)
+                {
+                    System.Diagnostics.Debug.WriteLine("Dialog closed manually before authentication completed");
+                    tcs.SetResult(new AuthResponse
+                    {
+                        AuthSuccessful = false,
+                        SessionToken = string.Empty,
+                        NewAccount = false
+                    });
+                }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Authentication error: {ex.Message}");
                 tcs.TrySetException(ex);
-                if (httpListener.IsListening)
-                {
-                    httpListener.Stop();
-                }
             }
             
             return await tcs.Task;
