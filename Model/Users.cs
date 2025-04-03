@@ -1,11 +1,12 @@
 ﻿using System;
 using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.Service;
 
 namespace DrinkDb_Auth.Model
 {
     public class Users
     {
-        private static readonly UserAdapter _userAdapter = new();
+        private static readonly UserService _userService = new();
 
         public required Guid UserId { get; set; }
         public required string Username { get; set; }
@@ -23,7 +24,7 @@ namespace DrinkDb_Auth.Model
             {
                 throw new ArgumentException("Action cannot be null or empty.", nameof(action));
             }
-            return _userAdapter.ValidateActionForUser(UserId, resource, action);
+            return _userService.ValidateAction(UserId, resource, action);
         }
     }
 }
