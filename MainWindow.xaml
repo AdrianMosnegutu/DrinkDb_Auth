@@ -62,6 +62,14 @@
                                 Background="{ThemeResource SystemAccentColor}"
                                 Foreground="{ThemeResource SystemAltHighColor}"
                                 Click="SignInButton_Click"/>
+
+                        <Button x:Name="GithubSignInButton"
+                        Content="Sign in with GitHub"
+                        Height="45"
+                        HorizontalAlignment="Stretch"
+                        Background="{ThemeResource SystemAccentColor}"
+                        Foreground="{ThemeResource SystemAltHighColor}"
+                        Click="GithubSignInButton_Click"/>
                     </StackPanel>
                 </Grid>
 
