@@ -2,6 +2,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Windowing;
 using Windows.Graphics;
+using DrinkDb_Auth.OAuthProviders;
+using System;
+using System.Threading.Tasks;
 
 
 // To learn more about WinUI, the WinUI project structure,
@@ -48,6 +51,53 @@ namespace DrinkDb_Auth
                 };
 
                 _ = errorDialog.ShowAsync();
+            }
+        }
+        
+        private async void GoogleSignInButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Disable button while authentication is in progress
+                GoogleSignInButton.IsEnabled = false;
+                
+                var googleProvider = new GoogleOAuth2Provider();
+                var authResponse = await googleProvider.SignInWithGoogleAsync(this);
+                
+                if (authResponse.AuthSuccessful)
+                {
+                    // Navigate to success page
+                    MainFrame.Navigate(typeof(SuccessPage));
+                }
+                else
+                {
+                    ContentDialog errorDialog = new ContentDialog
+                    {
+                        Title = "Authentication Failed",
+                        Content = "Google authentication was not successful. Please try again.",
+                        CloseButtonText = "OK",
+                        XamlRoot = Content.XamlRoot
+                    };
+
+                    await errorDialog.ShowAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                ContentDialog errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = $"An error occurred: {ex.Message}",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot
+                };
+
+                await errorDialog.ShowAsync();
+            }
+            finally
+            {
+                // Re-enable button
+                GoogleSignInButton.IsEnabled = true;
             }
         }
     }
