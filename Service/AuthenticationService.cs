@@ -67,6 +67,7 @@ namespace DrinkDb_Auth.Service
             App.CurrentSessionId = Guid.Empty;
             App.CurrentUserId = Guid.Empty;
         }
+
         public User GetUser(Guid sessionId)
         {
             Session sess = _sessionAdapter.GetSession(sessionId);
