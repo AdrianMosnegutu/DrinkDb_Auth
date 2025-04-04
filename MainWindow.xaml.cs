@@ -6,6 +6,10 @@ using DrinkDb_Auth.OAuthProviders;
 using DrinkDb_Auth.Service;
 using System;
 using System.Threading.Tasks;
+using System;
+using DrinkDb_Auth.Service;
+using System.Text.Json;
+using System.Net.Http;
 
 
 // To learn more about WinUI, the WinUI project structure,
@@ -15,6 +19,7 @@ namespace DrinkDb_Auth
 {
     public sealed partial class MainWindow : Window
     {
+        private LinkedInLocalOAuthServer _linkedinLocalServer;
         private GitHubLocalOAuthServer _githubLocalServer;
         private FacebookLocalOAuthServer _facebookLocalServer;
 
@@ -30,7 +35,10 @@ namespace DrinkDb_Auth
             _facebookLocalServer = new FacebookLocalOAuthServer("http://localhost:8888/");
             _ = _facebookLocalServer.StartAsync();
 
+            StartLinkedInLocalServer();
+
             this.AppWindow.Resize(new SizeInt32
+           
             {
                 Width = DisplayArea.Primary.WorkArea.Width,
                 Height = DisplayArea.Primary.WorkArea.Height
@@ -285,6 +293,79 @@ namespace DrinkDb_Auth
             }
         }
 
+
+        private async Task<string> GetLinkedInIdAsync(string token)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+                // Use the userinfo endpoint for OpenID Connect
+                var response = await client.GetAsync("https://api.linkedin.com/v2/userinfo");
+                if (!response.IsSuccessStatusCode)
+                    return string.Empty;
+                string json = await response.Content.ReadAsStringAsync();
+                using (JsonDocument doc = JsonDocument.Parse(json))
+                {
+                    var root = doc.RootElement;
+                    // Retrieve "sub" as the unique identifier
+                    if (root.TryGetProperty("sub", out var idProp))
+                    {
+                        return idProp.GetString();
+                    }
+                }
+            }
+            return string.Empty;
+        }
+
+
+        private async void LinkedInSignInButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var lnHelper = new LinkedInOAuthHelper(
+                    clientId: "86j0ikb93jm78x",
+                    clientSecret: "WPL_AP1.pg2Bd1XhCi821VTG.+hatTA==",
+                    redirectUri: "http://localhost:8891/auth",
+                    scope: "openid profile email"                     // Using OpenID Connect scopes
+                );
+                var authResponse = await lnHelper.AuthenticateAsync();
+
+                if (authResponse.AuthSuccessful)
+                {
+                    var lnProvider = new LinkedInOAuth2Provider();
+                    var finalAuth = lnProvider.Authenticate(null, authResponse.SessionToken);
+
+                    if (finalAuth.AuthSuccessful)
+                    {
+                        // Retrieve LinkedIn ID from the token.
+                        string lnId = await GetLinkedInIdAsync(authResponse.SessionToken);
+                        var userService = new UserService();
+                        var user = userService.GetUserByUsername(lnId);
+                        if (user != null)
+                        {
+                            App.CurrentUserId = user.UserId;
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine("User not found for LinkedIn ID: " + lnId);
+                        }
+                        MainFrame.Navigate(typeof(SuccessPage));
+                    }
+                    else
+                    {
+                        await ShowError("LinkedIn Authentication Failed", "Unable to verify token in DB.");
+                    }
+                }
+                else
+                {
+                    await ShowError("LinkedIn Authentication Failed", "Authentication was not successful. Please try again.");
+                }
+            }
+            catch (Exception ex)
+            {
+                await ShowError("Authentication Error", ex.ToString());
+            }
+        }
 
 
     }

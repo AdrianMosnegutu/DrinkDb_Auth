@@ -116,6 +116,13 @@
                             </StackPanel>
                         </Button>
 
+                        <Button x:Name="LinkedInSignInButton"
+                        Content="Sign in with LinkedIn"
+                        Height="45"
+                        HorizontalAlignment="Stretch"
+                        Background="{ThemeResource SystemAccentColor}"
+                        Foreground="{ThemeResource SystemAltHighColor}"
+                        Click="LinkedInSignInButton_Click"/>
                     </StackPanel>
                 </Grid>
 
