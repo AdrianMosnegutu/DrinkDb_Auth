@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.Service;
 
