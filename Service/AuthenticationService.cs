@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.AuthProviders;
 using DrinkDb_Auth.Model;
@@ -28,17 +29,13 @@ namespace DrinkDb_Auth.Service
         {
             throw new NotImplementedException("CreateAccount not implemented");
         }
-        public AuthResponse authWithUserPass(string username, string password)
+        public static AuthResponse AuthWithUserPass(string username, string password)
         {
-            // if not existent, do account creation
-            // if existent, do login
-            // if password is correct, return AuthResponse
-            // if password is incorrect, return AuthResponse with error
             try
             {
                 if(BasicAuthenticationProvider.Authenticate(username, password))
                 {
-                    User user = _userAdapter.GetUserByUsername(username);
+                    User user = _userAdapter.GetUserByUsername(username) ?? throw new UserNotFoundException("User not found");
                     Session sess = _sessionAdapter.CreateSession(user.UserId);
                     return new AuthResponse
                     {
@@ -66,10 +63,18 @@ namespace DrinkDb_Auth.Service
                 User user = new()
                 {
                     Username = username,
-                    PasswordHash = password,
+                    PasswordHash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(password)).ToString() ?? throw new Exception("Hashing failed"),
                     UserId = Guid.NewGuid()
                 };
                 _userAdapter.CreateUser(user);
+                Session sess = _sessionAdapter.CreateSession(user.UserId);
+                return new AuthResponse
+                {
+                    AuthSuccessful = true,
+                    NewAccount = true,
+                    OAuthToken = string.Empty,
+                    SessionId = sess.sessionId,
+                };
             }
             throw new Exception("Unexpected error during authentication");
 

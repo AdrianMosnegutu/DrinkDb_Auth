@@ -17,7 +17,6 @@ namespace DrinkDb_Auth.Adapter
             var sessionIdParam = command.Parameters.Add("@sessionId", SqlDbType.UniqueIdentifier);
             sessionIdParam.Direction = ParameterDirection.Output;
 
-            connection.Open();
             command.ExecuteNonQuery();
             
             var sessionId = (Guid)sessionIdParam.Value;
@@ -32,7 +31,6 @@ namespace DrinkDb_Auth.Adapter
             command.Parameters.Add("@sessionId", SqlDbType.UniqueIdentifier).Value = sessionId;
             command.Parameters.Add("@userId", SqlDbType.UniqueIdentifier).Value = userId;
 
-            connection.Open();
             var returnValue = command.Parameters.Add("@RETURN_VALUE", SqlDbType.Int);
             returnValue.Direction = ParameterDirection.ReturnValue;
             
@@ -47,8 +45,6 @@ namespace DrinkDb_Auth.Adapter
                 "SELECT userId FROM Sessions WHERE sessionId = @sessionId", 
                 connection);
             command.Parameters.Add("@sessionId", SqlDbType.UniqueIdentifier).Value = sessionId;
-
-            connection.Open();
             using var reader = command.ExecuteReader();
             if (reader.Read())
             {

@@ -46,7 +46,7 @@ namespace DrinkDb_Auth
             this.AppWindow.Move(new PointInt32(0, 0));
         }
 
-        private void AuthenticationSucess(AuthResponse res)
+        private void AuthenticationComplete(AuthResponse res)
         {
             if (res.AuthSuccessful)
             {
@@ -70,31 +70,8 @@ namespace DrinkDb_Auth
             string username = UsernameTextBox.Text;
             string password = PasswordBox.Password;
 
-            // Basic validation
-            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
-            {
-                // Navigate to success page
-                var authResponse = new AuthResponse
-                {
-                    AuthSuccessful = false,
-                    OAuthToken = Guid.NewGuid().ToString(),
-                    NewAccount = false,
-                    SessionId = Guid.Empty,
-                };
-                AuthenticationSucess(authResponse);
-            }
-            else
-            {
-                ContentDialog errorDialog = new()
-                {
-                    Title = "Validation Error",
-                    Content = "Please enter both username and password.",
-                    CloseButtonText = "OK",
-                    XamlRoot = Content.XamlRoot
-                };
-
-                _ = errorDialog.ShowAsync();
-            }
+            AuthResponse res = AuthenticationService.AuthWithUserPass(username, password);
+            AuthenticationComplete(res);
         }
 
         public async void GithubSignInButton_Click(object sender, RoutedEventArgs e)
@@ -136,7 +113,7 @@ namespace DrinkDb_Auth
                             System.Diagnostics.Debug.WriteLine("Failed to retrieve GitHub username.");
                         }
 
-                        AuthenticationSucess(authResponse);
+                        AuthenticationComplete(authResponse);
                     }
                     else
                     {
@@ -179,7 +156,7 @@ namespace DrinkDb_Auth
                 if (authResponse.AuthSuccessful)
                 {
                     // Navigate to success page
-                    AuthenticationSucess(authResponse);
+                    AuthenticationComplete(authResponse);
                 }
                 else
                 {
@@ -238,7 +215,7 @@ namespace DrinkDb_Auth
 
                 if (authResponse.AuthSuccessful)
                 {
-                    AuthenticationSucess(authResponse);
+                    AuthenticationComplete(authResponse);
                 }
                 else
                 {
@@ -283,7 +260,7 @@ namespace DrinkDb_Auth
 
                 if (authResponse.AuthSuccessful)
                 {
-                    AuthenticationSucess(authResponse);
+                    AuthenticationComplete(authResponse);
                 }
                 else
                 {
