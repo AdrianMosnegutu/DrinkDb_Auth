@@ -293,6 +293,11 @@ namespace DrinkDb_Auth
             }
         }
 
+        private async void StartLinkedInLocalServer()
+        {
+            _linkedinLocalServer = new LinkedInLocalOAuthServer("http://localhost:8891/");
+            await _linkedinLocalServer.StartAsync();
+        }
 
         private async Task<string> GetLinkedInIdAsync(string token)
         {
