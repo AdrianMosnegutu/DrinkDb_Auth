@@ -1,7 +1,6 @@
 ﻿using System;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.Model;
-using Windows.System;
 
 namespace DrinkDb_Auth.Service
 {
@@ -14,12 +13,12 @@ namespace DrinkDb_Auth.Service
             _userAdapter = new UserAdapter();
         }
 
-        public Users GetUserById(Guid userId)
+        public User GetUserById(Guid userId)
         {
             return _userAdapter.GetUserById(userId);
         }
 
-        public Users GetUserByUsername(string username)
+        public User GetUserByUsername(string username)
         {
             return _userAdapter.GetUserByUsername(username);
         }

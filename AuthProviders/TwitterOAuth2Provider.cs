@@ -64,7 +64,8 @@ namespace DrinkDb_Auth.OAuthProviders
             return new AuthResponse
             {
                 AuthSuccessful = !string.IsNullOrEmpty(token),
-                SessionId = token,
+                OAuthToken = token,
+                SessionId = Guid.Empty,
                 NewAccount = false
             };
         }
@@ -138,7 +139,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     System.Diagnostics.Debug.WriteLine("Token request failed with non-success status.");
                     return new AuthResponse {
                         AuthSuccessful = false,
-                        SessionId = string.Empty,
+                        OAuthToken = string.Empty,
+                        SessionId = Guid.Empty,
                         NewAccount = false
                     };
                 }
@@ -161,7 +163,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     return new AuthResponse
                     {
                         AuthSuccessful = false,
-                        SessionId = string.Empty,
+                        OAuthToken = string.Empty,
+                        SessionId = Guid.Empty,
                         NewAccount = false
                     };
                 }
@@ -183,7 +186,8 @@ namespace DrinkDb_Auth.OAuthProviders
                         return new AuthResponse
                         {
                             AuthSuccessful = false,
-                            SessionId = tokenResult.AccessToken,
+                            OAuthToken = tokenResult.AccessToken,
+                            SessionId = Guid.Empty,
                             NewAccount = false
                         };
                     }
@@ -194,7 +198,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     return new AuthResponse
                     {
                         AuthSuccessful = true,
-                        SessionId = tokenResult.AccessToken,
+                        OAuthToken = tokenResult.AccessToken,
+                        SessionId = Guid.Empty,
                         NewAccount = false
                     };
                 }
@@ -205,7 +210,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     return new AuthResponse
                     {
                         AuthSuccessful = true,
-                        SessionId = tokenResult.AccessToken,
+                        OAuthToken = tokenResult.AccessToken,
+                        SessionId = Guid.Empty,
                         NewAccount = false
                     };
                 }
@@ -213,7 +219,12 @@ namespace DrinkDb_Auth.OAuthProviders
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ExchangeCodeForTokenAsync exception: {ex.Message}");
-                return new AuthResponse {AuthSuccessful = false, SessionId = string.Empty, NewAccount = false };
+                return new AuthResponse {
+                    AuthSuccessful = false,
+                    OAuthToken = string.Empty,
+                    SessionId = Guid.Empty,
+                    NewAccount = false,
+                };
             }
         }
 
@@ -279,7 +290,12 @@ namespace DrinkDb_Auth.OAuthProviders
                 if (!tcs.Task.IsCompleted)
                 {
                     System.Diagnostics.Debug.WriteLine("Dialog closed; no code was returned.");
-                    tcs.SetResult(new AuthResponse {AuthSuccessful = false, SessionId = string.Empty, NewAccount = false });
+                    tcs.SetResult(new AuthResponse {
+                        AuthSuccessful = false,
+                        OAuthToken = string.Empty,
+                        SessionId = Guid.Empty,
+                        NewAccount = false
+                    });
                 }
             }
             catch (Exception ex)

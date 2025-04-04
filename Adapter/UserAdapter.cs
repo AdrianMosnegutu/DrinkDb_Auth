@@ -10,10 +10,10 @@ namespace DrinkDb_Auth.Adapter
     {
         /// <summary>
         /// Calls your T-SQL function fnGetUserById(@userId) 
-        /// which returns a row from the Users table.
+        /// which returns a row from the User table.
         /// </summary>
         /// 
-        public Users GetUserById(Guid userId)
+        public User GetUserById(Guid userId)
         {
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             {
@@ -26,7 +26,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         if (reader.Read())
                         {
-                            return new Users
+                            return new User
                             {
                                 UserId = reader.GetGuid(reader.GetOrdinal("userId")),
                                 Username = reader.GetString(reader.GetOrdinal("userName")),
@@ -48,7 +48,7 @@ namespace DrinkDb_Auth.Adapter
         /// <summary>
         /// Calls fnGetUserByUsername(@username).
         /// </summary>
-        public Users GetUserByUsername(string username)
+        public User GetUserByUsername(string username)
         {
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             {
@@ -61,7 +61,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         if (reader.Read())
                         {
-                            return new Users
+                            return new User
                             {
                                 UserId = reader.GetGuid(reader.GetOrdinal("userId")),
                                 Username = reader.GetString(reader.GetOrdinal("userName")),
@@ -83,7 +83,7 @@ namespace DrinkDb_Auth.Adapter
         public bool UpdateUser(User user)
         {
             using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
-            string sql = "UPDATE Users SET userName = @username, passwordHash = @passwordHash, twoFASecret = @twoFASecret WHERE userId = @userId;";
+            string sql = "UPDATE User SET userName = @username, passwordHash = @passwordHash, twoFASecret = @twoFASecret WHERE userId = @userId;";
             using (SqlCommand cmd = new(sql, conn))
             {
                 cmd.Parameters.AddWithValue("@userId", user.UserId);
@@ -96,7 +96,7 @@ namespace DrinkDb_Auth.Adapter
         public bool DeleteUser(Guid userId)
         {
             using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
-            string sql = "DELETE FROM Users WHERE userId = @userId;";
+            string sql = "DELETE FROM User WHERE userId = @userId;";
             using SqlCommand cmd = new(sql, conn);
             cmd.Parameters.AddWithValue("@userId", userId);
             return cmd.ExecuteNonQuery() > 0;
@@ -105,7 +105,7 @@ namespace DrinkDb_Auth.Adapter
         public bool CreateUser(User user)
         {
             using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
-            string sql = "INSERT INTO Users (userId, userName, passwordHash, twoFASecret) VALUES (@userId, @username, @passwordHash, @twoFASecret);";
+            string sql = "INSERT INTO User (userId, userName, passwordHash, twoFASecret) VALUES (@userId, @username, @passwordHash, @twoFASecret);";
             using SqlCommand cmd = new(sql, conn);
             cmd.Parameters.AddWithValue("@userId", user.UserId);
             cmd.Parameters.AddWithValue("@username", user.Username);
@@ -118,10 +118,10 @@ namespace DrinkDb_Auth.Adapter
         {
             List<Permission> permissions = new();
 
-            // SQL query joining Users -> UserRoles -> Roles -> RolePermissions -> Permissions
+            // SQL query joining User -> UserRoles -> Roles -> RolePermissions -> Permissions
             string sql = @"
         SELECT p.permissionId, p.permissionName, p.resource, p.action
-        FROM Users u
+        FROM User u
         JOIN UserRoles ur ON u.userId = ur.userId
         JOIN Roles r ON ur.roleId = r.roleId
         JOIN RolePermissions rp ON r.roleId = rp.roleId

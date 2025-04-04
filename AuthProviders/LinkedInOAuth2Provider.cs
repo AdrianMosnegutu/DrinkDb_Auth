@@ -22,7 +22,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     return new AuthResponse
                     {
                         AuthSuccessful = false,
-                        SessionId = token,
+                        OAuthToken = token,
+                        SessionId = Guid.Empty,
                         NewAccount = false
                     };
                 }
@@ -33,7 +34,8 @@ namespace DrinkDb_Auth.OAuthProviders
                 return new AuthResponse
                 {
                     AuthSuccessful = true,
-                    SessionId = token,
+                    OAuthToken = token,
+                    SessionId = Guid.Empty,
                     NewAccount = isNewAccount
                 };
             }
@@ -42,7 +44,8 @@ namespace DrinkDb_Auth.OAuthProviders
                 return new AuthResponse
                 {
                     AuthSuccessful = false,
-                    SessionId = token,
+                    OAuthToken = token,
+                    SessionId = Guid.Empty,
                     NewAccount = false
                 };
             }
@@ -99,7 +102,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 conn.Open();
 
                 // Check if a user with this lnId already exists (stored as userName)
-                string checkQuery = "SELECT COUNT(*) FROM Users WHERE userName = @lnId";
+                string checkQuery = "SELECT COUNT(*) FROM User WHERE userName = @lnId";
                 using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
                 {
                     checkCmd.Parameters.AddWithValue("@lnId", lnId);
@@ -108,7 +111,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     {
                         // Insert a new user
                         string insertQuery = @"
-                            INSERT INTO Users (userId, userName, passwordHash, twoFASecret, roleId)
+                            INSERT INTO User (userId, userName, passwordHash, twoFASecret, roleId)
                             VALUES (NEWID(), @lnId, '', NULL, @roleId)";
                         using (SqlCommand insertCmd = new SqlCommand(insertQuery, conn))
                         {

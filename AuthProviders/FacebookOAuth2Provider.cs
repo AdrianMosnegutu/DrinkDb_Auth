@@ -34,7 +34,8 @@ namespace DrinkDb_Auth.OAuthProviders
                             return new AuthResponse
                             {
                                 AuthSuccessful = true,
-                                SessionId = token,
+                                SessionId = Guid.Empty,
+                                OAuthToken = token,
                                 NewAccount = isNewAccount
                             };
                         }
@@ -43,7 +44,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     return new AuthResponse
                     {
                         AuthSuccessful = false,
-                        SessionId = token,
+                        OAuthToken = token,
+                        SessionId = Guid.Empty,
                         NewAccount = false
                     };
                 }
@@ -53,7 +55,8 @@ namespace DrinkDb_Auth.OAuthProviders
                 return new AuthResponse
                 {
                     AuthSuccessful = false,
-                    SessionId = token,
+                    OAuthToken = token,
+                    SessionId = Guid.Empty,
                     NewAccount = false
                 };
             }
@@ -70,7 +73,7 @@ namespace DrinkDb_Auth.OAuthProviders
 
                 string checkQuery = @"
                     SELECT COUNT(*) 
-                    FROM Users 
+                    FROM User 
                     WHERE fbId = @fbId OR userName = @fbEmail;
                 ";
 
@@ -84,7 +87,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     if (count == 0)
                     {
                         string insertQuery = @"
-                            INSERT INTO Users (userId, fbId, userName, email, passwordHash, roleId)
+                            INSERT INTO User (userId, fbId, userName, email, passwordHash, roleId)
                             VALUES (NEWID(), @fbId, @fbName, @fbEmail, '', @roleId);
                         ";
                         using (SqlCommand insertCmd = new SqlCommand(insertQuery, conn))
@@ -100,7 +103,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     else
                     {
                         string updateQuery = @"
-                            UPDATE Users
+                            UPDATE User
                             SET userName = @fbName, email = @fbEmail
                             WHERE fbId = @fbId;
                         ";

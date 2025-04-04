@@ -61,7 +61,8 @@ namespace DrinkDb_Auth.OAuthProviders
             var response = new AuthResponse
             {
                 AuthSuccessful = !string.IsNullOrEmpty(token),
-                SessionId = token,
+                OAuthToken = token,
+                SessionId = Guid.Empty,
                 NewAccount = false
             };
 
@@ -174,7 +175,8 @@ namespace DrinkDb_Auth.OAuthProviders
                             return new AuthResponse
                             {
                                 AuthSuccessful = false,
-                                SessionId = string.Empty,
+                                OAuthToken = string.Empty,
+                                SessionId = Guid.Empty,
                                 NewAccount = false
                             };
                         }
@@ -212,7 +214,8 @@ namespace DrinkDb_Auth.OAuthProviders
                                     return new AuthResponse
                                     {
                                         AuthSuccessful = true,
-                                        SessionId = tokenResult.AccessToken,
+                                        OAuthToken = tokenResult.AccessToken,
+                                        SessionId = Guid.Empty,
                                         NewAccount = false
                                     };
                                     
@@ -242,7 +245,8 @@ namespace DrinkDb_Auth.OAuthProviders
                                     return new AuthResponse
                                     {
                                         AuthSuccessful = true,
-                                        SessionId = tokenResult.AccessToken,
+                                        OAuthToken = tokenResult.AccessToken,
+                                        SessionId = Guid.Empty,
                                         NewAccount = false
                                     };
                                 }
@@ -256,7 +260,8 @@ namespace DrinkDb_Auth.OAuthProviders
                             return new AuthResponse
                             {
                                 AuthSuccessful = true,
-                                SessionId = tokenResult.AccessToken,
+                                SessionId = Guid.Empty,
+                                OAuthToken = tokenResult.AccessToken,
                                 NewAccount = false
                             };
                         }
@@ -267,7 +272,8 @@ namespace DrinkDb_Auth.OAuthProviders
                         return new AuthResponse
                         {
                             AuthSuccessful = false,
-                            SessionId = string.Empty,
+                            OAuthToken = string.Empty,
+                            SessionId = Guid.Empty,
                             NewAccount = false
                         };
                     }
@@ -287,7 +293,8 @@ namespace DrinkDb_Auth.OAuthProviders
             return new AuthResponse
             {
                 AuthSuccessful = false,
-                SessionId = string.Empty,
+                OAuthToken = string.Empty,
+                SessionId = Guid.Empty,
                 NewAccount = false
             };
         }
@@ -422,7 +429,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                 
                                 // Process the authentication code
                                 var response = await ExchangeCodeForTokenAsync(code);
-                                System.Diagnostics.Debug.WriteLine($"Authentication result: {response.AuthSuccessful}, Token: {(string.IsNullOrEmpty(response.SessionId) ? "Empty" : "Present")}");
+                                System.Diagnostics.Debug.WriteLine($"Authentication result: {response.AuthSuccessful}, Token: {(string.IsNullOrEmpty(response.OAuthToken) ? "Empty" : "Present")}");
                                 
                                 // Close the dialog and return the result
                                 parentWindow.DispatcherQueue.TryEnqueue(() =>
@@ -547,7 +554,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     tcs.SetResult(new AuthResponse
                     {
                         AuthSuccessful = false,
-                        SessionId = string.Empty,
+                        OAuthToken = string.Empty,
+                        SessionId = Guid.Empty,
                         NewAccount = false
                     });
                 }

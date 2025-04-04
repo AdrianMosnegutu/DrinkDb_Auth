@@ -24,7 +24,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     return new AuthResponse
                     {
                         AuthSuccessful = false,
-                        SessionId = token,
+                        OAuthToken = String.Empty,
+                        SessionId = Guid.Empty,
                         NewAccount = false
                     };
                 }
@@ -33,10 +34,12 @@ namespace DrinkDb_Auth.OAuthProviders
                 if (VerifyUserInDb(ghLogin))
                 {
                     // User exists, so proceed.
+
                     return new AuthResponse
                     {
                         AuthSuccessful = true,
-                        SessionId = token,
+                        OAuthToken = token,
+                        SessionId = Guid.Empty,
                         NewAccount = false
                     };
                 }
@@ -50,7 +53,8 @@ namespace DrinkDb_Auth.OAuthProviders
                         return new AuthResponse
                         {
                             AuthSuccessful = true,
-                            SessionId = token,
+                            OAuthToken  = token,
+                            SessionId = Guid.Empty,
                             NewAccount = true
                         };
                     }
@@ -60,7 +64,8 @@ namespace DrinkDb_Auth.OAuthProviders
                         return new AuthResponse
                         {
                             AuthSuccessful = false,
-                            SessionId = token,
+                            OAuthToken  = token,
+                            SessionId = Guid.Empty,
                             NewAccount = false
                         };
                     }
@@ -71,7 +76,8 @@ namespace DrinkDb_Auth.OAuthProviders
                 return new AuthResponse
                 {
                     AuthSuccessful = false,
-                    SessionId = token,
+                    OAuthToken  = token,
+                    SessionId = Guid.Empty,
                     NewAccount = false
                 };
             }
@@ -147,6 +153,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     UserId = Guid.NewGuid(),
                     Username = ghLogin.Trim(),
                     TwoFASecret = string.Empty,
+                    PasswordHash = string.Empty,
                 };
                 userAdapter.CreateUser(newUser);
 

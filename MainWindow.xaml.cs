@@ -50,11 +50,18 @@ namespace DrinkDb_Auth
         {
             if (res.AuthSuccessful)
             {
-
                 MainFrame.Navigate(typeof(SuccessPage));
             }
             else
             {
+                ContentDialog errorDialog = new ContentDialog
+                {
+                    Title = "Authentication Failed",
+                    Content = "Authentication was not successful. Please try again.",
+                    CloseButtonText = "OK",
+                    XamlRoot = Content.XamlRoot
+                };
+                _ = errorDialog.ShowAsync();
             }
         }
 
@@ -70,8 +77,9 @@ namespace DrinkDb_Auth
                 var authResponse = new AuthResponse
                 {
                     AuthSuccessful = false,
-                    SessionId = Guid.NewGuid().ToString(),
+                    OAuthToken = Guid.NewGuid().ToString(),
                     NewAccount = false,
+                    SessionId = Guid.Empty,
                 };
                 AuthenticationSucess(authResponse);
             }
@@ -101,12 +109,13 @@ namespace DrinkDb_Auth
                 {
                     // Verify the token
                     var provider = new GitHubOAuth2Provider();
-                    var finalAuth = provider.Authenticate(null, authResponse.SessionId);
+                    if (authResponse.OAuthToken == null || authResponse.OAuthToken == string.Empty) throw new Exception("OAuth token is null.");
+                    var finalAuth = provider.Authenticate(null, authResponse.OAuthToken);
 
                     if (finalAuth.AuthSuccessful)
                     {
                         // Retrieve the GitHub username using the token.
-                        string? githubUsername = await GitHubOAuth2Provider.GetGitHubUsernameAsync(authResponse.SessionId);
+                        string? githubUsername = await GitHubOAuth2Provider.GetGitHubUsernameAsync(authResponse.OAuthToken);
                         if (!string.IsNullOrWhiteSpace(githubUsername))
                         {
                             // Lookup the user by the dynamic GitHub username.
@@ -352,12 +361,13 @@ namespace DrinkDb_Auth
                 if (authResponse.AuthSuccessful)
                 {
                     var lnProvider = new LinkedInOAuth2Provider();
-                    var finalAuth = lnProvider.Authenticate(string.Empty, authResponse.SessionId);
+                    if (authResponse.OAuthToken == null || authResponse.OAuthToken == string.Empty) throw new Exception("OAuth token is null.");
+                    var finalAuth = lnProvider.Authenticate(string.Empty, authResponse.OAuthToken);
 
                     if (finalAuth.AuthSuccessful)
                     {
                         // Retrieve LinkedIn ID from the token.
-                        string lnId = await GetLinkedInIdAsync(authResponse.SessionId);
+                        string lnId = await GetLinkedInIdAsync(authResponse.OAuthToken);
                         var userService = new UserService();
                         var user = userService.GetUserByUsername(lnId);
                         if (user != null)
