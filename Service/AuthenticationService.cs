@@ -67,9 +67,9 @@ namespace DrinkDb_Auth.Service
             App.CurrentSessionId = Guid.Empty;
             App.CurrentUserId = Guid.Empty;
         }
-        public User GetUser(string sessionId)
+        public User GetUser(Guid sessionId)
         {
-            Session sess = _sessionAdapter.GetSession(App.CurrentUserId);
+            Session sess = _sessionAdapter.GetSession(sessionId);
             return _userAdapter.GetUserById(sess.userId) ?? throw new UserNotFoundException("User not found");
         }
         public static AuthResponse AuthWithUserPass(string username, string password)

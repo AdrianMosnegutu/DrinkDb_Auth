@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.View;
 using DrinkDb_Auth.ViewModel;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 namespace DrinkDb_Auth.Service
 {
@@ -46,6 +48,7 @@ namespace DrinkDb_Auth.Service
             };
 
             TwoFactorAuthSetupView twoFactorAuthSetupView = new(twoFactorAuthSetupViewModel);
+
             return await tcs.Task;
         }
 
