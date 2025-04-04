@@ -73,6 +73,14 @@
                         x:Name="EditAccountButton"
                         Content="Edit Account"
                         Click="EditAccountButton_Click" />
+
+                    <!-- Logout button -->
+                    <Button 
+                        x:Name="LogoutButton"
+                        Content="Logout"
+                        Click="LogoutButton_Click"
+                        Background="White"
+                        Foreground="Black"/>
                 </StackPanel>
             </Border>
         </StackPanel>
