@@ -6,6 +6,7 @@ using QRCoder;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.Service;
 using Microsoft.UI.Xaml.Controls;
+using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.ViewModel
 {
@@ -13,6 +14,7 @@ namespace DrinkDb_Auth.ViewModel
     {
         private static readonly UserAdapter _userAdapter = new();
         private static readonly ITwoFactorAuthenticationService _twoFactorAuthService = new TwoFactorAuthenticationService();
+        private static readonly SessionAdapter _sessionAdapter = new();
         private string _codeDigit1;
         private string _codeDigit2;
         private string _codeDigit3;
@@ -85,9 +87,10 @@ namespace DrinkDb_Auth.ViewModel
         public ICommand SubmitCommand { get; }
 
         private readonly Guid _userId;
-        public TwoFactorAuthCheckViewModel(Guid userId)
+        public TwoFactorAuthCheckViewModel()
         {
-            _userId = userId;
+            Session session = _sessionAdapter.GetSession(App.CurrentSessionId);
+            _userId = session.userId;
             CancelCommand = new RelayCommand(Cancel);
             SubmitCommand = new RelayCommand(Submit);
 

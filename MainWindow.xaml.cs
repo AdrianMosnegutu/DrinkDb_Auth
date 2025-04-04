@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using System.Net.Http;
 using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.View;
+using DrinkDb_Auth.Model;
 
 
 // To learn more about WinUI, the WinUI project structure,
@@ -19,6 +21,7 @@ namespace DrinkDb_Auth
     public sealed partial class MainWindow : Window
     {
         private AuthenticationService _authenticationService = new();
+        private ITwoFactorAuthenticationService _twoFactorAuthService = new TwoFactorAuthenticationService();
 
         public MainWindow()
         {
@@ -36,9 +39,18 @@ namespace DrinkDb_Auth
 
         private void AuthenticationComplete(AuthResponse res)
         {
+            App.CurrentSessionId = res.SessionId;
             if (res.AuthSuccessful)
             {
-                MainFrame.Navigate(typeof(SuccessPage));
+                var user = _authenticationService.GetUser(res.SessionId);
+                if (user.TwoFASecret != null)
+                {
+                    MainFrame.Navigate(typeof(TwoFactorAuthCheckView));
+                }
+                else
+                {
+                    _twoFactorAuthService.Setup2FA(user.UserId);
+                }
             }
             else
             {

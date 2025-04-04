@@ -22,12 +22,12 @@ namespace DrinkDb_Auth.View
     /// <summary>
     /// An empty window that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class TwoFactorAuthSetupView : Window
+    public sealed partial class TwoFactorAuthSetupView : Page
     {
-        public TwoFactorAuthSetupView(TwoFactorAuthSetupViewModel viewModel)
+        public TwoFactorAuthSetupView(TwoFactorAuthSetupViewModel twoFactorAuthSetupViewModel)
         {
             this.InitializeComponent();
-            RootPannel.DataContext = viewModel;
+            RootPannel.DataContext = twoFactorAuthSetupViewModel;
         }
     }
 }
