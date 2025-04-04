@@ -1,24 +1,39 @@
-using System;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
-using Microsoft.Web.WebView2.Core;
-using Microsoft.UI.Xaml.Controls;
+using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.Model;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Windows.Storage;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.Web.WebView2.Core;
+using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using System.Net;
-using System.Threading;
-using Microsoft.UI.Dispatching;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json.Serialization;
-using Microsoft.IdentityModel.Tokens;
+using System.Threading;
+using System.Threading.Tasks;
+using Windows.Storage;
+using System;
+using System.Security.Cryptography;
+using System.Text;
+
 
 namespace DrinkDb_Auth.OAuthProviders
 {
+   
     public class GoogleOAuth2Provider : GenericOAuth2Provider
     {
+        public static Guid SubToGuid(string sub)
+        {
+            using (var md5 = MD5.Create())
+            {
+                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(sub));
+                return new Guid(hash);
+            }
+        }
         // These values should be loaded from configuration, not hard-coded
         private string ClientId { get; }
         private string ClientSecret { get; }
@@ -27,8 +42,8 @@ namespace DrinkDb_Auth.OAuthProviders
         private const string TokenEndpoint = "https://oauth2.googleapis.com/token";
         private const string UserInfoEndpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
         private readonly string[] Scopes = { "profile", "email" };
-
         private HttpClient _httpClient;
+        private static readonly SessionAdapter sessionAdapter = new();
 
         public GoogleOAuth2Provider()
         {
@@ -175,8 +190,8 @@ namespace DrinkDb_Auth.OAuthProviders
                             return new AuthResponse
                             {
                                 AuthSuccessful = false,
-                                OAuthToken = string.Empty,
-                                SessionId = Guid.Empty,
+                                OAuthToken = tokenResult.AccessToken,
+                                SessionId = sessionAdapter.CreateSession(SubToGuid(ExtractUserInfoFromIdToken(tokenResult.IdToken).Sub)).sessionId,
                                 NewAccount = false
                             };
                         }
@@ -215,10 +230,10 @@ namespace DrinkDb_Auth.OAuthProviders
                                     {
                                         AuthSuccessful = true,
                                         OAuthToken = tokenResult.AccessToken,
-                                        SessionId = Guid.Empty,
+                                        SessionId = sessionAdapter.CreateSession(SubToGuid(ExtractUserInfoFromIdToken(tokenResult.IdToken).Sub)).sessionId,
                                         NewAccount = false
                                     };
-                                    
+
                                 }
                                 else
                                 {
@@ -240,14 +255,15 @@ namespace DrinkDb_Auth.OAuthProviders
                                             System.Diagnostics.Debug.WriteLine($"Failed to extract info from ID token: {idEx.Message}");
                                         }
                                     }
+               
                                     
+
                                     // If we couldn't get user info but have a valid token, still return success
                                     return new AuthResponse
                                     {
                                         AuthSuccessful = true,
                                         OAuthToken = tokenResult.AccessToken,
-                                        SessionId = Guid.Empty,
-                                        NewAccount = false
+                                        SessionId = sessionAdapter.CreateSession(SubToGuid(ExtractUserInfoFromIdToken(tokenResult.IdToken).Sub)).sessionId, NewAccount = false
                                     };
                                 }
                             }
@@ -255,13 +271,13 @@ namespace DrinkDb_Auth.OAuthProviders
                         catch (Exception ex)
                         {
                             System.Diagnostics.Debug.WriteLine($"Error getting user info: {ex.Message}");
-                            
+
                             // If we couldn't get user info but have a valid token, still return success
                             return new AuthResponse
                             {
                                 AuthSuccessful = true,
-                                SessionId = Guid.Empty,
                                 OAuthToken = tokenResult.AccessToken,
+                                SessionId = sessionAdapter.CreateSession(SubToGuid(ExtractUserInfoFromIdToken(tokenResult.IdToken).Sub)).sessionId,
                                 NewAccount = false
                             };
                         }
@@ -653,7 +669,5 @@ namespace DrinkDb_Auth.OAuthProviders
         [JsonPropertyName("email_verified")]
         public required bool EmailVerified { get; set; }
         
-        [JsonPropertyName("locale")]
-        public required string Locale { get; set; }
     }
 } 
