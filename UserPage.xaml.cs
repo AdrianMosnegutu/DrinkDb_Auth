@@ -1,4 +1,4 @@
-﻿using DrinkDb_Auth.Service;
+using DrinkDb_Auth.Service;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -30,7 +30,7 @@ namespace DrinkDb_Auth
                 // Update UI with the retrieved data.
                 if (user != null)
                 {
-                    NameTextBlock.Text = user.Username;
+                    NameTextBlock.Text = user.Username; 
                     UsernameTextBlock.Text = "@" + user.Username;
                     StatusTextBlock.Text = "Status: Online";
                 }
@@ -50,6 +50,7 @@ namespace DrinkDb_Auth
             }
         }
 
+
         private void LoadMockUserData()
         {
             // Create mock user data
@@ -60,14 +61,12 @@ namespace DrinkDb_Auth
                 Status = "Online",
                 Reviews = new List<ReviewModel>
                 {
-                    new ReviewModel
-                    {
+                    new() {
                         Date = DateTime.Now.AddDays(-2),
                         Rating = 4,
                         Comment = "Really good taste!"
                     },
-                    new ReviewModel
-                    {
+                    new() {
                         Date = DateTime.Now.AddDays(-10),
                         Rating = 2,
                         Comment = "Could be better"

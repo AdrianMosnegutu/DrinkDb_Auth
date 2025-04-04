@@ -54,7 +54,7 @@ namespace DrinkDb_Auth.Adapter
             {
                 return Session.createSessionWithIds(sessionId, reader.GetGuid(0));
             }
-            return null;
+            throw new Exception("Session not found.");
         }
     }
 } 
