@@ -4,11 +4,14 @@ using System.Text.Json;
 using DrinkDb_Auth.OAuthProviders;
 using Microsoft.Data.SqlClient;
 using System.Configuration;
+using DrinkDb_Auth.Model;
+using DrinkDb_Auth.Adapter;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
     public class FacebookOAuth2Provider : GenericOAuth2Provider
     {
+        private static readonly SessionAdapter sessionAdapter = new();
         public AuthResponse Authenticate(string userId, string token)
         {
             try
@@ -31,10 +34,12 @@ namespace DrinkDb_Auth.OAuthProviders
                             // store or update user in DB - UserService
                             bool isNewAccount = StoreOrUpdateUserInDb(fbId, fbName, fbEmail);
 
+                            Session session = sessionAdapter.CreateSession(Guid.Parse(fbId));
+
                             return new AuthResponse
                             {
                                 AuthSuccessful = true,
-                                SessionId = Guid.Empty,
+                                SessionId = session.sessionId,
                                 OAuthToken = token,
                                 NewAccount = isNewAccount
                             };
