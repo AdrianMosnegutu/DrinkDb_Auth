@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.Data.SqlClient;
 using DrinkDb_Auth.Model;
 using System.Collections.Generic;
@@ -34,12 +34,11 @@ namespace DrinkDb_Auth.Adapter
                                 TwoFASecret = reader.IsDBNull(reader.GetOrdinal("twoFASecret"))
                                     ? null
                                     : reader.GetString(reader.GetOrdinal("twoFASecret")),
-                                RoleId = reader.GetGuid(reader.GetOrdinal("roleId"))
                             };
                         }
                         else
                         {
-                            throw new Exception("User not found.");
+                            throw new Exception($"User with ID {userId} not found.");
                         }
                     }
                 }
@@ -70,16 +69,49 @@ namespace DrinkDb_Auth.Adapter
                                 TwoFASecret = reader.IsDBNull(reader.GetOrdinal("twoFASecret"))
                                     ? null
                                     : reader.GetString(reader.GetOrdinal("twoFASecret")),
-                                RoleId = reader.GetGuid(reader.GetOrdinal("roleId"))
                             };
                         }
                         else
                         {
-                            throw new Exception("User not found.");
+                            throw new Exception($"User with username {username} not found.");
                         }
                     }
                 }
             }
+        }
+
+        public bool UpdateUser(User user)
+        {
+            using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
+            string sql = "UPDATE Users SET userName = @username, passwordHash = @passwordHash, twoFASecret = @twoFASecret WHERE userId = @userId;";
+            using (SqlCommand cmd = new(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@userId", user.UserId);
+                cmd.Parameters.AddWithValue("@username", user.Username);
+                cmd.Parameters.AddWithValue("@passwordHash", user.PasswordHash);
+                cmd.Parameters.AddWithValue("@twoFASecret", user.TwoFASecret);
+                return cmd.ExecuteNonQuery() > 0;
+            }
+        }
+        public bool DeleteUser(Guid userId)
+        {
+            using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
+            string sql = "DELETE FROM Users WHERE userId = @userId;";
+            using SqlCommand cmd = new(sql, conn);
+            cmd.Parameters.AddWithValue("@userId", userId);
+            return cmd.ExecuteNonQuery() > 0;
+        }
+
+        public bool CreateUser(User user)
+        {
+            using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
+            string sql = "INSERT INTO Users (userId, userName, passwordHash, twoFASecret) VALUES (@userId, @username, @passwordHash, @twoFASecret);";
+            using SqlCommand cmd = new(sql, conn);
+            cmd.Parameters.AddWithValue("@userId", user.UserId);
+            cmd.Parameters.AddWithValue("@username", user.Username);
+            cmd.Parameters.AddWithValue("@passwordHash", user.PasswordHash);
+            cmd.Parameters.AddWithValue("@twoFASecret", user.TwoFASecret);
+            return cmd.ExecuteNonQuery() > 0;
         }
 
         private List<Permission> GetPermissionsForUser(Guid userId) 

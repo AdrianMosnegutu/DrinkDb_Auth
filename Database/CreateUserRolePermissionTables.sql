@@ -1,4 +1,4 @@
-﻿use DrinkDB_Dev
+use DrinkDB_Dev
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Permissions' AND xtype='U')
 BEGIN
     CREATE TABLE Permissions (
