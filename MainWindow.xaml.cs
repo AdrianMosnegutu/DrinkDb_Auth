@@ -100,5 +100,60 @@ namespace DrinkDb_Auth
                 GoogleSignInButton.IsEnabled = true;
             }
         }
+
+        private async void XSignInButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Disable the button to prevent multiple clicks.
+                XSignInButton.IsEnabled = false;
+
+                // Optionally, show a loading indicator here.
+
+                // Create an instance of the Twitter provider and call the sign-in method.
+                var twitterProvider = new TwitterOAuth2Provider();
+                var authResponse = await twitterProvider.SignInWithTwitterAsync(this);
+
+                if (authResponse.AuthSuccessful)
+                {
+                    MainFrame.Navigate(typeof(SuccessPage));
+                }
+                else
+                {
+                    // Sign in failed: Show an error dialog.
+                    ContentDialog failureDialog = new ContentDialog
+                    {
+                        Title = "Sign In Failed",
+                        Content = "Unable to sign in with X. Please try again.",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.Content.XamlRoot  // Set the XamlRoot
+                    };
+                    await failureDialog.ShowAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error if needed.
+                System.Diagnostics.Debug.WriteLine("Error during X sign-in: " + ex.Message);
+
+                // Display an error message to the user.
+                ContentDialog errorDialog = new ContentDialog
+                {
+                    Title = "Error",
+                    Content = "An error occurred during sign in: " + ex.Message,
+                    CloseButtonText = "OK",
+                    XamlRoot = this.Content.XamlRoot  // Set the XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
+            finally
+            {
+                // Re-enable the button after processing is complete.
+                XSignInButton.IsEnabled = true;
+            }
+        }
+
+
+
     }
 }
