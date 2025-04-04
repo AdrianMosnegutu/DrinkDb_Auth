@@ -34,7 +34,7 @@ namespace DrinkDb_Auth.OAuthProviders
                             return new AuthResponse
                             {
                                 AuthSuccessful = true,
-                                SessionToken = token,
+                                SessionId = token,
                                 NewAccount = isNewAccount
                             };
                         }
@@ -43,7 +43,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     return new AuthResponse
                     {
                         AuthSuccessful = false,
-                        SessionToken = token,
+                        SessionId = token,
                         NewAccount = false
                     };
                 }
@@ -53,7 +53,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 return new AuthResponse
                 {
                     AuthSuccessful = false,
-                    SessionToken = token,
+                    SessionId = token,
                     NewAccount = false
                 };
             }

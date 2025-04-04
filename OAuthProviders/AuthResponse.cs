@@ -8,7 +8,7 @@ namespace DrinkDb_Auth.OAuthProviders
         public required bool AuthSuccessful { get; set; }
 
         /// The session token (e.g., access token) returned by the OAuth2 provider.
-        public required string SessionToken { get; set; }
+        public required string SessionId { get; set; }
 
         /// Indicates whether this authentication created a brand new account.
         public required bool NewAccount { get; set; }

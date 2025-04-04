@@ -61,7 +61,7 @@ namespace DrinkDb_Auth.OAuthProviders
             var response = new AuthResponse
             {
                 AuthSuccessful = !string.IsNullOrEmpty(token),
-                SessionToken = token,
+                SessionId = token,
                 NewAccount = false
             };
 
@@ -174,7 +174,7 @@ namespace DrinkDb_Auth.OAuthProviders
                             return new AuthResponse
                             {
                                 AuthSuccessful = false,
-                                SessionToken = string.Empty,
+                                SessionId = string.Empty,
                                 NewAccount = false
                             };
                         }
@@ -212,7 +212,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                     return new AuthResponse
                                     {
                                         AuthSuccessful = true,
-                                        SessionToken = tokenResult.AccessToken,
+                                        SessionId = tokenResult.AccessToken,
                                         NewAccount = false
                                     };
                                     
@@ -242,7 +242,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                     return new AuthResponse
                                     {
                                         AuthSuccessful = true,
-                                        SessionToken = tokenResult.AccessToken,
+                                        SessionId = tokenResult.AccessToken,
                                         NewAccount = false
                                     };
                                 }
@@ -256,7 +256,7 @@ namespace DrinkDb_Auth.OAuthProviders
                             return new AuthResponse
                             {
                                 AuthSuccessful = true,
-                                SessionToken = tokenResult.AccessToken,
+                                SessionId = tokenResult.AccessToken,
                                 NewAccount = false
                             };
                         }
@@ -267,7 +267,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         return new AuthResponse
                         {
                             AuthSuccessful = false,
-                            SessionToken = string.Empty,
+                            SessionId = string.Empty,
                             NewAccount = false
                         };
                     }
@@ -287,7 +287,7 @@ namespace DrinkDb_Auth.OAuthProviders
             return new AuthResponse
             {
                 AuthSuccessful = false,
-                SessionToken = string.Empty,
+                SessionId = string.Empty,
                 NewAccount = false
             };
         }
@@ -422,7 +422,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                 
                                 // Process the authentication code
                                 var response = await ExchangeCodeForTokenAsync(code);
-                                System.Diagnostics.Debug.WriteLine($"Authentication result: {response.AuthSuccessful}, Token: {(string.IsNullOrEmpty(response.SessionToken) ? "Empty" : "Present")}");
+                                System.Diagnostics.Debug.WriteLine($"Authentication result: {response.AuthSuccessful}, Token: {(string.IsNullOrEmpty(response.SessionId) ? "Empty" : "Present")}");
                                 
                                 // Close the dialog and return the result
                                 parentWindow.DispatcherQueue.TryEnqueue(() =>
@@ -547,7 +547,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     tcs.SetResult(new AuthResponse
                     {
                         AuthSuccessful = false,
-                        SessionToken = string.Empty,
+                        SessionId = string.Empty,
                         NewAccount = false
                     });
                 }

@@ -52,7 +52,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     _tcs.TrySetResult(new AuthResponse
                     {
                         AuthSuccessful = true,
-                        SessionToken = token,
+                        SessionId = token,
                         NewAccount = false
                     });
                 }
@@ -61,7 +61,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     _tcs.TrySetResult(new AuthResponse
                     {
                         AuthSuccessful = false,
-                        SessionToken = string.Empty,
+                        SessionId = string.Empty,
                         NewAccount = false
                     });
                 }
@@ -71,7 +71,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 _tcs.TrySetResult(new AuthResponse
                 {
                     AuthSuccessful = false,
-                    SessionToken = string.Empty,
+                    SessionId = string.Empty,
                     NewAccount = false
                 });
                 throw new Exception("Failed to exchange code for token.", ex);
