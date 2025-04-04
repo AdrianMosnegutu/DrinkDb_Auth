@@ -9,7 +9,7 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace DrinkDb_Auth.ViewModel
 {
-    public class TwoFactorAuthSetupViewModel : INotifyPropertyChanged
+    public class TwoFactorAuthCheckViewModel : INotifyPropertyChanged
     {
         private static readonly UserAdapter _userAdapter = new();
         private static readonly ITwoFactorAuthenticationService _twoFactorAuthService = new TwoFactorAuthenticationService();
@@ -19,11 +19,8 @@ namespace DrinkDb_Auth.ViewModel
         private string _codeDigit4;
         private string _codeDigit5;
         private string _codeDigit6;
-        private string _qrCodeImage;
 
         public event EventHandler<bool>? DialogResult;
-
-
         public string CodeDigit1
         {
             get => _codeDigit1;
@@ -84,31 +81,13 @@ namespace DrinkDb_Auth.ViewModel
             }
         }
 
-        public string QrCodeImage
-        {
-            get => _qrCodeImage;
-            set
-            {
-                _qrCodeImage = value;
-                OnPropertyChanged();
-            }
-        }
-
         public ICommand CancelCommand { get; }
         public ICommand SubmitCommand { get; }
 
-        private string _keyCode;
-        private Guid _userId;
-
-        public TwoFactorAuthSetupViewModel(string keyCode, Guid userId)
+        private readonly Guid _userId;
+        public TwoFactorAuthCheckViewModel(Guid userId)
         {
-            _keyCode = keyCode;
             _userId = userId;
-            QRCodeData qRCodeData = new QRCodeGenerator().CreateQrCode(keyCode, QRCodeGenerator.ECCLevel.Q);
-            BitmapByteQRCode qrCode = new(qRCodeData);
-
-            _qrCodeImage = Convert.ToBase64String(qrCode.GetGraphic(20));
-
             CancelCommand = new RelayCommand(Cancel);
             SubmitCommand = new RelayCommand(Submit);
 
@@ -150,6 +129,7 @@ namespace DrinkDb_Auth.ViewModel
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-}
+    }
 
 }
+
