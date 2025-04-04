@@ -80,12 +80,21 @@
                         </Button>
                   
                         <Button x:Name="GithubSignInButton"
-                        Content="Sign in with GitHub"
-                        Height="45"
-                        HorizontalAlignment="Stretch"
-                        Background="{ThemeResource SystemAccentColor}"
-                        Foreground="{ThemeResource SystemAltHighColor}"
-                        Click="GithubSignInButton_Click"/>
+                                Content="Sign in with GitHub"
+                                Height="45"
+                                HorizontalAlignment="Stretch"
+                                Background="{ThemeResource SystemAccentColor}"
+                                Foreground="{ThemeResource SystemAltHighColor}"
+                                Click="GithubSignInButton_Click"/>
+                      
+                        <Button x:Name="FacebookSignInButton"
+                                Content="Sign in with Facebook"
+                                Height="45"
+                                HorizontalAlignment="Stretch"
+                                Background="#3b5998"
+                                Foreground="White"
+                                Margin="0,10,0,0"
+                                Click="FacebookSignInButton_Click"/>
                     </StackPanel>
                 </Grid>
 
