@@ -12,6 +12,14 @@ using Microsoft.UI.Xaml;
 
 namespace DrinkDb_Auth.Service
 {
+    public enum OAuthService
+    {
+        Google,
+        Facebook,
+        Twitter,
+        GitHub,
+        LinkedIn
+    }
     public class AuthenticationService
     {
         private static readonly SessionAdapter _sessionAdapter = new();
@@ -32,9 +40,26 @@ namespace DrinkDb_Auth.Service
             _ = _linkedinLocalServer.StartAsync();
         }
 
-        public AuthResponse authWithOAuth(string userId, string token)
+        public async Task<AuthResponse> AuthWithOAuth(Window windowRef, OAuthService selectedService)
         {
-            throw new NotImplementedException("AuthWithOAuth not implemented");
+            var authResponse = selectedService switch
+            {
+                OAuthService.Google => await AuthenticateWithGoogleAsync(windowRef),
+                OAuthService.Facebook => await AuthenticateWithFacebookAsync(),
+                OAuthService.Twitter => await AuthenticateWithTwitterAsync(windowRef),
+                OAuthService.GitHub => await AuthenticateWithGitHubAsync(),
+                OAuthService.LinkedIn => await AuthenticateWithLinkedInAsync(),
+                _ => throw new ArgumentException("Invalid OAuth service selected"),
+            };
+
+            if (authResponse.AuthSuccessful)
+            {
+                App.CurrentSessionId = authResponse.SessionId;
+                Session session = _sessionAdapter.GetSession(App.CurrentSessionId);
+                App.CurrentUserId = session.userId;
+            }
+
+            return authResponse;
         }
         public void Logout()
         {
@@ -98,30 +123,30 @@ namespace DrinkDb_Auth.Service
 
         }
 
-        public async Task<AuthResponse> AuthenticateWithGitHubAsync()
+        private static async Task<AuthResponse> AuthenticateWithGitHubAsync()
         {
             var ghHelper = new GitHubOAuthHelper();
             return await ghHelper.AuthenticateAsync();
         }
 
-        public async Task<AuthResponse> AuthenticateWithGoogleAsync(Window window)
+        private static async Task<AuthResponse> AuthenticateWithGoogleAsync(Window window)
         {
             var googleProvider = new GoogleOAuth2Provider();
             return await googleProvider.SignInWithGoogleAsync(window);
         }
 
-        public async Task<AuthResponse> AuthenticateWithFacebookAsync()
+        private static async Task<AuthResponse> AuthenticateWithFacebookAsync()
         {
             var fbHelper = new FacebookOAuthHelper();
             return await fbHelper.AuthenticateAsync();
         }
 
-        public async Task<AuthResponse> AuthenticateWithTwitterAsync(Window window)
+        private static async Task<AuthResponse> AuthenticateWithTwitterAsync(Window window)
         {
             var twitterProvider = new TwitterOAuth2Provider();
             return await twitterProvider.SignInWithTwitterAsync(window);
         }
-        public async Task<AuthResponse> AuthenticateWithLinkedInAsync()
+        private static async Task<AuthResponse> AuthenticateWithLinkedInAsync()
         {
             var lnHelper = new LinkedInOAuthHelper(
                 clientId: "86j0ikb93jm78x",

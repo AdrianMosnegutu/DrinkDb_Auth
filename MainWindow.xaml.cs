@@ -66,7 +66,7 @@ namespace DrinkDb_Auth
         {
             try
             {
-                var authResponse = await _authenticationService.AuthenticateWithGitHubAsync();
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.GitHub);
                 AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
@@ -80,7 +80,7 @@ namespace DrinkDb_Auth
             try
             {
                 GoogleSignInButton.IsEnabled = false;
-                var authResponse = await _authenticationService.AuthenticateWithGoogleAsync(this);
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Google);
                 AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
@@ -97,7 +97,7 @@ namespace DrinkDb_Auth
         {
             try
             {
-                var authResponse = await _authenticationService.AuthenticateWithFacebookAsync();
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.GitHub);
                 AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
@@ -111,7 +111,7 @@ namespace DrinkDb_Auth
             try
             {
                 XSignInButton.IsEnabled = false;
-                var authResponse = await _authenticationService.AuthenticateWithTwitterAsync(this);
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Google);
                 AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
@@ -128,7 +128,7 @@ namespace DrinkDb_Auth
         {
             try
             {
-                var authResponse = await _authenticationService.AuthenticateWithLinkedInAsync();
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.LinkedIn);
                 AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
