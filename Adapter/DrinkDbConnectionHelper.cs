@@ -17,7 +17,7 @@ namespace DrinkDb_Auth.Adapter
             string connectionString = ConfigurationManager.ConnectionStrings["DrinkDbConnection"].ConnectionString;
 
             // Create and open a new SqlConnection
-            SqlConnection connection = new SqlConnection(connectionString);
+            SqlConnection connection = new(connectionString);
             connection.Open();
             return connection;
         }

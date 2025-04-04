@@ -20,8 +20,8 @@ namespace DrinkDb_Auth.Database
         public void CreateResource(Roles resource)
         {
             string query = "INSERT INTO Resources (Name, Description) VALUES (@Name, @Description)";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            using (SqlConnection conn = new(connectionString))
+            using (SqlCommand cmd = new(query, conn))
             {
                 cmd.Parameters.AddWithValue("@Name", resource.Name);
                 cmd.Parameters.AddWithValue("@Description", resource.Description);
@@ -33,8 +33,8 @@ namespace DrinkDb_Auth.Database
         public void UpdateResource(Roles resource)
         {
             string query = "UPDATE Resources SET Name=@Name, Description=@Description WHERE Id=@Id";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            using (SqlConnection conn = new(connectionString))
+            using (SqlCommand cmd = new(query, conn))
             {
                 cmd.Parameters.AddWithValue("@Name", resource.Name);
                 cmd.Parameters.AddWithValue("@Description", resource.Description);
@@ -47,8 +47,8 @@ namespace DrinkDb_Auth.Database
         public void DeleteResource(Roles resource)
         {
             string query = "DELETE FROM Resources WHERE Id=@Id";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            using (SqlConnection conn = new(connectionString))
+            using (SqlCommand cmd = new(query, conn))
             {
                 cmd.Parameters.AddWithValue("@Id", resource.Id);
                 conn.Open();
@@ -58,10 +58,9 @@ namespace DrinkDb_Auth.Database
 
         public Roles GetResourceById(int id)
         {
-            Roles resource = null;
             string query = "SELECT Id, Name, Description FROM Resources WHERE Id=@Id";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            using (SqlConnection conn = new(connectionString))
+            using (SqlCommand cmd = new(query, conn))
             {
                 cmd.Parameters.AddWithValue("@Id", id);
                 conn.Open();
@@ -69,33 +68,33 @@ namespace DrinkDb_Auth.Database
                 {
                     if (reader.Read())
                     {
-                        resource = new Roles
+                        return new Roles
                         {
-                            Id = reader.GetInt32(0),
+                            Id = Guid.Parse(reader.GetString(0)),
                             Name = reader.GetString(1),
                             Description = reader.GetString(2)
                         };
                     }
                 }
             }
-            return resource;
+            throw new Exception("Resource not found.");
         }
 
         public List<Roles> GetResources()
         {
-            List<Roles> resources = new List<Roles>();
+            List<Roles> resources = [];
             string query = "SELECT Id, Name, Description FROM Resources";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            using (SqlConnection conn = new(connectionString))
+            using (SqlCommand cmd = new(query, conn))
             {
                 conn.Open();
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        Roles resource = new Roles
+                        Roles resource = new()
                         {
-                            Id = reader.GetInt32(0),
+                            Id = Guid.Parse(reader.GetString(0)),
                             Name = reader.GetString(1),
                             Description = reader.GetString(2)
                         };

@@ -34,7 +34,7 @@ namespace DrinkDb_Auth.Service
             {
                 throw new ArgumentException("Action cannot be null or empty.", nameof(action));
             }
-            return _userAdapter.ValidateActionForUser(userId, resource, action);
+            return _userAdapter.ValidateAction(userId, resource, action);
         }
     }
 }

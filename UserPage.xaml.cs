@@ -24,14 +24,12 @@ namespace DrinkDb_Auth
                 Status = "Online",
                 Reviews = new List<ReviewModel>
                 {
-                    new ReviewModel
-                    {
+                    new() {
                         Date = DateTime.Now.AddDays(-2),
                         Rating = 4,
                         Comment = "Really good taste!"
                     },
-                    new ReviewModel
-                    {
+                    new() {
                         Date = DateTime.Now.AddDays(-10),
                         Rating = 2,
                         Comment = "Could be better"

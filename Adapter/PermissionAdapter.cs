@@ -20,8 +20,8 @@ namespace DrinkDb_Auth.Adapter
         {
             string query = @"INSERT INTO Permissions (permissionName, resource, action)
                              VALUES (@PermissionName, @Role, @Action)";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            using (SqlConnection conn = new(connectionString))
+            using (SqlCommand cmd = new(query, conn))
             {
                 cmd.Parameters.AddWithValue("@PermissionName", permission.PermissionName);
                 cmd.Parameters.AddWithValue("@Role", permission.Resource);
@@ -36,8 +36,8 @@ namespace DrinkDb_Auth.Adapter
             string query = @"UPDATE Permissions 
                              SET permissionName=@PermissionName, resource=@Role, action=@Action 
                              WHERE Id=@Id";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            using (SqlConnection conn = new(connectionString))
+            using (SqlCommand cmd = new(query, conn))
             {
                 cmd.Parameters.AddWithValue("@PermissionName", permission.PermissionName);
                 cmd.Parameters.AddWithValue("@Role", permission.Resource);
@@ -51,8 +51,8 @@ namespace DrinkDb_Auth.Adapter
         public void DeletePermission(Permission permission)
         {
             string query = "DELETE FROM Permissions WHERE Id=@Id";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            using (SqlConnection conn = new(connectionString))
+            using (SqlCommand cmd = new(query, conn))
             {
                 cmd.Parameters.AddWithValue("@Id", permission.Id);
                 conn.Open();
@@ -63,8 +63,8 @@ namespace DrinkDb_Auth.Adapter
         public Permission GetPermissionById(int id)
         {
             string query = "SELECT Id, permissionName, resource, action FROM Permissions WHERE Id=@Id";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            using (SqlConnection conn = new(connectionString))
+            using (SqlCommand cmd = new(query, conn))
             {
                 cmd.Parameters.AddWithValue("@Id", id);
                 conn.Open();
@@ -74,7 +74,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         return new Permission
                         {
-                            Id = reader.GetInt32(0),
+                            Id = Guid.Parse(reader.GetString(0)),
                             PermissionName = reader.GetString(1),
                             Resource = reader.GetString(2),
                             Action = reader.GetString(3)
@@ -87,19 +87,19 @@ namespace DrinkDb_Auth.Adapter
 
         public List<Permission> GetPermissions()
         {
-            List<Permission> permissions = new List<Permission>();
+            List<Permission> permissions = new();
             string query = "SELECT Id, permissionName, resource, action FROM Permissions";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            using (SqlConnection conn = new(connectionString))
+            using (SqlCommand cmd = new(query, conn))
             {
                 conn.Open();
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        Permission permission = new Permission
+                        Permission permission = new()
                         {
-                            Id = reader.GetInt32(0),
+                            Id = Guid.Parse(reader.GetString(0)),
                             PermissionName = reader.GetString(1),
                             Resource = reader.GetString(2),
                             Action = reader.GetString(3)

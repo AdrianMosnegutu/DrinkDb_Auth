@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using DrinkDb_Auth.Model;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
 
 namespace DrinkDb_Auth.Adapter
 {
@@ -17,7 +18,7 @@ namespace DrinkDb_Auth.Adapter
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             {
                 string sql = "SELECT * FROM fnGetUserById(@userId);";
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand cmd = new(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@userId", userId);
 
@@ -38,7 +39,7 @@ namespace DrinkDb_Auth.Adapter
                         }
                         else
                         {
-                            return null;
+                            throw new Exception("User not found.");
                         }
                     }
                 }
@@ -53,7 +54,7 @@ namespace DrinkDb_Auth.Adapter
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             {
                 string sql = "SELECT * FROM fnGetUserByUsername(@username);";
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand cmd = new(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@username", username);
 
@@ -74,7 +75,7 @@ namespace DrinkDb_Auth.Adapter
                         }
                         else
                         {
-                            return null;
+                            throw new Exception("User not found.");
                         }
                     }
                 }
@@ -83,7 +84,7 @@ namespace DrinkDb_Auth.Adapter
 
         private List<Permission> GetPermissionsForUser(Guid userId) 
         {
-            List<Permission> permissions = new List<Permission>();
+            List<Permission> permissions = new();
 
             // SQL query joining Users -> UserRoles -> Roles -> RolePermissions -> Permissions
             string sql = @"
@@ -97,7 +98,7 @@ namespace DrinkDb_Auth.Adapter
     ";
 
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
-            using (SqlCommand cmd = new SqlCommand(sql, conn))
+            using (SqlCommand cmd = new(sql, conn))
             {
                 cmd.Parameters.AddWithValue("@userId", userId);
 
@@ -107,9 +108,9 @@ namespace DrinkDb_Auth.Adapter
                 {
                     while (reader.Read())
                     {
-                        Permission permission = new Permission
+                        Permission permission = new()
                         {
-                            Id = reader.GetGuid(reader.GetOrdinal("permissionId")).ToString(),
+                            Id = reader.GetGuid(reader.GetOrdinal("permissionId")),
                             PermissionName = reader.GetString(reader.GetOrdinal("permissionName")),
                             Resource = reader.GetString(reader.GetOrdinal("resource")),
                             Action = reader.GetString(reader.GetOrdinal("action"))
@@ -128,7 +129,7 @@ namespace DrinkDb_Auth.Adapter
             string sql = "SELECT dbo.fnValidateAction(@userId, @resource, @action)";
 
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
-            using (SqlCommand cmd = new SqlCommand(sql, conn))
+            using (SqlCommand cmd = new(sql, conn))
             {
                 cmd.Parameters.AddWithValue("@userId", userId);
                 cmd.Parameters.AddWithValue("@resource", resource);
