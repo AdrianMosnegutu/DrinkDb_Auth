@@ -28,6 +28,9 @@ namespace DrinkDb_Auth
     {
         private Window? m_window;
 
+        public static Guid CurrentUserId { get; set; } = Guid.Empty;
+
+
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
