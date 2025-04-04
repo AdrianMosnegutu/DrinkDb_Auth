@@ -24,9 +24,9 @@ namespace DrinkDb_Auth.OAuthProviders
 
                         if (doc.TryGetProperty("id", out var idProp))
                         {
-                            string fbId = idProp.GetString();
-                            string fbName = doc.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
-                            string fbEmail = doc.TryGetProperty("email", out var emailProp) ? emailProp.GetString() : null;
+                            string fbId = idProp.GetString() ?? throw new Exception("Facebook ID is null.");
+                            string fbName = doc.GetProperty("name").GetString() ?? throw new Exception("Facebook name is null.");
+                            string fbEmail = doc.GetProperty("email").GetString() ?? throw new Exception("Facebook email is null.");
 
                             // store or update user in DB - UserService
                             bool isNewAccount = StoreOrUpdateUserInDb(fbId, fbName, fbEmail);

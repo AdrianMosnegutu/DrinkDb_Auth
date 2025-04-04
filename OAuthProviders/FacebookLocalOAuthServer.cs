@@ -11,7 +11,7 @@ namespace DrinkDb_Auth.OAuthProviders
     {
         private readonly HttpListener _listener;
 
-        public static event Action<string> OnTokenReceived;
+        public static event Action<string>? OnTokenReceived;
 
         public FacebookLocalOAuthServer(string prefix)
         {
@@ -30,7 +30,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 {
                     var context = await _listener.GetContextAsync();
 
-                    if (context.Request.Url.AbsolutePath.Equals("/auth", StringComparison.OrdinalIgnoreCase))
+                    if (context.Request.Url?.AbsolutePath.Equals("/auth", StringComparison.OrdinalIgnoreCase) == true)
                     {
                         string responseHtml = GetHtmlResponse();
                         byte[] buffer = Encoding.UTF8.GetBytes(responseHtml);
@@ -39,7 +39,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
                         context.Response.OutputStream.Close();
                     }
-                    else if (context.Request.Url.AbsolutePath.Equals("/token", StringComparison.OrdinalIgnoreCase))
+                    else if (context.Request.Url?.AbsolutePath.Equals("/token", StringComparison.OrdinalIgnoreCase) == true)
                     {
                         using (var reader = new System.IO.StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
                         {
@@ -50,16 +50,16 @@ namespace DrinkDb_Auth.OAuthProviders
                             }
 
                             var splitParameters = HttpUtility.ParseQueryString(queryParameters.Trim());
-                            string accessToken = splitParameters["access_token"];
+                            string accessToken = splitParameters["access_token"] ?? throw new Exception("Acess token not found.");
                             if (!string.IsNullOrEmpty(accessToken))
                             {
-                                Console.WriteLine("Token de acces: " + accessToken);
+                                Console.WriteLine("Acess token: " + accessToken);
 
                                 OnTokenReceived?.Invoke(accessToken);
                             }
                             else
                             {
-                                Console.WriteLine("Token de acces nu a fost găsit.");
+                                Console.WriteLine("Acess token not found.");
                             }
                         }
                         context.Response.StatusCode = 200;
@@ -87,28 +87,28 @@ namespace DrinkDb_Auth.OAuthProviders
         private string GetHtmlResponse()
         {
             return @"
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>OAuth Log in successful!</title>
-    <script>
-        window.onload = () => {
-            console.log('HI!');
-            fetch('http://localhost:8888/token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: window.location.hash
-            });
-        }
-     </script>
-  </head>
-  <body>
-    <h1>Autentificare cu succes!</h1>
-    <p id='message'>Poti inchide aceasta pagina.</p>
-  </body>
-</html>";
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>OAuth Log in successful!</title>
+        <script>
+            window.onload = () => {
+                console.log('HI!');
+                fetch('http://localhost:8888/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain'
+                    },
+                    body: window.location.hash
+                });
+            }
+         </script>
+      </head>
+      <body>
+        <h1>Autentificare cu succes!</h1>
+        <p id='message'>Poti inchide aceasta pagina.</p>
+      </body>
+    </html>";
         }
     }
 }

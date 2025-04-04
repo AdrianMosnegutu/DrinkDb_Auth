@@ -16,17 +16,19 @@ namespace DrinkDb_Auth
     public sealed partial class MainWindow : Window
     {
         private GitHubLocalOAuthServer _githubLocalServer;
-        private FacebookLocalOAuthServer _localServer;
+        private FacebookLocalOAuthServer _facebookLocalServer;
 
         public MainWindow()
         {
             this.InitializeComponent();
 
-            StartLocalServer();
-
             Title = "DrinkDb - Sign In";
 
-            StartGitHubLocalServer();
+            _githubLocalServer = new GitHubLocalOAuthServer("http://localhost:8890/");
+            _ = _githubLocalServer.StartAsync();
+
+            _facebookLocalServer = new FacebookLocalOAuthServer("http://localhost:8888/");
+            _ = _facebookLocalServer.StartAsync();
 
             this.AppWindow.Resize(new SizeInt32
             {
@@ -60,11 +62,6 @@ namespace DrinkDb_Auth
                 _ = errorDialog.ShowAsync();
             }
         }
-        private async void StartGitHubLocalServer()
-        {
-            _githubLocalServer = new GitHubLocalOAuthServer("http://localhost:8890/");
-            await _githubLocalServer.StartAsync();
-        }
 
         private async void GithubSignInButton_Click(object sender, RoutedEventArgs e)
         {
@@ -83,7 +80,7 @@ namespace DrinkDb_Auth
                     if (finalAuth.AuthSuccessful)
                     {
                         // Retrieve the GitHub username using the token.
-                        string githubUsername = await GitHubOAuth2Provider.GetGitHubUsernameAsync(authResponse.SessionToken);
+                        string? githubUsername = await GitHubOAuth2Provider.GetGitHubUsernameAsync(authResponse.SessionToken);
                         if (!string.IsNullOrWhiteSpace(githubUsername))
                         {
                             // Lookup the user by the dynamic GitHub username.
@@ -181,11 +178,6 @@ namespace DrinkDb_Auth
             }
         }
 
-        private async void StartLocalServer()
-        {
-            _localServer = new FacebookLocalOAuthServer("http://localhost:8888/");
-            await Task.Run(() => _localServer.StartAsync());
-        }
 
         /// <summary>
         /// Initiates the Facebook sign-in process.

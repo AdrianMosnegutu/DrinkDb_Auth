@@ -136,11 +136,15 @@ namespace DrinkDb_Auth.OAuthProviders
                 if (!tokenResponse.IsSuccessStatusCode)
                 {
                     System.Diagnostics.Debug.WriteLine("Token request failed with non-success status.");
-                    return new AuthResponse { AuthSuccessful = false };
+                    return new AuthResponse {
+                        AuthSuccessful = false,
+                        SessionToken = string.Empty,
+                        NewAccount = false
+                    };
                 }
 
                 // Deserialize token response
-                TwitterTokenResponse tokenResult = null;
+                TwitterTokenResponse? tokenResult;
                 try
                 {
                     tokenResult = await tokenResponse.Content.ReadFromJsonAsync<TwitterTokenResponse>();
@@ -154,7 +158,12 @@ namespace DrinkDb_Auth.OAuthProviders
                 if (tokenResult == null || string.IsNullOrEmpty(tokenResult.AccessToken))
                 {
                     System.Diagnostics.Debug.WriteLine("No access token in tokenResult.");
-                    return new AuthResponse { AuthSuccessful = false };
+                    return new AuthResponse
+                    {
+                        AuthSuccessful = false,
+                        SessionToken = string.Empty,
+                        NewAccount = false
+                    };
                 }
 
                 // 4) Optionally, get user info
@@ -173,8 +182,9 @@ namespace DrinkDb_Auth.OAuthProviders
                         // We still have a valid token though
                         return new AuthResponse
                         {
-                            AuthSuccessful = true,
-                            SessionToken = tokenResult.AccessToken
+                            AuthSuccessful = false,
+                            SessionToken = tokenResult.AccessToken,
+                            NewAccount = false
                         };
                     }
 
@@ -184,7 +194,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     return new AuthResponse
                     {
                         AuthSuccessful = true,
-                        SessionToken = tokenResult.AccessToken
+                        SessionToken = tokenResult.AccessToken,
+                        NewAccount = false
                     };
                 }
                 catch (Exception ex)
@@ -194,14 +205,15 @@ namespace DrinkDb_Auth.OAuthProviders
                     return new AuthResponse
                     {
                         AuthSuccessful = true,
-                        SessionToken = tokenResult.AccessToken
+                        SessionToken = tokenResult.AccessToken,
+                        NewAccount = false
                     };
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ExchangeCodeForTokenAsync exception: {ex.Message}");
-                return new AuthResponse { AuthSuccessful = false };
+                return new AuthResponse {AuthSuccessful = false, SessionToken = string.Empty, NewAccount = false };
             }
         }
 
@@ -267,7 +279,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 if (!tcs.Task.IsCompleted)
                 {
                     System.Diagnostics.Debug.WriteLine("Dialog closed; no code was returned.");
-                    tcs.SetResult(new AuthResponse { AuthSuccessful = false });
+                    tcs.SetResult(new AuthResponse {AuthSuccessful = false, SessionToken = string.Empty, NewAccount = false });
                 }
             }
             catch (Exception ex)
@@ -284,25 +296,18 @@ namespace DrinkDb_Auth.OAuthProviders
         /// </summary>
         private string ExtractQueryParameter(string url, string paramName)
         {
-            try
+            var uri = new Uri(url);
+            var query = uri.Query.TrimStart('?');
+            var pairs = query.Split('&', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var pair in pairs)
             {
-                var uri = new Uri(url);
-                var query = uri.Query.TrimStart('?');
-                var pairs = query.Split('&', StringSplitOptions.RemoveEmptyEntries);
-                foreach (var pair in pairs)
+                var kv = pair.Split('=', 2);
+                if (kv.Length == 2 && kv[0] == paramName)
                 {
-                    var kv = pair.Split('=', 2);
-                    if (kv.Length == 2 && kv[0] == paramName)
-                    {
-                        return Uri.UnescapeDataString(kv[1]);
-                    }
+                    return Uri.UnescapeDataString(kv[1]);
                 }
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"ExtractQueryParameter error: {ex.Message}");
-            }
-            return null;
+            throw new ArgumentException($"Parameter '{paramName}' not found in URL: {url}", nameof(url));
         }
 
         /// <summary>
@@ -340,27 +345,22 @@ namespace DrinkDb_Auth.OAuthProviders
         private TwitterUserInfoResponse ExtractUserInfoFromIdToken(string idToken)
         {
             var parts = idToken.Split('.');
-            if (parts.Length != 3) return null;
-
-            try
+            if (parts.Length != 3)
             {
-                var payload = parts[1];
-                while (payload.Length % 4 != 0) payload += '=';
-                var jsonBytes = Convert.FromBase64String(payload.Replace('-', '+').Replace('_', '/'));
-                var json = Encoding.UTF8.GetString(jsonBytes);
-
-                var options = new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-
-                return System.Text.Json.JsonSerializer.Deserialize<TwitterUserInfoResponse>(json, options);
+                throw new ArgumentException("Invalid ID token format.", nameof(idToken));
             }
-            catch (Exception ex)
+
+            var payload = parts[1];
+            while (payload.Length % 4 != 0) payload += '=';
+            var jsonBytes = Convert.FromBase64String(payload.Replace('-', '+').Replace('_', '/'));
+            var json = Encoding.UTF8.GetString(jsonBytes);
+
+            var options = new System.Text.Json.JsonSerializerOptions
             {
-                System.Diagnostics.Debug.WriteLine($"ExtractUserInfoFromIdToken error: {ex.Message}");
-                return null;
-            }
+                PropertyNameCaseInsensitive = true
+            };
+
+            return System.Text.Json.JsonSerializer.Deserialize<TwitterUserInfoResponse>(json, options) ?? throw new Exception("Failed to deserialize ID token payload.");
         }
     }
 
@@ -371,19 +371,19 @@ namespace DrinkDb_Auth.OAuthProviders
     internal class TwitterTokenResponse
     {
         [JsonPropertyName("access_token")]
-        public string AccessToken { get; set; }
+        public required string AccessToken { get; set; }
 
         [JsonPropertyName("token_type")]
-        public string TokenType { get; set; }
+        public required string TokenType { get; set; }
 
         [JsonPropertyName("expires_in")]
-        public int ExpiresIn { get; set; }
+        public required int ExpiresIn { get; set; }
 
         [JsonPropertyName("refresh_token")]
-        public string RefreshToken { get; set; }
+        public required string RefreshToken { get; set; }
 
         [JsonPropertyName("id_token")]
-        public string IdToken { get; set; }
+        public required string IdToken { get; set; }
     }
 
     /// <summary>
@@ -393,27 +393,27 @@ namespace DrinkDb_Auth.OAuthProviders
     internal class TwitterUserInfoResponse
     {
         [JsonPropertyName("sub")]
-        public string Sub { get; set; }
+        public required string Sub { get; set; }
 
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [JsonPropertyName("given_name")]
-        public string GivenName { get; set; }
+        public required string GivenName { get; set; }
 
         [JsonPropertyName("family_name")]
-        public string FamilyName { get; set; }
+        public required string FamilyName { get; set; }
 
         [JsonPropertyName("picture")]
-        public string Picture { get; set; }
+        public required string Picture { get; set; }
 
         [JsonPropertyName("email")]
-        public string Email { get; set; }
+        public required string Email { get; set; }
 
         [JsonPropertyName("email_verified")]
-        public bool EmailVerified { get; set; }
+        public required bool EmailVerified { get; set; }
 
         [JsonPropertyName("locale")]
-        public string Locale { get; set; }
+        public required string Locale { get; set; }
     }
 }

@@ -1,12 +1,12 @@
 ﻿using System;
-namespace DrinkDb_Auth.Models
+namespace DrinkDb_Auth.Model
 {
     public class Role
     {
-        public Guid RoleId { get; set; }
-        public string RoleName { get; set; }
+        public required Guid RoleId { get; set; }
+        public required string RoleName { get; set; }
         // Each Role has one Permission (referenced by its ID)
-        public Guid PermissionId { get; set; }
+        public required Guid PermissionId { get; set; }
     }
 }
 

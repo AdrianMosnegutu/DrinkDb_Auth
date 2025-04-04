@@ -32,7 +32,7 @@ BEGIN
     CREATE TABLE Users (
         userId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
         userName NVARCHAR(50) NOT NULL UNIQUE,
-        passwordHash NVARCHAR(255) NOT NULL,
+        passwordHash NVARCHAR(255),
         twoFASecret NVARCHAR(255),
         roleId UNIQUEIDENTIFIER NOT NULL,
         FOREIGN KEY (roleId) REFERENCES Roles(roleId)

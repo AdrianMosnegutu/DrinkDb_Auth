@@ -3,6 +3,8 @@ using System.Configuration;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.Model;
 using DrinkDb_Auth.OAuthProviders;
 using Microsoft.Data.SqlClient;
 
@@ -10,11 +12,12 @@ namespace DrinkDb_Auth.OAuthProviders
 {
     public class GitHubOAuth2Provider : GenericOAuth2Provider
     {
-        public AuthResponse Authenticate(string userId, string token)
+        private readonly static UserAdapter userAdapter = new UserAdapter();
+        public AuthResponse Authenticate(string? userId, string token)
         {
             try
             {
-                var (ghId, ghLogin, ghEmail) = FetchGitHubUserInfo(token);
+                var (ghId, ghLogin) = FetchGitHubUserInfo(token);
 
                 if (string.IsNullOrEmpty(ghLogin))
                 {
@@ -40,7 +43,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 else
                 {
                     // User does not exist. Insert the new user.
-                    Guid newUserId = CreateUserFromGitHub(ghLogin, ghEmail);
+                    Guid newUserId = CreateUserFromGitHub(ghLogin);
                     if (newUserId != Guid.Empty)
                     {
                         // Successfully inserted, so login is successful.
@@ -74,7 +77,7 @@ namespace DrinkDb_Auth.OAuthProviders
             }
         }
 
-        private (string ghId, string ghLogin, string ghEmail) FetchGitHubUserInfo(string token)
+        private (string ghId, string ghLogin) FetchGitHubUserInfo(string token)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -83,25 +86,24 @@ namespace DrinkDb_Auth.OAuthProviders
 
                 var response = client.GetAsync("https://api.github.com/user").Result;
                 if (!response.IsSuccessStatusCode)
-                    return (null, null, null);
+                    throw new Exception("Failed to fetch user info from GitHub.");
 
                 string userJson = response.Content.ReadAsStringAsync().Result;
                 using (JsonDocument doc = JsonDocument.Parse(userJson))
                 {
                     var root = doc.RootElement;
                     string ghId = root.GetProperty("id").GetRawText();
-                    string ghLogin = root.GetProperty("login").GetString();
-                    string ghEmail = null;
-                    if (root.TryGetProperty("email", out JsonElement emailElement) && emailElement.ValueKind != JsonValueKind.Null)
+                    string? ghLogin = root.GetProperty("login").GetString();
+                    if (ghLogin == null)
                     {
-                        ghEmail = emailElement.GetString();
+                        throw new Exception("GitHub login is null.");
                     }
-                    return (ghId, ghLogin, ghEmail);
+                    return (ghId, ghLogin);
                 }
             }
         }
 
-        public static async Task<string> GetGitHubUsernameAsync(string token)
+        public static async Task<string?> GetGitHubUsernameAsync(string token)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -136,32 +138,18 @@ namespace DrinkDb_Auth.OAuthProviders
             }
         }
 
-        private Guid CreateUserFromGitHub(string ghLogin, string ghEmail)
+        private Guid CreateUserFromGitHub(string ghLogin)
         {
             try
             {
-                Guid newUserId = Guid.NewGuid();
-                string connectionString = ConfigurationManager.ConnectionStrings["DrinkDbConnection"].ConnectionString;
-                using (SqlConnection conn = new SqlConnection(connectionString))
+                User newUser = new()
                 {
-                    conn.Open();
-                    // Insert into Users table using the GitHub username.
-                    // Note: passwordHash is left empty, and twoFASecret is NULL.
-                    string sql = @"
-                    INSERT INTO Users (userId, userName, passwordHash, twoFASecret, roleId) 
-                    VALUES (@userId, @userName, @passwordHash, NULL, @roleId)";
-                    using (SqlCommand cmd = new SqlCommand(sql, conn))
-                    {
-                        cmd.Parameters.AddWithValue("@userId", newUserId);
-                        cmd.Parameters.AddWithValue("@userName", ghLogin.Trim());
-                        cmd.Parameters.AddWithValue("@passwordHash", ""); // Placeholder since OAuth doesn't use it.
-                        cmd.Parameters.AddWithValue("@roleId", GetDefaultRoleId(conn));
-                        int result = cmd.ExecuteNonQuery();
-                        Console.WriteLine($"Inserted new user {ghLogin}. Rows affected: {result}");
-                        if (result > 0)
-                            return newUserId;
-                    }
-                }
+                    UserId = Guid.NewGuid(),
+                    Username = ghLogin.Trim(),
+                    TwoFASecret = string.Empty,
+                };
+                userAdapter.CreateUser(newUser);
+
             }
             catch (Exception ex)
             {
@@ -170,19 +158,5 @@ namespace DrinkDb_Auth.OAuthProviders
             return Guid.Empty;
         }
 
-        private Guid GetDefaultRoleId(SqlConnection conn)
-        {
-            // Retrieve a valid roleId from the Roles table.
-            string sql = "SELECT TOP 1 roleId FROM Roles ORDER BY roleName";
-            using (SqlCommand cmd = new SqlCommand(sql, conn))
-            {
-                object result = cmd.ExecuteScalar();
-                if (result != null)
-                {
-                    return (Guid)result;
-                }
-            }
-            throw new Exception("No default role found in Roles table.");
-        }
     }
 }

@@ -13,7 +13,7 @@ namespace DrinkDb_Auth.OAuthProviders
         /// <summary>
         /// Fires when the GitHub code is received from the redirect.
         /// </summary>
-        public static event Action<string> OnCodeReceived;
+        public static event Action<string>? OnCodeReceived;
 
         private bool _isRunning = false;
 
@@ -34,12 +34,17 @@ namespace DrinkDb_Auth.OAuthProviders
                 try
                 {
                     var context = await _listener.GetContextAsync();
-
+                    if (context.Request.Url == null)
+                    {
+                        context.Response.StatusCode = 400;
+                        context.Response.OutputStream.Close();
+                        continue;
+                    }
                     if (context.Request.Url.AbsolutePath.Equals("/auth", StringComparison.OrdinalIgnoreCase))
                     {
                         // GitHub redirects here with ?code=... 
                         // We'll show a minimal HTML that triggers a POST to /exchange with the code
-                        string code = HttpUtility.ParseQueryString(context.Request.Url.Query).Get("code");
+                        string code = HttpUtility.ParseQueryString(context.Request.Url.Query).Get("code") ?? throw new Exception("Code not found in request.");
 
                         string responseHtml = GetHtmlResponse(code);
                         byte[] buffer = Encoding.UTF8.GetBytes(responseHtml);

@@ -31,12 +31,11 @@ namespace DrinkDb_Auth.Adapter
                                 TwoFASecret = reader.IsDBNull(reader.GetOrdinal("twoFASecret"))
                                     ? null
                                     : reader.GetString(reader.GetOrdinal("twoFASecret")),
-                                RoleId = reader.GetGuid(reader.GetOrdinal("roleId"))
                             };
                         }
                         else
                         {
-                            return null;
+                            throw new Exception($"User with ID {userId} not found.");
                         }
                     }
                 }
@@ -67,12 +66,11 @@ namespace DrinkDb_Auth.Adapter
                                 TwoFASecret = reader.IsDBNull(reader.GetOrdinal("twoFASecret"))
                                     ? null
                                     : reader.GetString(reader.GetOrdinal("twoFASecret")),
-                                RoleId = reader.GetGuid(reader.GetOrdinal("roleId"))
                             };
                         }
                         else
                         {
-                            return null;
+                            throw new Exception($"User with username {username} not found.");
                         }
                     }
                 }
@@ -88,7 +86,7 @@ namespace DrinkDb_Auth.Adapter
                 cmd.Parameters.AddWithValue("@userId", user.UserId);
                 cmd.Parameters.AddWithValue("@username", user.Username);
                 cmd.Parameters.AddWithValue("@passwordHash", user.PasswordHash);
-                cmd.Parameters.AddWithValue("@twoFASecret", (object)user.TwoFASecret ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@twoFASecret", user.TwoFASecret);
                 return cmd.ExecuteNonQuery() > 0;
             }
         }
@@ -109,7 +107,7 @@ namespace DrinkDb_Auth.Adapter
             cmd.Parameters.AddWithValue("@userId", user.UserId);
             cmd.Parameters.AddWithValue("@username", user.Username);
             cmd.Parameters.AddWithValue("@passwordHash", user.PasswordHash);
-            cmd.Parameters.AddWithValue("@twoFASecret", (object)user.TwoFASecret ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@twoFASecret", user.TwoFASecret);
             return cmd.ExecuteNonQuery() > 0;
         }
 

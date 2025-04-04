@@ -18,6 +18,7 @@ namespace DrinkDb_Auth.OAuthProviders
 
         public GitHubOAuthHelper()
         {
+            _tcs = new TaskCompletionSource<AuthResponse>();
             GitHubLocalOAuthServer.OnCodeReceived += OnCodeReceived;
         }
 
@@ -60,7 +61,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     _tcs.TrySetResult(new AuthResponse
                     {
                         AuthSuccessful = false,
-                        SessionToken = null,
+                        SessionToken = string.Empty,
                         NewAccount = false
                     });
                 }
@@ -70,10 +71,10 @@ namespace DrinkDb_Auth.OAuthProviders
                 _tcs.TrySetResult(new AuthResponse
                 {
                     AuthSuccessful = false,
-                    SessionToken = null,
+                    SessionToken = string.Empty,
                     NewAccount = false
                 });
-                Debug.WriteLine("GitHub token exchange error: " + ex);
+                throw new Exception("Failed to exchange code for token.", ex);
             }
         }
 
@@ -120,9 +121,9 @@ namespace DrinkDb_Auth.OAuthProviders
                 using var doc = JsonDocument.Parse(body);
                 if (doc.RootElement.TryGetProperty("access_token", out var tokenProp))
                 {
-                    return tokenProp.GetString();
+                    return tokenProp.GetString() ?? throw new Exception("Access token is null.");
                 }
-                return null;
+                throw new Exception("Failed to get access token from GitHub.");
             }
         }
     }

@@ -30,6 +30,7 @@ namespace DrinkDb_Auth.OAuthProviders
 
         public FacebookOAuthHelper()
         {
+            _tcs = new TaskCompletionSource<AuthResponse>();
             FacebookLocalOAuthServer.OnTokenReceived += OnTokenReceived;
         }
 

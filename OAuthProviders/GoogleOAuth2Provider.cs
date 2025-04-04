@@ -13,6 +13,7 @@ using System.Net;
 using System.Threading;
 using Microsoft.UI.Dispatching;
 using System.Text.Json.Serialization;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
@@ -121,7 +122,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 {
                     try 
                     {
-                        TokenResponse tokenResult = null;
+                        TokenResponse? tokenResult;
                         
                         try
                         {
@@ -143,12 +144,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                     PropertyNameCaseInsensitive = true
                                 };
                                 
-                                tokenResult = System.Text.Json.JsonSerializer.Deserialize<TokenResponse>(responseContent, options);
-                                
-                                if (tokenResult != null)
-                                {
-                                    System.Diagnostics.Debug.WriteLine("Manual parsing succeeded");
-                                }
+                                tokenResult = System.Text.Json.JsonSerializer.Deserialize<TokenResponse>(responseContent, options) ?? throw new Exception("Failed to deserialize token response manually");
                             }
                             catch (Exception manualEx)
                             {
@@ -206,15 +202,20 @@ namespace DrinkDb_Auth.OAuthProviders
                                 
                                 if (userInfoResponse.IsSuccessStatusCode)
                                 {
-                                    var userInfo = await userInfoResponse.Content.ReadFromJsonAsync<UserInfoResponse>();
+                                    UserInfoResponse? userInfo = await userInfoResponse.Content.ReadFromJsonAsync<UserInfoResponse>();
+                                    if (userInfo == null)
+                                    {
+                                        throw new Exception("User info response was null");
+                                    }
                                     System.Diagnostics.Debug.WriteLine($"User authenticated: {userInfo.Email} ({userInfo.Name})");
-                                    
+
                                     return new AuthResponse
                                     {
                                         AuthSuccessful = true,
                                         SessionToken = tokenResult.AccessToken,
                                         NewAccount = false
                                     };
+                                    
                                 }
                                 else
                                 {
@@ -373,7 +374,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         // The auth code page has "Success code=" in the title, or the code might be in the page content
                         if (title.Contains("Success") || title.Contains("code"))
                         {
-                            string code = null;
+                            string code = string.Empty;
                             
                             // Try to get code from title
                             if (title.Contains("Success code="))
@@ -462,7 +463,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                 await Task.Delay(500);
                                 
                                 // Try several ways to extract the code
-                                string code = null;
+                                string code = string.Empty;
                                 
                                 // Try to get from page text that might contain "code="
                                 var pageText = await webView.CoreWebView2.ExecuteScriptAsync(
@@ -566,8 +567,7 @@ namespace DrinkDb_Auth.OAuthProviders
             var parts = idToken.Split('.');
             if (parts.Length != 3)
             {
-                System.Diagnostics.Debug.WriteLine("Invalid JWT format");
-                return null;
+                throw new ArgumentException("Invalid JWT format");
             }
             
             try
@@ -591,12 +591,15 @@ namespace DrinkDb_Auth.OAuthProviders
                     PropertyNameCaseInsensitive = true
                 };
                 
-                return System.Text.Json.JsonSerializer.Deserialize<UserInfoResponse>(json, options);
+                var result = System.Text.Json.JsonSerializer.Deserialize<UserInfoResponse>(json, options);
+                if (result == null) {
+                    throw new Exception("Failed to deserialize user info from ID token");
+                }
+                return result;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error parsing JWT: {ex.Message}");
-                return null;
+                throw new Exception($"Error parsing ID token: {ex.Message}", ex);
             }
         }
     }
@@ -604,45 +607,45 @@ namespace DrinkDb_Auth.OAuthProviders
     internal class TokenResponse
     {
         [JsonPropertyName("access_token")]
-        public string AccessToken { get; set; }
+        public required string AccessToken { get; set; }
         
         [JsonPropertyName("token_type")]
-        public string TokenType { get; set; }
+        public required string TokenType { get; set; }
         
         [JsonPropertyName("expires_in")]
-        public int ExpiresIn { get; set; }
+        public required int ExpiresIn { get; set; }
         
         [JsonPropertyName("refresh_token")]
-        public string RefreshToken { get; set; }
+        public required string RefreshToken { get; set; }
         
         [JsonPropertyName("id_token")]
-        public string IdToken { get; set; }
+        public required string IdToken { get; set; }
     }
 
     internal class UserInfoResponse
     {
         [JsonPropertyName("sub")]
-        public string Sub { get; set; }
+        public required string Sub { get; set; }
         
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public required string Name { get; set; }
         
         [JsonPropertyName("given_name")]
-        public string GivenName { get; set; }
+        public required string GivenName { get; set; }
         
         [JsonPropertyName("family_name")]
-        public string FamilyName { get; set; }
+        public required string FamilyName { get; set; }
         
         [JsonPropertyName("picture")]
-        public string Picture { get; set; }
+        public required string Picture { get; set; }
         
         [JsonPropertyName("email")]
-        public string Email { get; set; }
+        public required string Email { get; set; }
         
         [JsonPropertyName("email_verified")]
-        public bool EmailVerified { get; set; }
+        public required bool EmailVerified { get; set; }
         
         [JsonPropertyName("locale")]
-        public string Locale { get; set; }
+        public required string Locale { get; set; }
     }
 } 
