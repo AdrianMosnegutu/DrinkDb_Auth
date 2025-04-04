@@ -221,9 +221,7 @@ Each OAuth provider can be customized by modifying the corresponding provider cl
 
 - **OAuthProviders/**: Contains implementation for various OAuth providers
 - **Model/**: Data models for users, roles, permissions, and sessions
-- **Service/**: Business logic and authentication services
 - **Database/**: SQL scripts for database setup
-- **Adapter/**: Interface adapters for data access
 - **Assets/**: Application icons and images
 - **Service/**: Core business logic implementation
 - **Adapter/**: Database and external service adapters
