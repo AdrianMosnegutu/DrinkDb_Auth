@@ -17,17 +17,16 @@ namespace DrinkDb_Auth.Service
         {
             throw new NotImplementedException("AuthWithOAuth not implemented");
         }
-        public void logout(string sessionId)
+        public void Logout()
         {
-            throw new NotImplementedException("Logout not implemented");
+            _sessionAdapter.EndSession(App.CurrentSessionId);
+            App.CurrentSessionId = Guid.Empty;
+            App.CurrentUserId = Guid.Empty;
         }
-        public User getUser(string sessionId)
+        public User GetUser(string sessionId)
         {
-            throw new NotImplementedException("GetUser not implemented");
-        }
-        public void createAccount(User user)
-        {
-            throw new NotImplementedException("CreateAccount not implemented");
+            Session sess = _sessionAdapter.GetSession(App.CurrentUserId);
+            return _userAdapter.GetUserById(sess.userId) ?? throw new UserNotFoundException("User not found");
         }
         public static AuthResponse AuthWithUserPass(string username, string password)
         {

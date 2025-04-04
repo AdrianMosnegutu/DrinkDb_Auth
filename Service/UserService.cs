@@ -15,12 +15,12 @@ namespace DrinkDb_Auth.Service
 
         public User GetUserById(Guid userId)
         {
-            return _userAdapter.GetUserById(userId);
+            return _userAdapter.GetUserById(userId) ?? throw new ArgumentException("User not found", nameof(userId));
         }
 
         public User GetUserByUsername(string username)
         {
-            return _userAdapter.GetUserByUsername(username);
+            return _userAdapter.GetUserByUsername(username) ?? throw new ArgumentException("User not found", nameof(username));
         }
 
         public bool ValidateAction(Guid userId, string resource, string action)

@@ -18,12 +18,11 @@ END;
 GO
 
 CREATE OR ALTER PROCEDURE end_session
-    @sessionId UNIQUEIDENTIFIER,
-    @userId UNIQUEIDENTIFIER
+    @sessionId UNIQUEIDENTIFIER
 AS
 BEGIN
     DELETE FROM Sessions
-    WHERE sessionId = @sessionId AND userId = @userId;
+    WHERE sessionId = @sessionId;
     
     RETURN @@ROWCOUNT;
 END;
