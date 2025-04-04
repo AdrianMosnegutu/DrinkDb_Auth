@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
@@ -14,6 +16,7 @@ namespace DrinkDb_Auth.OAuthProviders
         private readonly string _redirectUri = "http://localhost:8891/auth";
         private readonly string _scope = "openid profile email";
         private TaskCompletionSource<AuthResponse>? _tcs;
+        private readonly UserAdapter userAdapter = new UserAdapter();
 
         public LinkedInOAuthHelper(string clientId, string clientSecret, string redirectUri, string scope)
         {
@@ -34,7 +37,26 @@ namespace DrinkDb_Auth.OAuthProviders
             Debug.WriteLine("Authorize URL: " + url);
             return url;
         }
-
+        private async Task<(string, string)> GetLinkedInIdAndNameAsync(string token)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+                var response = await client.GetAsync("https://api.linkedin.com/v2/me");
+                if (!response.IsSuccessStatusCode)
+                    return (string.Empty, string.Empty);
+                string json = await response.Content.ReadAsStringAsync();
+                using (JsonDocument doc = JsonDocument.Parse(json))
+                {
+                    var root = doc.RootElement;
+                    string id = root.GetProperty("id").GetString() ?? throw new Exception("LinkedIn ID not found in response.");
+                    string firstName = root.GetProperty("localizedFirstName").GetString() ?? throw new Exception("LinkedIn first name not found in response.");
+                    string lastName = root.GetProperty("localizedLastName").GetString() ?? throw new Exception("LinkedIn last name not found in response.");
+                    return (id, $"{firstName} {lastName}");
+                }
+            }
+            throw new Exception("Failed to get LinkedIn ID and name.");
+        }
         private async void OnCodeReceived(string code)
         {
             if (_tcs == null || _tcs.Task.IsCompleted) return;
@@ -42,23 +64,48 @@ namespace DrinkDb_Auth.OAuthProviders
             try
             {
                 var token = await ExchangeCodeForToken(code);
-                if (!string.IsNullOrEmpty(token))
+
+                (string id, string name) = await GetLinkedInIdAndNameAsync(token);
+
+                if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name))
                 {
+                    Debug.WriteLine("LinkedIn ID or name is empty.");
+                    _tcs.TrySetResult(new AuthResponse
+                    {
+                        AuthSuccessful = false,
+                        OAuthToken = string.Empty,
+                        SessionId = Guid.Empty,
+                        NewAccount = false
+                    });
+                    return;
+                }
+
+                var user = userAdapter.GetUserByUsername(name);
+                if (user == null)
+                {
+                    User newUser = new User
+                    {
+                        Username = name,
+                        PasswordHash = string.Empty,
+                        UserId = Guid.NewGuid(),
+                        TwoFASecret = string.Empty,
+                    };
+                    userAdapter.CreateUser(newUser);
                     _tcs.TrySetResult(new AuthResponse
                     {
                         AuthSuccessful = true,
                         OAuthToken = token,
-                        SessionId = Guid.Empty,
-                        NewAccount = false
+                        SessionId = newUser.UserId,
+                        NewAccount = true
                     });
                 }
                 else
                 {
                     _tcs.TrySetResult(new AuthResponse
                     {
-                        AuthSuccessful = false,
-                        OAuthToken = string.Empty,
-                        SessionId = Guid.Empty,
+                        AuthSuccessful = true,
+                        OAuthToken = token,
+                        SessionId = user.UserId,
                         NewAccount = false
                     });
                 }

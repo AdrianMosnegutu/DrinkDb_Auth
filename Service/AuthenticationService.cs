@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Security.Cryptography;
+using System.Text.Json;
+using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.AuthProviders;
 using DrinkDb_Auth.Model;
 using DrinkDb_Auth.OAuthProviders;
+using Microsoft.UI.Xaml;
 
 namespace DrinkDb_Auth.Service
 {
@@ -32,7 +36,7 @@ namespace DrinkDb_Auth.Service
         {
             try
             {
-                if(BasicAuthenticationProvider.Authenticate(username, password))
+                if (BasicAuthenticationProvider.Authenticate(username, password))
                 {
                     User user = _userAdapter.GetUserByUsername(username) ?? throw new UserNotFoundException("User not found");
                     Session sess = _sessionAdapter.CreateSession(user.UserId);
@@ -79,5 +83,38 @@ namespace DrinkDb_Auth.Service
 
         }
 
+        public async Task<AuthResponse> AuthenticateWithGitHubAsync()
+        {
+            var ghHelper = new GitHubOAuthHelper();
+            return await ghHelper.AuthenticateAsync();
+        }
+
+        public async Task<AuthResponse> AuthenticateWithGoogleAsync(Window window)
+        {
+            var googleProvider = new GoogleOAuth2Provider();
+            return await googleProvider.SignInWithGoogleAsync(window);
+        }
+
+        public async Task<AuthResponse> AuthenticateWithFacebookAsync()
+        {
+            var fbHelper = new FacebookOAuthHelper();
+            return await fbHelper.AuthenticateAsync();
+        }
+
+        public async Task<AuthResponse> AuthenticateWithTwitterAsync(Window window)
+        {
+            var twitterProvider = new TwitterOAuth2Provider();
+            return await twitterProvider.SignInWithTwitterAsync(window);
+        }
+        public async Task<AuthResponse> AuthenticateWithLinkedInAsync()
+        {
+            var lnHelper = new LinkedInOAuthHelper(
+                clientId: "86j0ikb93jm78x",
+                clientSecret: "WPL_AP1.pg2Bd1XhCi821VTG.+hatTA==",
+                redirectUri: "http://localhost:8891/auth",
+                scope: "openid profile email"
+            );
+            return await lnHelper.AuthenticateAsync();
+        }
     }
 }

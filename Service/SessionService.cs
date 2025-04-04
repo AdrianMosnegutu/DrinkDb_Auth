@@ -18,9 +18,9 @@ namespace DrinkDb_Auth.Service
             return _sessionRepository.CreateSession(userId);
         }
 
-        public bool EndSession(Guid sessionId, Guid userId)
+        public bool EndSession(Guid sessionId)
         {
-            return _sessionRepository.EndSession(sessionId, userId);
+            return _sessionRepository.EndSession(sessionId);
         }
 
         public Session GetSession(Guid sessionId)
