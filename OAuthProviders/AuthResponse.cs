@@ -1,4 +1,4 @@
-﻿namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.OAuthProviders
 {
   
     /// Represents the result of an OAuth2 authentication attempt.

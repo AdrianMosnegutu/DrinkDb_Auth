@@ -1,21 +1,24 @@
-﻿using System;
+using System;
 using Microsoft.Data.SqlClient;
 using DrinkDb_Auth.Model;
+using System.Collections.Generic;
+using System.Reflection.Metadata;
 
 namespace DrinkDb_Auth.Adapter
 {
-    public class UserAdapter
+    public class UserAdapter : IUserAdapter
     {
         /// <summary>
         /// Calls your T-SQL function fnGetUserById(@userId) 
         /// which returns a row from the Users table.
         /// </summary>
-        public User GetUserById(Guid userId)
+        /// 
+        public Users GetUserById(Guid userId)
         {
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             {
                 string sql = "SELECT * FROM fnGetUserById(@userId);";
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand cmd = new(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@userId", userId);
 
@@ -23,7 +26,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         if (reader.Read())
                         {
-                            return new User
+                            return new Users
                             {
                                 UserId = reader.GetGuid(reader.GetOrdinal("userId")),
                                 Username = reader.GetString(reader.GetOrdinal("userName")),
@@ -45,12 +48,12 @@ namespace DrinkDb_Auth.Adapter
         /// <summary>
         /// Calls fnGetUserByUsername(@username).
         /// </summary>
-        public User GetUserByUsername(string username)
+        public Users GetUserByUsername(string username)
         {
             using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
             {
                 string sql = "SELECT * FROM fnGetUserByUsername(@username);";
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                using (SqlCommand cmd = new(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@username", username);
 
@@ -58,7 +61,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         if (reader.Read())
                         {
-                            return new User
+                            return new Users
                             {
                                 UserId = reader.GetGuid(reader.GetOrdinal("userId")),
                                 Username = reader.GetString(reader.GetOrdinal("userName")),
@@ -111,30 +114,70 @@ namespace DrinkDb_Auth.Adapter
             return cmd.ExecuteNonQuery() > 0;
         }
 
-        /// <summary>
-        /// Calls fnValidateAction(@userId, @resource, @action) which returns BIT.
-        /// </summary>
-        public bool ValidateAction(Guid userId, string resource, string action)
+        private List<Permission> GetPermissionsForUser(Guid userId) 
         {
-            using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
-            {
-                // The function returns BIT: 1 (true) or 0 (false)
-                string sql = "SELECT dbo.fnValidateAction(@userId, @resource, @action) as Allowed;";
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("@userId", userId);
-                    cmd.Parameters.AddWithValue("@resource", resource);
-                    cmd.Parameters.AddWithValue("@action", action);
+            List<Permission> permissions = new();
 
-                    object result = cmd.ExecuteScalar();
-                    if (result != null && result != DBNull.Value)
+            // SQL query joining Users -> UserRoles -> Roles -> RolePermissions -> Permissions
+            string sql = @"
+        SELECT p.permissionId, p.permissionName, p.resource, p.action
+        FROM Users u
+        JOIN UserRoles ur ON u.userId = ur.userId
+        JOIN Roles r ON ur.roleId = r.roleId
+        JOIN RolePermissions rp ON r.roleId = rp.roleId
+        JOIN Permissions p ON rp.permissionId = p.permissionId
+        WHERE u.userId = @userId;
+    ";
+
+            using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
+            using (SqlCommand cmd = new(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@userId", userId);
+
+                conn.Open();
+
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
                     {
-                        int allowed = Convert.ToInt32(result);
-                        return (allowed == 1);
+                        Permission permission = new()
+                        {
+                            Id = reader.GetGuid(reader.GetOrdinal("permissionId")),
+                            PermissionName = reader.GetString(reader.GetOrdinal("permissionName")),
+                            Resource = reader.GetString(reader.GetOrdinal("resource")),
+                            Action = reader.GetString(reader.GetOrdinal("action"))
+                        };
+                        permissions.Add(permission);
                     }
-                    return false;
                 }
             }
+
+            return permissions;
         }
+
+        public bool ValidateAction(Guid userId, string resource, string action)
+        {
+            bool result = false;
+            string sql = "SELECT dbo.fnValidateAction(@userId, @resource, @action)";
+
+            using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
+            using (SqlCommand cmd = new(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@userId", userId);
+                cmd.Parameters.AddWithValue("@resource", resource);
+                cmd.Parameters.AddWithValue("@action", action);
+
+                conn.Open();
+                var scalarResult = cmd.ExecuteScalar();
+                if (scalarResult != null && scalarResult != DBNull.Value)
+                {
+                    result = Convert.ToBoolean(scalarResult);
+                }
+            }
+
+            return result;
+        }
+
+
     }
 }

@@ -51,7 +51,7 @@ namespace DrinkDb_Auth
             }
             else
             {
-                ContentDialog errorDialog = new ContentDialog
+                ContentDialog errorDialog = new()
                 {
                     Title = "Validation Error",
                     Content = "Please enter both username and password.",
