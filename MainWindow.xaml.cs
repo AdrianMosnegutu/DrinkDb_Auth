@@ -18,9 +18,6 @@ namespace DrinkDb_Auth
 {
     public sealed partial class MainWindow : Window
     {
-        private LinkedInLocalOAuthServer _linkedinLocalServer;
-        private GitHubLocalOAuthServer _githubLocalServer;
-        private FacebookLocalOAuthServer _facebookLocalServer;
         private AuthenticationService _authenticationService = new();
 
         public MainWindow()
@@ -28,15 +25,6 @@ namespace DrinkDb_Auth
             this.InitializeComponent();
 
             Title = "DrinkDb - Sign In";
-
-            _githubLocalServer = new GitHubLocalOAuthServer("http://localhost:8890/");
-            _ = _githubLocalServer.StartAsync();
-
-            _facebookLocalServer = new FacebookLocalOAuthServer("http://localhost:8888/");
-            _ = _facebookLocalServer.StartAsync();
-
-            _linkedinLocalServer = new LinkedInLocalOAuthServer("http://localhost:8891/");
-            _ = _linkedinLocalServer.StartAsync();
 
             this.AppWindow.Resize(new SizeInt32
             {

@@ -16,6 +16,21 @@ namespace DrinkDb_Auth.Service
     {
         private static readonly SessionAdapter _sessionAdapter = new();
         private static readonly UserAdapter _userAdapter = new();
+        private LinkedInLocalOAuthServer _linkedinLocalServer;
+        private GitHubLocalOAuthServer _githubLocalServer;
+        private FacebookLocalOAuthServer _facebookLocalServer;
+
+        public AuthenticationService()
+        {
+            _githubLocalServer = new GitHubLocalOAuthServer("http://localhost:8890/");
+            _ = _githubLocalServer.StartAsync();
+
+            _facebookLocalServer = new FacebookLocalOAuthServer("http://localhost:8888/");
+            _ = _facebookLocalServer.StartAsync();
+
+            _linkedinLocalServer = new LinkedInLocalOAuthServer("http://localhost:8891/");
+            _ = _linkedinLocalServer.StartAsync();
+        }
 
         public AuthResponse authWithOAuth(string userId, string token)
         {
