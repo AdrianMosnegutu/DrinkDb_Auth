@@ -6,8 +6,6 @@ using DrinkDb_Auth.OAuthProviders;
 using DrinkDb_Auth.Service;
 using System;
 using System.Threading.Tasks;
-using System;
-using DrinkDb_Auth.Service;
 using System.Text.Json;
 using System.Net.Http;
 
