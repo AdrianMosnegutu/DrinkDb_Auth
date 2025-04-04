@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Xaml;
+using DrinkDb_Auth.Service;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -11,8 +12,44 @@ namespace DrinkDb_Auth
         public UserPage()
         {
             this.InitializeComponent();
-            LoadMockUserData();
+            LoadUserData();
         }
+
+        private void LoadUserData()
+        {
+            // Retrieve the current user's ID from the static property.
+            Guid currentUserId = App.CurrentUserId;
+
+            // Check if the user ID is valid (not empty)
+            if (currentUserId != Guid.Empty)
+            {
+                // Retrieve the user from the database using your UserService.
+                var userService = new UserService();
+                var user = userService.GetUserById(currentUserId);
+
+                // Update UI with the retrieved data.
+                if (user != null)
+                {
+                    NameTextBlock.Text = user.Username; 
+                    UsernameTextBlock.Text = "@" + user.Username;
+                    StatusTextBlock.Text = "Status: Online";
+                }
+                else
+                {
+                    NameTextBlock.Text = "User not found";
+                    UsernameTextBlock.Text = "";
+                    StatusTextBlock.Text = "";
+                }
+            }
+            else
+            {
+                // If no user is stored, show a default message.
+                NameTextBlock.Text = "No user logged in";
+                UsernameTextBlock.Text = "";
+                StatusTextBlock.Text = "";
+            }
+        }
+
 
         private void LoadMockUserData()
         {
@@ -24,14 +61,12 @@ namespace DrinkDb_Auth
                 Status = "Online",
                 Reviews = new List<ReviewModel>
                 {
-                    new ReviewModel
-                    {
+                    new() {
                         Date = DateTime.Now.AddDays(-2),
                         Rating = 4,
                         Comment = "Really good taste!"
                     },
-                    new ReviewModel
-                    {
+                    new() {
                         Date = DateTime.Now.AddDays(-10),
                         Rating = 2,
                         Comment = "Could be better"

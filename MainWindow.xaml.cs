@@ -2,6 +2,13 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Windowing;
 using Windows.Graphics;
+using DrinkDb_Auth.OAuthProviders;
+using DrinkDb_Auth.Service;
+using System;
+using System.Threading.Tasks;
+using System.Text.Json;
+using System.Net.Http;
+using DrinkDb_Auth.Adapter;
 
 
 // To learn more about WinUI, the WinUI project structure,
@@ -9,46 +16,137 @@ using Windows.Graphics;
 
 namespace DrinkDb_Auth
 {
-    /// <summary>
-    /// An empty window that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class MainWindow : Window
     {
+        private AuthenticationService _authenticationService = new();
+
         public MainWindow()
         {
             this.InitializeComponent();
+
             Title = "DrinkDb - Sign In";
 
-            this.AppWindow.Resize(new SizeInt32 {
+            this.AppWindow.Resize(new SizeInt32
+            {
                 Width = DisplayArea.Primary.WorkArea.Width,
                 Height = DisplayArea.Primary.WorkArea.Height
             });
             this.AppWindow.Move(new PointInt32(0, 0));
         }
 
-        private void SignInButton_Click(object sender, RoutedEventArgs e)
+        private void AuthenticationComplete(AuthResponse res)
         {
-            string username = UsernameTextBox.Text;
-            string password = PasswordBox.Password;
-
-            // Basic validation
-            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+            if (res.AuthSuccessful)
             {
-                // Navigate to success page
                 MainFrame.Navigate(typeof(SuccessPage));
             }
             else
             {
                 ContentDialog errorDialog = new ContentDialog
                 {
-                    Title = "Validation Error",
-                    Content = "Please enter both username and password.",
+                    Title = "Authentication Failed",
+                    Content = "Authentication was not successful. Please try again.",
                     CloseButtonText = "OK",
                     XamlRoot = Content.XamlRoot
                 };
-
                 _ = errorDialog.ShowAsync();
             }
+        }
+
+        public void SignInButton_Click(object sender, RoutedEventArgs e)
+        {
+            string username = UsernameTextBox.Text;
+            string password = PasswordBox.Password;
+
+            AuthResponse res = AuthenticationService.AuthWithUserPass(username, password);
+            AuthenticationComplete(res);
+        }
+
+        public async void GithubSignInButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.GitHub);
+                AuthenticationComplete(authResponse);
+            }
+            catch (Exception ex)
+            {
+                await ShowError("Authentication Error", ex.ToString());
+            }
+        }
+
+        public async void GoogleSignInButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                GoogleSignInButton.IsEnabled = false;
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Google);
+                AuthenticationComplete(authResponse);
+            }
+            catch (Exception ex)
+            {
+                await ShowError("Error", ex.Message);
+            }
+            finally
+            {
+                GoogleSignInButton.IsEnabled = true;
+            }
+        }
+
+        public async void FacebookSignInButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.GitHub);
+                AuthenticationComplete(authResponse);
+            }
+            catch (Exception ex)
+            {
+                await ShowError("Authentication Error", ex.ToString());
+            }
+        }
+
+        public async void XSignInButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                XSignInButton.IsEnabled = false;
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Google);
+                AuthenticationComplete(authResponse);
+            }
+            catch (Exception ex)
+            {
+                await ShowError("Error", ex.Message);
+            }
+            finally
+            {
+                XSignInButton.IsEnabled = true;
+            }
+        }
+
+        public async void LinkedInSignInButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.LinkedIn);
+                AuthenticationComplete(authResponse);
+            }
+            catch (Exception ex)
+            {
+                await ShowError("Authentication Error", ex.ToString());
+            }
+        }
+
+        private async Task ShowError(string title, string content)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = title,
+                Content = content,
+                CloseButtonText = "OK",
+                XamlRoot = Content.XamlRoot
+            };
+            await errorDialog.ShowAsync();
         }
     }
 }

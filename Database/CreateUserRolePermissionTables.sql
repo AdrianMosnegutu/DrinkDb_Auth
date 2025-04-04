@@ -1,6 +1,4 @@
-﻿-- ==========================================
--- Permissions table
--- ==========================================
+use DrinkDB_Dev
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Permissions' AND xtype='U')
 BEGIN
     CREATE TABLE Permissions (
@@ -11,30 +9,42 @@ BEGIN
     );
 END
 
--- ==========================================
--- Roles table (one permission → many roles)
--- ==========================================
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Roles' AND xtype='U')
 BEGIN
     CREATE TABLE Roles (
         roleId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
         roleName NVARCHAR(50) NOT NULL UNIQUE,
+    );
+END
+
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='RolePermissions' AND xtype='U')
+BEGIN
+    CREATE TABLE RolePermissions (
+        roleId UNIQUEIDENTIFIER NOT NULL,
         permissionId UNIQUEIDENTIFIER NOT NULL,
+        PRIMARY KEY (roleId, permissionId),
+        FOREIGN KEY (roleId) REFERENCES Roles(roleId),
         FOREIGN KEY (permissionId) REFERENCES Permissions(permissionId)
     );
 END
 
--- ==========================================
--- Users table (one role → many users)
--- ==========================================
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='UserRoles' AND xtype='U')
+BEGIN
+    CREATE TABLE UserRoles (
+        userId UNIQUEIDENTIFIER NOT NULL,
+        roleId UNIQUEIDENTIFIER NOT NULL,
+        PRIMARY KEY (userId, roleId),
+        FOREIGN KEY (userId) REFERENCES Users(userId),
+        FOREIGN KEY (roleId) REFERENCES Roles(roleId)
+    );
+END
+
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Users' AND xtype='U')
 BEGIN
     CREATE TABLE Users (
         userId UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
         userName NVARCHAR(50) NOT NULL UNIQUE,
-        passwordHash NVARCHAR(255) NOT NULL,
+        passwordHash NVARCHAR(255),
         twoFASecret NVARCHAR(255),
-        roleId UNIQUEIDENTIFIER NOT NULL,
-        FOREIGN KEY (roleId) REFERENCES Roles(roleId)
     );
 END
