@@ -66,7 +66,7 @@ namespace DrinkDb_Auth.Model
             return $"Session[ID: {sessionId}, UserID: {userId}, Active: {IsActive}]";
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is Session other)
             {

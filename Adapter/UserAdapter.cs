@@ -31,7 +31,6 @@ namespace DrinkDb_Auth.Adapter
                                 TwoFASecret = reader.IsDBNull(reader.GetOrdinal("twoFASecret"))
                                     ? null
                                     : reader.GetString(reader.GetOrdinal("twoFASecret")),
-                                RoleId = reader.GetGuid(reader.GetOrdinal("roleId"))
                             };
                         }
                         else
@@ -67,7 +66,6 @@ namespace DrinkDb_Auth.Adapter
                                 TwoFASecret = reader.IsDBNull(reader.GetOrdinal("twoFASecret"))
                                     ? null
                                     : reader.GetString(reader.GetOrdinal("twoFASecret")),
-                                RoleId = reader.GetGuid(reader.GetOrdinal("roleId"))
                             };
                         }
                         else
