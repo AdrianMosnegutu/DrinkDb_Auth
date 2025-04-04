@@ -42,7 +42,7 @@ namespace DrinkDb_Auth.Adapter
                 cmd.Parameters.AddWithValue("@PermissionName", permission.PermissionName);
                 cmd.Parameters.AddWithValue("@Role", permission.Resource);
                 cmd.Parameters.AddWithValue("@Action", permission.Action);
-                cmd.Parameters.AddWithValue("@Id", permission.Id);
+                cmd.Parameters.AddWithValue("@Id", permission.PermissionId);
                 conn.Open();
                 cmd.ExecuteNonQuery();
             }
@@ -54,7 +54,7 @@ namespace DrinkDb_Auth.Adapter
             using (SqlConnection conn = new(connectionString))
             using (SqlCommand cmd = new(query, conn))
             {
-                cmd.Parameters.AddWithValue("@Id", permission.Id);
+                cmd.Parameters.AddWithValue("@Id", permission.PermissionId);
                 conn.Open();
                 cmd.ExecuteNonQuery();
             }
@@ -74,7 +74,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         return new Permission
                         {
-                            Id = Guid.Parse(reader.GetString(0)),
+                            PermissionId = Guid.Parse(reader.GetString(0)),
                             PermissionName = reader.GetString(1),
                             Resource = reader.GetString(2),
                             Action = reader.GetString(3)
@@ -99,7 +99,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         Permission permission = new()
                         {
-                            Id = Guid.Parse(reader.GetString(0)),
+                            PermissionId = Guid.Parse(reader.GetString(0)),
                             PermissionName = reader.GetString(1),
                             Resource = reader.GetString(2),
                             Action = reader.GetString(3)

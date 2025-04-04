@@ -9,7 +9,7 @@ namespace DrinkDb_Auth.OAuthProviders
     public class LinkedInLocalOAuthServer
     {
         private readonly HttpListener _listener;
-        public static event Action<string> OnCodeReceived;
+        public static event Action<string>? OnCodeReceived;
         private bool _isRunning;
 
         public LinkedInLocalOAuthServer(string prefix)
@@ -29,11 +29,14 @@ namespace DrinkDb_Auth.OAuthProviders
                 try
                 {
                     var context = await _listener.GetContextAsync();
-
+                    if (context.Request.Url == null)
+                    {
+                        throw new Exception("Request URL is null.");
+                    }
                     if (context.Request.Url.AbsolutePath.Equals("/auth", StringComparison.OrdinalIgnoreCase))
                     {
                         // LinkedIn redirects here with ?code=... 
-                        string code = HttpUtility.ParseQueryString(context.Request.Url.Query).Get("code");
+                        string code = HttpUtility.ParseQueryString(context.Request.Url.Query).Get("code") ?? throw new Exception("No code found in the request.");
 
                         string responseHtml = GetHtmlResponse(code);
                         byte[] buffer = Encoding.UTF8.GetBytes(responseHtml);

@@ -8,6 +8,7 @@ using System;
 using System.Threading.Tasks;
 using System.Text.Json;
 using System.Net.Http;
+using DrinkDb_Auth.Adapter;
 
 
 // To learn more about WinUI, the WinUI project structure,
@@ -20,7 +21,7 @@ namespace DrinkDb_Auth
         private LinkedInLocalOAuthServer _linkedinLocalServer;
         private GitHubLocalOAuthServer _githubLocalServer;
         private FacebookLocalOAuthServer _facebookLocalServer;
-
+        private AuthenticationService _authenticationService = new();
         public MainWindow()
         {
             this.InitializeComponent();
@@ -33,7 +34,8 @@ namespace DrinkDb_Auth
             _facebookLocalServer = new FacebookLocalOAuthServer("http://localhost:8888/");
             _ = _facebookLocalServer.StartAsync();
 
-            StartLinkedInLocalServer();
+            _linkedinLocalServer = new LinkedInLocalOAuthServer("http://localhost:8891/");
+            _ = _linkedinLocalServer.StartAsync();
 
             this.AppWindow.Resize(new SizeInt32
            
@@ -42,6 +44,18 @@ namespace DrinkDb_Auth
                 Height = DisplayArea.Primary.WorkArea.Height
             });
             this.AppWindow.Move(new PointInt32(0, 0));
+        }
+
+        private void AuthenticationSucess(AuthResponse res)
+        {
+            if (res.AuthSuccessful)
+            {
+
+                MainFrame.Navigate(typeof(SuccessPage));
+            }
+            else
+            {
+            }
         }
 
         private void SignInButton_Click(object sender, RoutedEventArgs e)
@@ -53,7 +67,13 @@ namespace DrinkDb_Auth
             if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
             {
                 // Navigate to success page
-                MainFrame.Navigate(typeof(SuccessPage));
+                var authResponse = new AuthResponse
+                {
+                    AuthSuccessful = false,
+                    SessionId = Guid.NewGuid().ToString(),
+                    NewAccount = false,
+                };
+                AuthenticationSucess(authResponse);
             }
             else
             {
@@ -69,7 +89,7 @@ namespace DrinkDb_Auth
             }
         }
 
-        private async void GithubSignInButton_Click(object sender, RoutedEventArgs e)
+        public async void GithubSignInButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -81,12 +101,12 @@ namespace DrinkDb_Auth
                 {
                     // Verify the token
                     var provider = new GitHubOAuth2Provider();
-                    var finalAuth = provider.Authenticate(null, authResponse.SessionToken);
+                    var finalAuth = provider.Authenticate(null, authResponse.SessionId);
 
                     if (finalAuth.AuthSuccessful)
                     {
                         // Retrieve the GitHub username using the token.
-                        string? githubUsername = await GitHubOAuth2Provider.GetGitHubUsernameAsync(authResponse.SessionToken);
+                        string? githubUsername = await GitHubOAuth2Provider.GetGitHubUsernameAsync(authResponse.SessionId);
                         if (!string.IsNullOrWhiteSpace(githubUsername))
                         {
                             // Lookup the user by the dynamic GitHub username.
@@ -107,7 +127,7 @@ namespace DrinkDb_Auth
                             System.Diagnostics.Debug.WriteLine("Failed to retrieve GitHub username.");
                         }
 
-                        MainFrame.Navigate(typeof(SuccessPage));
+                        AuthenticationSucess(authResponse);
                     }
                     else
                     {
@@ -137,7 +157,7 @@ namespace DrinkDb_Auth
             await errorDialog.ShowAsync();
         }
 
-        private async void GoogleSignInButton_Click(object sender, RoutedEventArgs e)
+        public async void GoogleSignInButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -150,7 +170,7 @@ namespace DrinkDb_Auth
                 if (authResponse.AuthSuccessful)
                 {
                     // Navigate to success page
-                    MainFrame.Navigate(typeof(SuccessPage));
+                    AuthenticationSucess(authResponse);
                 }
                 else
                 {
@@ -200,7 +220,7 @@ namespace DrinkDb_Auth
         /// </summary>
         /// <param name="sender">The event sender, typically the Facebook sign-in button.</param>
         /// <param name="e">The event arguments.</param>
-        private async void FacebookSignInButton_Click(object sender, RoutedEventArgs e)
+        public async void FacebookSignInButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -209,7 +229,7 @@ namespace DrinkDb_Auth
 
                 if (authResponse.AuthSuccessful)
                 {
-                    MainFrame.Navigate(typeof(SuccessPage));
+                    AuthenticationSucess(authResponse);
                 }
                 else
                 {
@@ -239,7 +259,7 @@ namespace DrinkDb_Auth
         }
 
 
-        private async void XSignInButton_Click(object sender, RoutedEventArgs e)
+        public async void XSignInButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -254,7 +274,7 @@ namespace DrinkDb_Auth
 
                 if (authResponse.AuthSuccessful)
                 {
-                    MainFrame.Navigate(typeof(SuccessPage));
+                    AuthenticationSucess(authResponse);
                 }
                 else
                 {
@@ -291,11 +311,7 @@ namespace DrinkDb_Auth
             }
         }
 
-        private async void StartLinkedInLocalServer()
-        {
-            _linkedinLocalServer = new LinkedInLocalOAuthServer("http://localhost:8891/");
-            await _linkedinLocalServer.StartAsync();
-        }
+        
 
         private async Task<string> GetLinkedInIdAsync(string token)
         {
@@ -313,7 +329,7 @@ namespace DrinkDb_Auth
                     // Retrieve "sub" as the unique identifier
                     if (root.TryGetProperty("sub", out var idProp))
                     {
-                        return idProp.GetString();
+                        return idProp.GetString() ?? throw new Exception("LinkedIn ID not found in response.");
                     }
                 }
             }
@@ -336,12 +352,12 @@ namespace DrinkDb_Auth
                 if (authResponse.AuthSuccessful)
                 {
                     var lnProvider = new LinkedInOAuth2Provider();
-                    var finalAuth = lnProvider.Authenticate(null, authResponse.SessionToken);
+                    var finalAuth = lnProvider.Authenticate(string.Empty, authResponse.SessionId);
 
                     if (finalAuth.AuthSuccessful)
                     {
                         // Retrieve LinkedIn ID from the token.
-                        string lnId = await GetLinkedInIdAsync(authResponse.SessionToken);
+                        string lnId = await GetLinkedInIdAsync(authResponse.SessionId);
                         var userService = new UserService();
                         var user = userService.GetUserByUsername(lnId);
                         if (user != null)

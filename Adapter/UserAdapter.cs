@@ -142,7 +142,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         Permission permission = new()
                         {
-                            Id = reader.GetGuid(reader.GetOrdinal("permissionId")),
+                            PermissionId = reader.GetGuid(reader.GetOrdinal("permissionId")),
                             PermissionName = reader.GetString(reader.GetOrdinal("permissionName")),
                             Resource = reader.GetString(reader.GetOrdinal("resource")),
                             Action = reader.GetString(reader.GetOrdinal("action"))

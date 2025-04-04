@@ -22,7 +22,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     return new AuthResponse
                     {
                         AuthSuccessful = false,
-                        SessionToken = token,
+                        SessionId = token,
                         NewAccount = false
                     };
                 }
@@ -33,7 +33,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 return new AuthResponse
                 {
                     AuthSuccessful = true,
-                    SessionToken = token,
+                    SessionId = token,
                     NewAccount = isNewAccount
                 };
             }
@@ -42,7 +42,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 return new AuthResponse
                 {
                     AuthSuccessful = false,
-                    SessionToken = token,
+                    SessionId = token,
                     NewAccount = false
                 };
             }
@@ -70,16 +70,16 @@ namespace DrinkDb_Auth.OAuthProviders
                 // Call the userinfo endpoint for OpenID Connect
                 var response = client.GetAsync("https://api.linkedin.com/v2/userinfo").Result;
                 if (!response.IsSuccessStatusCode)
-                    return (null, null, null);
+                    throw new Exception($"Failed to fetch user info from LinkedIn. Status code: {response.StatusCode}");
 
                 string json = response.Content.ReadAsStringAsync().Result;
                 using (JsonDocument doc = JsonDocument.Parse(json))
                 {
                     var root = doc.RootElement;
                     // Use "sub" as LinkedIn's unique identifier
-                    string lnId = root.TryGetProperty("sub", out var subProp) ? subProp.GetString() : null;
-                    string fullName = root.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
-                    string email = root.TryGetProperty("email", out var emailProp) ? emailProp.GetString() : null;
+                    string lnId = root.GetProperty("sub").ToString() ?? throw new Exception("No LinkedIn ID found in the response.");
+                    string fullName = root.GetProperty("name").ToString() ?? throw new Exception("No LinkedIn ID found in the response.");
+                    string email = root.GetProperty("email").ToString() ?? throw new Exception("No email found in the response.");
                     return (lnId, fullName, email);
                 }
             }

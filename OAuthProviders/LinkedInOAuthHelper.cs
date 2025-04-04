@@ -13,7 +13,7 @@ namespace DrinkDb_Auth.OAuthProviders
         private readonly string _clientSecret = "WPL_AP1.pg2Bd1XhCi821VTG.+hatTA==";
         private readonly string _redirectUri = "http://localhost:8891/auth";
         private readonly string _scope = "openid profile email";
-        private TaskCompletionSource<AuthResponse> _tcs;
+        private TaskCompletionSource<AuthResponse>? _tcs;
 
         public LinkedInOAuthHelper(string clientId, string clientSecret, string redirectUri, string scope)
         {
@@ -47,7 +47,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     _tcs.TrySetResult(new AuthResponse
                     {
                         AuthSuccessful = true,
-                        SessionToken = token,
+                        SessionId = token,
                         NewAccount = false
                     });
                 }
@@ -56,7 +56,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     _tcs.TrySetResult(new AuthResponse
                     {
                         AuthSuccessful = false,
-                        SessionToken = null,
+                        SessionId = string.Empty,
                         NewAccount = false
                     });
                 }
@@ -67,7 +67,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 _tcs.TrySetResult(new AuthResponse
                 {
                     AuthSuccessful = false,
-                    SessionToken = null,
+                    SessionId = string.Empty,
                     NewAccount = false
                 });
             }
@@ -109,9 +109,9 @@ namespace DrinkDb_Auth.OAuthProviders
                 using var doc = JsonDocument.Parse(body);
                 if (doc.RootElement.TryGetProperty("access_token", out var tokenProp))
                 {
-                    return tokenProp.GetString();
+                    return tokenProp.GetString() ?? throw new Exception("Token is null");
                 }
-                return null;
+                throw new Exception("Token not found in response");
             }
         }
     }
