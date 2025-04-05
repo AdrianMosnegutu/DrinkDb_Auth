@@ -80,6 +80,8 @@
                                 Margin="0,20,0,0"
                                 Height="45"
                                 HorizontalAlignment="Stretch"
+                                Background="#4285F4"
+                                Foreground="White"
                                 Click="GoogleSignInButton_Click">
                             <StackPanel Orientation="Horizontal">
                                 <Image Source="/Assets/google_logo.png" Width="20" Height="20" Margin="0,0,10,0"/>
@@ -88,41 +90,57 @@
                         </Button>
                   
                         <Button x:Name="GithubSignInButton"
-                                Content="Sign in with GitHub"
+                                Margin="0,10,0,0"
                                 Height="45"
                                 HorizontalAlignment="Stretch"
-                                Background="{ThemeResource SystemAccentColor}"
-                                Foreground="{ThemeResource SystemAltHighColor}"
-                                Click="GithubSignInButton_Click"/>
+                                Background="White"
+                                Foreground="Black"
+                                Click="GithubSignInButton_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="/Assets/github_logo.png" Width="20" Height="20" Margin="0,0,10,0"/>
+                                <TextBlock Text="Sign in with GitHub"/>
+                            </StackPanel>
+                        </Button>
                       
                         <Button x:Name="FacebookSignInButton"
-                                Content="Sign in with Facebook"
+                                Margin="0,10,0,0"
                                 Height="45"
                                 HorizontalAlignment="Stretch"
                                 Background="#3b5998"
                                 Foreground="White"
-                                Margin="0,10,0,0"
-                                Click="FacebookSignInButton_Click"/>
+                                Click="FacebookSignInButton_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="/Assets/facebook_logo.png" Width="20" Height="20" Margin="0,0,10,0"/>
+                                <TextBlock Text="Sign in with Facebook"/>
+                            </StackPanel>
+                        </Button>
 
                         <!-- Sign in with X (Twitter) -->
                         <Button x:Name="XSignInButton"
-                                Margin="0,20,0,0"
+                                Margin="0,10,0,0"
                                 Height="45"
                                 HorizontalAlignment="Stretch"
+                                Background="Black"
+                                Foreground="White"
                                 Click="XSignInButton_Click">
                             <StackPanel Orientation="Horizontal">
-                                <Image Source="/Assets/x-twitter-logo-on-black.png" Width="50" Height="30" Margin="0,0,0,0"/>
+                                <Image Source="/Assets/x-twitter-logo-on-black.png" Width="50" Height="30" Margin="0,0,10,0"/>
                                 <TextBlock Text="Sign in with X"/>
                             </StackPanel>
                         </Button>
 
                         <Button x:Name="LinkedInSignInButton"
-                        Content="Sign in with LinkedIn"
-                        Height="45"
-                        HorizontalAlignment="Stretch"
-                        Background="{ThemeResource SystemAccentColor}"
-                        Foreground="{ThemeResource SystemAltHighColor}"
-                        Click="LinkedInSignInButton_Click"/>
+                                Margin="0,10,0,0"
+                                Height="45"
+                                HorizontalAlignment="Stretch"
+                                Background="#0077B5"
+                                Foreground="White"
+                                Click="LinkedInSignInButton_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="/Assets/linkedin_logo.png" Width="20" Height="20" Margin="0,0,10,0"/>
+                                <TextBlock Text="Sign in with LinkedIn"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </Grid>
 

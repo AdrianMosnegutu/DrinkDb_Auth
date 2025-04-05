@@ -1,51 +1,77 @@
 ﻿using System;
 using System.Configuration;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading.Tasks;
+using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.Model;
 using Microsoft.Data.SqlClient;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
     public class LinkedInOAuth2Provider : GenericOAuth2Provider
     {
+        private readonly static UserAdapter userAdapter = new();
+        private readonly static SessionAdapter sessionAdapter = new();
         /// <summary>
         /// Performs authentication using the access token, fetches user info via OpenID Connect, and stores/updates the user.
         /// </summary>
         public AuthResponse Authenticate(string userId, string token)
         {
-            try
+            using HttpClient client = new();
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+            client.DefaultRequestHeaders.Add("User-Agent", "DrinkDb_Auth-App");
+            var response = client.GetAsync("https://api.linkedin.com/v2/userinfo").Result;
+            if (!response.IsSuccessStatusCode)
+                throw new Exception("Failed to fetch user info from Linkedin.");
+
+            string json = response.Content.ReadAsStringAsync().Result;
+
+            using JsonDocument doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            string id = root.GetProperty("sub").GetString() ?? throw new Exception("LinkedIn ID not found in response.");
+            string name = root.GetProperty("name").GetString() ?? throw new Exception("LinkedIn name not found in response.");
+
+            if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name))
             {
-                // Fetch LinkedIn user info using OpenID Connect (userinfo endpoint)
-                var (lnId, fullName, email) = FetchLinkedInUserInfo(token);
-                if (string.IsNullOrEmpty(lnId))
+                Debug.WriteLine("LinkedIn ID or name is empty.");
+                return new AuthResponse
                 {
-                    return new AuthResponse
-                    {
-                        AuthSuccessful = false,
-                        OAuthToken = token,
-                        SessionId = Guid.Empty,
-                        NewAccount = false
-                    };
-                }
+                    AuthSuccessful = false,
+                    OAuthToken = string.Empty,
+                    SessionId = Guid.Empty,
+                    NewAccount = false
+                };
+            }
 
-                // Store or update user in DB. Here we use lnId as the unique username.
-                bool isNewAccount = StoreOrUpdateUserInDb(lnId, fullName, email);
-
+            var user = userAdapter.GetUserByUsername(name);
+            if (user == null)
+            {
+                User newUser = new User
+                {
+                    Username = name,
+                    PasswordHash = string.Empty,
+                    UserId = Guid.NewGuid(),
+                    TwoFASecret = string.Empty,
+                };
+                userAdapter.CreateUser(newUser);
+                Session session = sessionAdapter.CreateSession(newUser.UserId);
                 return new AuthResponse
                 {
                     AuthSuccessful = true,
                     OAuthToken = token,
-                    SessionId = Guid.Empty,
-                    NewAccount = isNewAccount
+                    SessionId = session.sessionId,
+                    NewAccount = true
                 };
             }
-            catch (Exception)
+            else
             {
                 return new AuthResponse
                 {
-                    AuthSuccessful = false,
+                    AuthSuccessful = true,
                     OAuthToken = token,
-                    SessionId = Guid.Empty,
+                    SessionId = user.UserId,
                     NewAccount = false
                 };
             }

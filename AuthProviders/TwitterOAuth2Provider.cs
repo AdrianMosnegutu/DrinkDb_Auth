@@ -12,6 +12,8 @@ using System.Threading;
 using Microsoft.UI.Dispatching;
 using System.Text.Json.Serialization;
 using System.Security.Cryptography;
+using DrinkDb_Auth.Model;
+using DrinkDb_Auth.Adapter;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
@@ -20,6 +22,8 @@ namespace DrinkDb_Auth.OAuthProviders
     /// </summary>
     public class TwitterOAuth2Provider : GenericOAuth2Provider
     {
+        private static readonly UserAdapter userAdapter = new();
+        private static readonly SessionAdapter sessionAdapter = new();
         // ▼▼▼ 1) Set these appropriately ▼▼▼
 
         // In "Native App" flows, we typically do NOT use a Client Secret
@@ -193,15 +197,36 @@ namespace DrinkDb_Auth.OAuthProviders
                     }
 
                     var userInfo = System.Text.Json.JsonSerializer.Deserialize<TwitterUserInfoResponse>(userBody);
-                    System.Diagnostics.Debug.WriteLine($"Authenticated user: {userInfo?.Email} ({userInfo?.Name})");
+                    System.Diagnostics.Debug.WriteLine($"Authenticated user: {userInfo?.Data.Id} ({userInfo?.Data.Username})");
 
+                    User? user = userAdapter.GetUserByUsername(userInfo?.Data.Username ?? throw new Exception("user not found in json response payload for Twitter authentication"));
+                    if (user == null)
+                    {
+                        // Create a new user
+                        user = new User
+                        {
+                            Username = userInfo?.Data.Username ?? throw new Exception("user not found in json response payload for Twitter authentication"),
+                            PasswordHash = string.Empty,
+                            UserId = Guid.NewGuid(),
+                            TwoFASecret = string.Empty,
+                        };
+                        userAdapter.CreateUser(user);
+                    }
+                    else
+                    {
+                        // Update existing user if needed
+                        userAdapter.UpdateUser(user);
+                    }
+
+                    Session session = sessionAdapter.CreateSession(user.UserId);
                     return new AuthResponse
                     {
                         AuthSuccessful = true,
                         OAuthToken = tokenResult.AccessToken,
-                        SessionId = Guid.Empty,
+                        SessionId = session.sessionId,
                         NewAccount = false
                     };
+
                 }
                 catch (Exception ex)
                 {
@@ -209,8 +234,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     // We'll still consider the token valid
                     return new AuthResponse
                     {
-                        AuthSuccessful = true,
-                        OAuthToken = tokenResult.AccessToken,
+                        AuthSuccessful = false,
+                        OAuthToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -395,10 +420,7 @@ namespace DrinkDb_Auth.OAuthProviders
         [JsonPropertyName("expires_in")]
         public required int ExpiresIn { get; set; }
 
-        [JsonPropertyName("refresh_token")]
-        public required string RefreshToken { get; set; }
-
-        [JsonPropertyName("id_token")]
+        [JsonPropertyName("scope")]
         public required string IdToken { get; set; }
     }
 
@@ -408,28 +430,19 @@ namespace DrinkDb_Auth.OAuthProviders
     /// </summary>
     internal class TwitterUserInfoResponse
     {
-        [JsonPropertyName("sub")]
-        public required string Sub { get; set; }
+        [JsonPropertyName("data")]
+        public required TwitterUserData Data { get; set; }
+    }
+
+    internal class TwitterUserData
+    {
+        [JsonPropertyName("id")]
+        public required string Id { get; set; }
 
         [JsonPropertyName("name")]
         public required string Name { get; set; }
 
-        [JsonPropertyName("given_name")]
-        public required string GivenName { get; set; }
-
-        [JsonPropertyName("family_name")]
-        public required string FamilyName { get; set; }
-
-        [JsonPropertyName("picture")]
-        public required string Picture { get; set; }
-
-        [JsonPropertyName("email")]
-        public required string Email { get; set; }
-
-        [JsonPropertyName("email_verified")]
-        public required bool EmailVerified { get; set; }
-
-        [JsonPropertyName("locale")]
-        public required string Locale { get; set; }
+        [JsonPropertyName("username")]
+        public required string Username { get; set; }
     }
 }

@@ -162,6 +162,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     PasswordHash = string.Empty,
                 };
                 userAdapter.CreateUser(newUser);
+                return newUser.UserId;
 
             }
             catch (Exception ex)

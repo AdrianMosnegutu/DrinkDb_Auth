@@ -17,6 +17,7 @@ namespace DrinkDb_Auth.OAuthProviders
         private readonly string _scope = "openid profile email";
         private TaskCompletionSource<AuthResponse>? _tcs;
         private readonly UserAdapter userAdapter = new UserAdapter();
+        private readonly static LinkedInOAuth2Provider linkedInOAuth2Provider = new();
 
         public LinkedInOAuthHelper(string clientId, string clientSecret, string redirectUri, string scope)
         {
@@ -37,26 +38,7 @@ namespace DrinkDb_Auth.OAuthProviders
             Debug.WriteLine("Authorize URL: " + url);
             return url;
         }
-        private async Task<(string, string)> GetLinkedInIdAndNameAsync(string token)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
-                var response = await client.GetAsync("https://api.linkedin.com/v2/me");
-                if (!response.IsSuccessStatusCode)
-                    return (string.Empty, string.Empty);
-                string json = await response.Content.ReadAsStringAsync();
-                using (JsonDocument doc = JsonDocument.Parse(json))
-                {
-                    var root = doc.RootElement;
-                    string id = root.GetProperty("id").GetString() ?? throw new Exception("LinkedIn ID not found in response.");
-                    string firstName = root.GetProperty("localizedFirstName").GetString() ?? throw new Exception("LinkedIn first name not found in response.");
-                    string lastName = root.GetProperty("localizedLastName").GetString() ?? throw new Exception("LinkedIn last name not found in response.");
-                    return (id, $"{firstName} {lastName}");
-                }
-            }
-            throw new Exception("Failed to get LinkedIn ID and name.");
-        }
+        
         private async void OnCodeReceived(string code)
         {
             if (_tcs == null || _tcs.Task.IsCompleted) return;
@@ -64,62 +46,12 @@ namespace DrinkDb_Auth.OAuthProviders
             try
             {
                 var token = await ExchangeCodeForToken(code);
-
-                (string id, string name) = await GetLinkedInIdAndNameAsync(token);
-
-                if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name))
-                {
-                    Debug.WriteLine("LinkedIn ID or name is empty.");
-                    _tcs.TrySetResult(new AuthResponse
-                    {
-                        AuthSuccessful = false,
-                        OAuthToken = string.Empty,
-                        SessionId = Guid.Empty,
-                        NewAccount = false
-                    });
-                    return;
-                }
-
-                var user = userAdapter.GetUserByUsername(name);
-                if (user == null)
-                {
-                    User newUser = new User
-                    {
-                        Username = name,
-                        PasswordHash = string.Empty,
-                        UserId = Guid.NewGuid(),
-                        TwoFASecret = string.Empty,
-                    };
-                    userAdapter.CreateUser(newUser);
-                    _tcs.TrySetResult(new AuthResponse
-                    {
-                        AuthSuccessful = true,
-                        OAuthToken = token,
-                        SessionId = newUser.UserId,
-                        NewAccount = true
-                    });
-                }
-                else
-                {
-                    _tcs.TrySetResult(new AuthResponse
-                    {
-                        AuthSuccessful = true,
-                        OAuthToken = token,
-                        SessionId = user.UserId,
-                        NewAccount = false
-                    });
-                }
+                var res = linkedInOAuth2Provider.Authenticate(string.Empty, token);
+                _tcs.SetResult(res);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("LinkedIn token exchange error: " + ex);
-                _tcs.TrySetResult(new AuthResponse
-                {
-                    AuthSuccessful = false,
-                    OAuthToken = string.Empty,
-                    SessionId = Guid.Empty,
-                    NewAccount = false
-                });
+                _tcs.SetException(ex);
             }
         }
 

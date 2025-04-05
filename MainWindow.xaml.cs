@@ -105,7 +105,7 @@ namespace DrinkDb_Auth
             {
                 GoogleSignInButton.IsEnabled = false;
                 var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Google);
-                AuthenticationComplete(authResponse);
+                await AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
             {
@@ -122,7 +122,7 @@ namespace DrinkDb_Auth
             try
             {
                 var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Facebook);
-                AuthenticationComplete(authResponse);
+                await AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
             {
@@ -135,8 +135,8 @@ namespace DrinkDb_Auth
             try
             {
                 XSignInButton.IsEnabled = false;
-                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Google);
-                AuthenticationComplete(authResponse);
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Twitter);
+                await AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
             {
@@ -153,7 +153,7 @@ namespace DrinkDb_Auth
             try
             {
                 var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.LinkedIn);
-                AuthenticationComplete(authResponse);
+                await AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
             {
