@@ -97,7 +97,7 @@ namespace DrinkDb_Auth
         {
             try
             {
-                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.GitHub);
+                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Facebook);
                 AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
