@@ -44,6 +44,35 @@ namespace DrinkDb_Auth.OAuthProviders
         private readonly string[] Scopes = { "profile", "email" };
         private HttpClient _httpClient;
         private static readonly SessionAdapter sessionAdapter = new();
+        private static readonly UserAdapter userAdapter = new();
+
+        // Check if a user exists and create it if it doesn't
+        private Guid EnsureUserExists(string sub, string email, string name)
+        {
+            var userId = SubToGuid(sub);
+            var existingUser = userAdapter.GetUserById(userId);
+            
+            if (existingUser == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"Creating new user with ID {userId} for Google user {email} ({name})");
+                
+                var newUser = new User
+                {
+                    UserId = userId,
+                    Username = email, // Using email as the username
+                    PasswordHash = string.Empty, // OAuth users don't need passwords
+                    TwoFASecret = null
+                };
+                
+                var success = userAdapter.CreateUser(newUser);
+                System.Diagnostics.Debug.WriteLine($"User creation result: {success}");
+                
+                return userId;
+            }
+            
+            System.Diagnostics.Debug.WriteLine($"Found existing user with ID {userId}");
+            return userId;
+        }
 
         public GoogleOAuth2Provider()
         {
@@ -191,7 +220,7 @@ namespace DrinkDb_Auth.OAuthProviders
                             {
                                 AuthSuccessful = false,
                                 OAuthToken = tokenResult.AccessToken,
-                                SessionId = sessionAdapter.CreateSession(SubToGuid(ExtractUserInfoFromIdToken(tokenResult.IdToken).Sub)).sessionId,
+                                SessionId = Guid.Empty,
                                 NewAccount = false
                             };
                         }
@@ -226,14 +255,19 @@ namespace DrinkDb_Auth.OAuthProviders
                                     }
                                     System.Diagnostics.Debug.WriteLine($"User authenticated: {userInfo.Email} ({userInfo.Name})");
 
+                                    // Extract user info from token
+                                    var tokenUserInfo = ExtractUserInfoFromIdToken(tokenResult.IdToken);
+                                    
+                                    // Ensure the user exists in the database
+                                    var userId = EnsureUserExists(tokenUserInfo.Sub, userInfo.Email, userInfo.Name);
+                                    
                                     return new AuthResponse
                                     {
                                         AuthSuccessful = true,
                                         OAuthToken = tokenResult.AccessToken,
-                                        SessionId = sessionAdapter.CreateSession(SubToGuid(ExtractUserInfoFromIdToken(tokenResult.IdToken).Sub)).sessionId,
+                                        SessionId = sessionAdapter.CreateSession(userId).sessionId,
                                         NewAccount = false
                                     };
-
                                 }
                                 else
                                 {
@@ -248,6 +282,18 @@ namespace DrinkDb_Auth.OAuthProviders
                                             if (basicUserInfo != null)
                                             {
                                                 System.Diagnostics.Debug.WriteLine($"Extracted user info from ID token: {basicUserInfo.Email} ({basicUserInfo.Name})");
+                                                
+                                                // Ensure the user exists in the database
+                                                var userId = EnsureUserExists(basicUserInfo.Sub, basicUserInfo.Email, basicUserInfo.Name);
+                                                
+                                                // If we couldn't get user info but have a valid token, still return success
+                                                return new AuthResponse
+                                                {
+                                                    AuthSuccessful = true,
+                                                    OAuthToken = tokenResult.AccessToken,
+                                                    SessionId = sessionAdapter.CreateSession(userId).sessionId, 
+                                                    NewAccount = false
+                                                };
                                             }
                                         }
                                         catch (Exception idEx)
@@ -263,7 +309,8 @@ namespace DrinkDb_Auth.OAuthProviders
                                     {
                                         AuthSuccessful = true,
                                         OAuthToken = tokenResult.AccessToken,
-                                        SessionId = sessionAdapter.CreateSession(SubToGuid(ExtractUserInfoFromIdToken(tokenResult.IdToken).Sub)).sessionId, NewAccount = false
+                                        SessionId = Guid.Empty,
+                                        NewAccount = false
                                     };
                                 }
                             }
@@ -272,12 +319,36 @@ namespace DrinkDb_Auth.OAuthProviders
                         {
                             System.Diagnostics.Debug.WriteLine($"Error getting user info: {ex.Message}");
 
-                            // If we couldn't get user info but have a valid token, still return success
+                            // Try to extract basic info from ID token
+                            try 
+                            {
+                                var basicUserInfo = ExtractUserInfoFromIdToken(tokenResult.IdToken);
+                                if (basicUserInfo != null)
+                                {
+                                    // Ensure the user exists in the database
+                                    var userId = EnsureUserExists(basicUserInfo.Sub, basicUserInfo.Email, basicUserInfo.Name);
+                                    
+                                    // If we couldn't get user info but have a valid token, still return success
+                                    return new AuthResponse
+                                    {
+                                        AuthSuccessful = true,
+                                        OAuthToken = tokenResult.AccessToken,
+                                        SessionId = sessionAdapter.CreateSession(userId).sessionId,
+                                        NewAccount = false
+                                    };
+                                }
+                            }
+                            catch (Exception idEx)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Failed to extract info from ID token: {idEx.Message}");
+                            }
+                            
+                            // Unable to extract user info, can't create user
                             return new AuthResponse
                             {
-                                AuthSuccessful = true,
-                                OAuthToken = tokenResult.AccessToken,
-                                SessionId = sessionAdapter.CreateSession(SubToGuid(ExtractUserInfoFromIdToken(tokenResult.IdToken).Sub)).sessionId,
+                                AuthSuccessful = false,
+                                OAuthToken = string.Empty,
+                                SessionId = Guid.Empty,
                                 NewAccount = false
                             };
                         }
