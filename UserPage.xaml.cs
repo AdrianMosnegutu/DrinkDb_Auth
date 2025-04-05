@@ -57,9 +57,7 @@ namespace DrinkDb_Auth
         private void LogoutButton_Click(object sender, RoutedEventArgs e)
         {
             _authService.Logout();
-            App.m_window?.AppWindow.Destroy();
-            App.m_window = new MainWindow();
-            App.m_window.Activate();
+            App.m_window?.Close();
         }
 
 

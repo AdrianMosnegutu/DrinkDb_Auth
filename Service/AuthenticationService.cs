@@ -107,7 +107,7 @@ namespace DrinkDb_Auth.Service
                 User user = new()
                 {
                     Username = username,
-                    PasswordHash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(password)).ToString() ?? throw new Exception("Hashing failed"),
+                    PasswordHash = Convert.ToBase64String(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(password)) ?? throw new Exception("Hashing failed")),
                     UserId = Guid.NewGuid(),
                     TwoFASecret = string.Empty
                 };
