@@ -59,7 +59,7 @@ namespace DrinkDb_Auth.View
 
             var options = new FindNextElementOptions
             {
-                SearchRoot = this // Assuming 'this' is a loaded DependencyObject
+                SearchRoot = this
             };
 
             FocusManager.TryMoveFocus(FocusNavigationDirection.Right, options);
@@ -71,7 +71,7 @@ namespace DrinkDb_Auth.View
             var provider = peer.GetPattern(PatternInterface.Text) as ITextProvider;
             var options = new FindNextElementOptions
             {
-                SearchRoot = this // Assuming 'this' is a loaded DependencyObject
+                SearchRoot = this
             };
             FocusManager.TryMoveFocus(FocusNavigationDirection.Left, options);
         }

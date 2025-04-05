@@ -59,14 +59,24 @@ namespace DrinkDb_Auth.View
         {
             var peer = FrameworkElementAutomationPeer.FromElement(textBox);
             var provider = peer.GetPattern(PatternInterface.Text) as ITextProvider;
-            FocusManager.TryMoveFocus(FocusNavigationDirection.Next);
+
+            var options = new FindNextElementOptions
+            {
+                SearchRoot = this
+            };
+
+            FocusManager.TryMoveFocus(FocusNavigationDirection.Right, options);
         }
 
         private void MoveFocusToPreviousTextBox(TextBox textBox)
         {
             var peer = FrameworkElementAutomationPeer.FromElement(textBox);
             var provider = peer.GetPattern(PatternInterface.Text) as ITextProvider;
-            FocusManager.TryMoveFocus(FocusNavigationDirection.Previous);
+            var options = new FindNextElementOptions
+            {
+                SearchRoot = this
+            };
+            FocusManager.TryMoveFocus(FocusNavigationDirection.Left, options);
         }
     }
 
