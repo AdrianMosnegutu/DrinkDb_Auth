@@ -6,6 +6,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -17,7 +18,7 @@ namespace DrinkDb_Auth
     /// </summary>
     sealed partial class App : Application
     {
-        private Window? m_window;
+        public static Window? m_window;
 
         public static Guid CurrentUserId { get; set; } = Guid.Empty;
         public static Guid CurrentSessionId { get; set; } = Guid.Empty;
