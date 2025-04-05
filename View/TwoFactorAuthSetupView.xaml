@@ -15,16 +15,12 @@
                       TextWrapping="Wrap" Margin="0,0,0,20" TextAlignment="Center"/>  
            <Image Source="{Binding QrCodeImage}" Width="200" Height="200" Margin="0,0,0,20"/>  
            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">  
-               <TextBox Text="{Binding CodeDigit1, UpdateSourceTrigger=PropertyChanged}" Width="30" Margin="5"/>  
-               <TextBox Text="{Binding CodeDigit2, UpdateSourceTrigger=PropertyChanged}" Width="30" Margin="5"/>  
-               <TextBox Text="{Binding CodeDigit3, UpdateSourceTrigger=PropertyChanged}" Width="30" Margin="5"/>  
-               <TextBox Text="{Binding CodeDigit4, UpdateSourceTrigger=PropertyChanged}" Width="30" Margin="5"/>  
-               <TextBox Text="{Binding CodeDigit5, UpdateSourceTrigger=PropertyChanged}" Width="30" Margin="5"/>  
-               <TextBox Text="{Binding CodeDigit6, UpdateSourceTrigger=PropertyChanged}" Width="30" Margin="5"/>  
-           </StackPanel>  
-           <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">  
-               <Button Content="Cancel" Command="{Binding CancelCommand}" Width="100" Margin="10"/>  
-               <Button Content="Submit" Command="{Binding SubmitCommand}" Width="100" Margin="10"/>  
+               <TextBox Text="{Binding CodeDigit1, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
+               <TextBox Text="{Binding CodeDigit2, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
+               <TextBox Text="{Binding CodeDigit3, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
+               <TextBox Text="{Binding CodeDigit4, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
+               <TextBox Text="{Binding CodeDigit5, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
+               <TextBox Text="{Binding CodeDigit6, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
            </StackPanel>  
        </StackPanel>  
    </Grid>  

@@ -6,6 +6,9 @@ using QRCoder;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.Service;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
+using System.IO;
+using System.Drawing;
 
 namespace DrinkDb_Auth.ViewModel
 {
@@ -19,18 +22,19 @@ namespace DrinkDb_Auth.ViewModel
         private string _codeDigit4;
         private string _codeDigit5;
         private string _codeDigit6;
-        private string _qrCodeImage;
 
         public event EventHandler<bool>? DialogResult;
-
 
         public string CodeDigit1
         {
             get => _codeDigit1;
             set
             {
-                _codeDigit1 = value;
-                OnPropertyChanged();
+                if (_codeDigit1 != value)
+                {
+                    _codeDigit1 = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -39,8 +43,11 @@ namespace DrinkDb_Auth.ViewModel
             get => _codeDigit2;
             set
             {
-                _codeDigit2 = value;
-                OnPropertyChanged();
+                if (_codeDigit2 != value)
+                {
+                    _codeDigit2 = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -49,8 +56,11 @@ namespace DrinkDb_Auth.ViewModel
             get => _codeDigit3;
             set
             {
-                _codeDigit3 = value;
-                OnPropertyChanged();
+                if (_codeDigit3 != value)
+                {
+                    _codeDigit3 = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -59,8 +69,11 @@ namespace DrinkDb_Auth.ViewModel
             get => _codeDigit4;
             set
             {
-                _codeDigit4 = value;
-                OnPropertyChanged();
+                if (_codeDigit4 != value)
+                {
+                    _codeDigit4 = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -69,8 +82,11 @@ namespace DrinkDb_Auth.ViewModel
             get => _codeDigit5;
             set
             {
-                _codeDigit5 = value;
-                OnPropertyChanged();
+                if (_codeDigit5 != value)
+                {
+                    _codeDigit5 = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -79,12 +95,16 @@ namespace DrinkDb_Auth.ViewModel
             get => _codeDigit6;
             set
             {
-                _codeDigit6 = value;
-                OnPropertyChanged();
+                if (_codeDigit6 != value)
+                {
+                    _codeDigit6 = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
-        public string QrCodeImage
+        private BitmapImage _qrCodeImage;
+        public BitmapImage QrCodeImage
         {
             get => _qrCodeImage;
             set
@@ -94,23 +114,20 @@ namespace DrinkDb_Auth.ViewModel
             }
         }
 
-        public ICommand CancelCommand { get; }
-        public ICommand SubmitCommand { get; }
-
-        private string _keyCode;
-        private Guid _userId;
-
-        public TwoFactorAuthSetupViewModel(string keyCode, Guid userId)
+        public TwoFactorAuthSetupViewModel(string keyCode)
         {
-            _keyCode = keyCode;
-            _userId = userId;
             QRCodeData qRCodeData = new QRCodeGenerator().CreateQrCode(keyCode, QRCodeGenerator.ECCLevel.Q);
             BitmapByteQRCode qrCode = new(qRCodeData);
-
-            _qrCodeImage = Convert.ToBase64String(qrCode.GetGraphic(20));
-
-            CancelCommand = new RelayCommand(Cancel);
-            SubmitCommand = new RelayCommand(Submit);
+            byte[] qrCodeImageBytes = qrCode.GetGraphic(20);
+            Bitmap qrCodeBitmap = new Bitmap(new MemoryStream(qrCodeImageBytes));
+            BitmapImage qrCodeBitmapImage = new BitmapImage();
+            using (MemoryStream stream = new MemoryStream())
+            {
+                qrCodeBitmap.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                stream.Position = 0;
+                qrCodeBitmapImage.SetSource(stream.AsRandomAccessStream());
+            }
+            _qrCodeImage = qrCodeBitmapImage;
 
             _codeDigit1 = string.Empty;
             _codeDigit2 = string.Empty;
@@ -118,30 +135,6 @@ namespace DrinkDb_Auth.ViewModel
             _codeDigit4 = string.Empty;
             _codeDigit5 = string.Empty;
             _codeDigit6 = string.Empty;
-        }
-
-        private void Cancel()
-        {
-            DialogResult?.Invoke(this, false);
-        }
-
-        private void Submit()
-        {
-            string code = CodeDigit1 + CodeDigit2 + CodeDigit3 + CodeDigit4 + CodeDigit5 + CodeDigit6;
-            // Verify the 2FA code
-            if (_twoFactorAuthService.Verify2FACode(_userId, code))
-            {
-                DialogResult?.Invoke(this, true);
-            }
-            else
-            {
-                ContentDialog dialog = new ContentDialog
-                {
-                    Title = "Error",
-                    Content = "Invalid 2FA code. Please try again.",
-                    CloseButtonText = "OK"
-                };
-            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

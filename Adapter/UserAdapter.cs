@@ -52,7 +52,7 @@ namespace DrinkDb_Auth.Adapter
         public bool UpdateUser(User user)
         {
             using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
-            string sql = "UPDATE User SET userName = @username, passwordHash = @passwordHash, twoFASecret = @twoFASecret WHERE userId = @userId;";
+            string sql = "UPDATE Users SET userName = @username, passwordHash = @passwordHash, twoFASecret = @twoFASecret WHERE userId = @userId;";
             using (SqlCommand cmd = new(sql, conn))
             {
                 cmd.Parameters.AddWithValue("@userId", user.UserId);

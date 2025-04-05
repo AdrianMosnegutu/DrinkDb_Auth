@@ -4,7 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using DrinkDb_Auth.ViewModel;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation.Peers;
+using Microsoft.UI.Xaml.Automation.Provider;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
@@ -27,7 +31,52 @@ namespace DrinkDb_Auth.View
         public TwoFactorAuthSetupView(TwoFactorAuthSetupViewModel twoFactorAuthSetupViewModel)
         {
             this.InitializeComponent();
-            RootPannel.DataContext = twoFactorAuthSetupViewModel;
+            DataContext = twoFactorAuthSetupViewModel;
+        }
+
+        public void TextBox_KeyUp(object sender, KeyRoutedEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            if (textBox == null) return;
+
+            if (e.Key == Windows.System.VirtualKey.Back)
+            {
+                if (textBox.Text.Length == 0)
+                {
+                    MoveFocusToPreviousTextBox(textBox);
+                }
+            }
+            else
+            {
+                if (textBox.Text.Length == 1)
+                {
+                    MoveFocusToNextTextBox(textBox);
+                }
+            }
+        }
+
+        private void MoveFocusToNextTextBox(TextBox textBox)
+        {
+            var peer = FrameworkElementAutomationPeer.FromElement(textBox);
+            var provider = peer.GetPattern(PatternInterface.Text) as ITextProvider;
+            FocusManager.TryMoveFocus(FocusNavigationDirection.Next);
+        }
+
+        private void MoveFocusToPreviousTextBox(TextBox textBox)
+        {
+            var peer = FrameworkElementAutomationPeer.FromElement(textBox);
+            var provider = peer.GetPattern(PatternInterface.Text) as ITextProvider;
+            FocusManager.TryMoveFocus(FocusNavigationDirection.Previous);
+        }
+    }
+
+    internal class TraversalRequest
+    {
+        private FocusNavigationDirection next;
+
+        public TraversalRequest(FocusNavigationDirection next)
+        {
+            this.next = next;
         }
     }
 }
