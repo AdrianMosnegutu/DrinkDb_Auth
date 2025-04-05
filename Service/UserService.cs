@@ -26,6 +26,16 @@ namespace DrinkDb_Auth.Service
             return _userAdapter.GetUserByUsername(username) ?? throw new ArgumentException("User not found", nameof(username));
         }
 
+        public User GetCurrentUser()
+        {
+            Guid currentSessionId = App.CurrentSessionId;
+            if (currentSessionId == Guid.Empty)
+            {
+                throw new InvalidOperationException("No user is currently logged in.");
+            }
+            return _authenticationService.GetUser(currentSessionId);
+        }
+
         public bool ValidateAction(Guid userId, string resource, string action)
         {
             if (string.IsNullOrEmpty(resource))

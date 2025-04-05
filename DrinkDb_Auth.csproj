@@ -15,7 +15,6 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="UserPage.xaml" />
-    <None Remove="View\TwoFactorAuthCheckView.xaml" />
   </ItemGroup>
 
   <ItemGroup>

@@ -11,6 +11,7 @@ using System.Net.Http;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.View;
 using DrinkDb_Auth.Model;
+using System.Runtime.CompilerServices;
 
 
 // To learn more about WinUI, the WinUI project structure,
@@ -37,20 +38,29 @@ namespace DrinkDb_Auth
             this.AppWindow.Move(new PointInt32(0, 0));
         }
 
-        private void AuthenticationComplete(AuthResponse res)
+        private async Task<bool> AuthenticationComplete(AuthResponse res)
         {
-            App.CurrentSessionId = res.SessionId;
             if (res.AuthSuccessful)
             {
                 var user = _authenticationService.GetUser(res.SessionId);
+                bool twoFAres = false;
                 if (user.TwoFASecret != null)
                 {
-                    MainFrame.Navigate(typeof(TwoFactorAuthCheckView));
+                    twoFAres = await _twoFactorAuthService.Verify2FAForUser(this, user.UserId);
                 }
                 else
                 {
-                    _twoFactorAuthService.Setup2FA(user.UserId);
+                    twoFAres = await _twoFactorAuthService.Setup2FA(this, user.UserId);
                 }
+
+                if (twoFAres)
+                {
+                    App.CurrentUserId = user.UserId;
+                    App.CurrentSessionId = res.SessionId;
+                    MainFrame.Navigate(typeof(SuccessPage), this);
+                    return true;
+                }
+                return false;
             }
             else
             {
@@ -63,6 +73,7 @@ namespace DrinkDb_Auth
                 };
                 _ = errorDialog.ShowAsync();
             }
+            return false;
         }
 
         public void SignInButton_Click(object sender, RoutedEventArgs e)
@@ -71,7 +82,7 @@ namespace DrinkDb_Auth
             string password = PasswordBox.Password;
 
             AuthResponse res = AuthenticationService.AuthWithUserPass(username, password);
-            AuthenticationComplete(res);
+            _ = AuthenticationComplete(res);
         }
 
         public async void GithubSignInButton_Click(object sender, RoutedEventArgs e)
@@ -79,7 +90,7 @@ namespace DrinkDb_Auth
             try
             {
                 var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.GitHub);
-                AuthenticationComplete(authResponse);
+                _ = AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
             {

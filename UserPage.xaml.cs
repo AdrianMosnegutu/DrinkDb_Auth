@@ -1,3 +1,4 @@
+using DrinkDb_Auth.Model;
 using DrinkDb_Auth.Service;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -9,6 +10,9 @@ namespace DrinkDb_Auth
 {
     public sealed partial class UserPage : Page
     {
+        private static readonly AuthenticationService _authService = new();
+        private static readonly UserService _userService = new();
+
         public UserPage()
         {
             this.InitializeComponent();
@@ -50,43 +54,39 @@ namespace DrinkDb_Auth
             }
         }
 
-
-        private void LoadMockUserData()
+        private void LogoutButton_Click(object sender, RoutedEventArgs e)
         {
-            // Create mock user data
-            var mockUser = new UserModel
-            {
-                Name = "Serginio",
-                Username = "sergio24",
-                Status = "Online",
-                Reviews = new List<ReviewModel>
-                {
-                    new() {
-                        Date = DateTime.Now.AddDays(-2),
-                        Rating = 4,
-                        Comment = "Really good taste!"
-                    },
-                    new() {
-                        Date = DateTime.Now.AddDays(-10),
-                        Rating = 2,
-                        Comment = "Could be better"
-                    }
-                },
-                Drinklist = new List<string>
-                {
-                    "Coca Cola Zero",
-                    "Pepsi Twist",
-                    "Lemonade"
-                }
-            };
+            _authService.Logout();
+            Frame.Navigate(typeof(MainWindow));
+        }
+
+
+        public void LoadMockUserData()
+        {
+            User user = _userService.GetCurrentUser();
+            string mockStatus = "Online";
+            ReviewModel[] mockReviews =
+            [
+                new ReviewModel { Date = DateTime.Now.AddDays(-1), Rating = 5, Comment = "Great drink!" },
+                new ReviewModel { Date = DateTime.Now.AddDays(-2), Rating = 4, Comment = "Good, but could be better." },
+                new ReviewModel { Date = DateTime.Now.AddDays(-3), Rating = 3, Comment = "Average." }
+            ];
+
+            string[] mockDrinkList =
+            [
+                "Mojito",
+                "Pina Colada",
+                "Margarita",
+                "Whiskey Sour"
+            ];
 
             // Show user info
-            NameTextBlock.Text = mockUser.Name;
-            UsernameTextBlock.Text = "@" + mockUser.Username;
-            StatusTextBlock.Text = $"Status: {mockUser.Status}";
+            NameTextBlock.Text = user.Username;
+            UsernameTextBlock.Text = "@" + user.Username;
+            StatusTextBlock.Text = $"Status: {mockStatus}";
 
             // Display each review in the ReviewsItemsControl
-            foreach (var review in mockUser.Reviews)
+            foreach (var review in mockReviews)
             {
                 // Create a simple border "card"
                 var border = new Border
@@ -133,9 +133,8 @@ namespace DrinkDb_Auth
             }
 
             // Display each drink in the DrinklistItemsControl
-            foreach (var drink in mockUser.Drinklist)
+            foreach (var drink in mockDrinkList)
             {
-                // Just display each drink as a TextBlock
                 var drinkText = new TextBlock
                 {
                     Text = drink,
@@ -160,16 +159,6 @@ namespace DrinkDb_Auth
 
             await dialog.ShowAsync();
         }
-    }
-
-    // User model with default values for non-nullable properties
-    public class UserModel
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Username { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public List<ReviewModel> Reviews { get; set; } = new List<ReviewModel>();
-        public List<string> Drinklist { get; set; } = new List<string>();
     }
 
     public class ReviewModel
