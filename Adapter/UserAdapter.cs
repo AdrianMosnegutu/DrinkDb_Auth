@@ -57,8 +57,8 @@ namespace DrinkDb_Auth.Adapter
             {
                 cmd.Parameters.AddWithValue("@userId", user.UserId);
                 cmd.Parameters.AddWithValue("@username", user.Username);
-                cmd.Parameters.AddWithValue("@passwordHash", user.PasswordHash);
-                cmd.Parameters.AddWithValue("@twoFASecret", user.TwoFASecret);
+                cmd.Parameters.AddWithValue("@passwordHash", (object?)user.PasswordHash ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@twoFASecret", (object?)user.TwoFASecret ?? DBNull.Value);
                 return cmd.ExecuteNonQuery() > 0;
             }
         }

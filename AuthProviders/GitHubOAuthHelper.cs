@@ -13,7 +13,7 @@ namespace DrinkDb_Auth.OAuthProviders
         private const string ClientSecret = "791dfaf36750b2a34a752c4fe3fb3703cef18836";
         private const string RedirectUri = "http://localhost:8890/auth";
         private const string Scope = "read:user user:email"; // Adjust scopes as needed
-
+        private static readonly GitHubOAuth2Provider gitHubOAuth2Provider = new();
         private TaskCompletionSource<AuthResponse> _tcs;
 
         public GitHubOAuthHelper()
@@ -47,37 +47,12 @@ namespace DrinkDb_Auth.OAuthProviders
             {
                 // Exchange code for an access token
                 var token = await ExchangeCodeForToken(code);
-                if (!string.IsNullOrEmpty(token))
-                {
-                    _tcs.TrySetResult(new AuthResponse
-                    {
-                        AuthSuccessful = true,
-                        OAuthToken = token,
-                        SessionId = Guid.Empty,
-                        NewAccount = false
-                    });
-                }
-                else
-                {
-                    _tcs.TrySetResult(new AuthResponse
-                    {
-                        AuthSuccessful = false,
-                        OAuthToken = string.Empty,
-                        SessionId = Guid.Empty,
-                        NewAccount = false
-                    });
-                }
+                var res = gitHubOAuth2Provider.Authenticate(string.Empty, token);
+                _tcs.SetResult(res);
             }
             catch (Exception ex)
             {
-                _tcs.TrySetResult(new AuthResponse
-                {
-                    AuthSuccessful = false,
-                    OAuthToken = string.Empty,
-                    SessionId = Guid.Empty,
-                    NewAccount = false
-                });
-                throw new Exception("Failed to exchange code for token.", ex);
+                _tcs.SetException(ex);
             }
         }
 

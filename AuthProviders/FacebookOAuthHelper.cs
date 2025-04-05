@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Threading.Tasks;
+using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.Model;
 using Windows.ApplicationModel;
 
 namespace DrinkDb_Auth.OAuthProviders
 { 
     public class FacebookOAuthHelper
     {
+        private static readonly FacebookOAuth2Provider facebookOAuth2Provider = new();
+        private static readonly SessionAdapter sessionAdapter = new();
         private static string GetPackageSecurityIdentifier()
         {
             var package = Package.Current;
@@ -38,15 +42,9 @@ namespace DrinkDb_Auth.OAuthProviders
         {
             if (_tcs != null && !_tcs.Task.IsCompleted)
             {
-                AuthResponse authResponse = new AuthResponse
-                {
-                    AuthSuccessful = true,
-                    OAuthToken = accessToken,
-                    SessionId = Guid.Empty,
-                    NewAccount = false
-                };
-
-                _tcs.TrySetResult(authResponse);
+                AuthResponse res = facebookOAuth2Provider.Authenticate(string.Empty, accessToken);
+                
+                _tcs.TrySetResult(res);
             }
         }
 

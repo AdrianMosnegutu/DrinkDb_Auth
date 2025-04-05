@@ -12,7 +12,8 @@ namespace DrinkDb_Auth.OAuthProviders
 {
     public class GitHubOAuth2Provider : GenericOAuth2Provider
     {
-        private readonly static UserAdapter userAdapter = new UserAdapter();
+        private readonly static UserAdapter userAdapter = new();
+        private readonly static SessionAdapter sessionAdapter = new();
         public AuthResponse Authenticate(string? userId, string token)
         {
             try
@@ -34,12 +35,15 @@ namespace DrinkDb_Auth.OAuthProviders
                 if (VerifyUserInDb(ghLogin))
                 {
                     // User exists, so proceed.
+                    User user = userAdapter.GetUserByUsername(ghLogin) ?? throw new Exception("User not found");
+
+                    Session session = sessionAdapter.CreateSession(user.UserId);
 
                     return new AuthResponse
                     {
                         AuthSuccessful = true,
                         OAuthToken = token,
-                        SessionId = Guid.Empty,
+                        SessionId = session.sessionId,
                         NewAccount = false
                     };
                 }
@@ -50,11 +54,12 @@ namespace DrinkDb_Auth.OAuthProviders
                     if (newUserId != Guid.Empty)
                     {
                         // Successfully inserted, so login is successful.
+                        Session session = sessionAdapter.CreateSession(newUserId);
                         return new AuthResponse
                         {
                             AuthSuccessful = true,
                             OAuthToken  = token,
-                            SessionId = Guid.Empty,
+                            SessionId = session.sessionId,
                             NewAccount = true
                         };
                     }
@@ -127,21 +132,22 @@ namespace DrinkDb_Auth.OAuthProviders
             }
         }
 
+
         private bool VerifyUserInDb(string ghLogin)
         {
-            using (SqlConnection conn = new SqlConnection(ConfigurationManager.ConnectionStrings["DrinkDbConnection"].ConnectionString))
+            try
             {
-                conn.Open();
-                // Using the existing function fnGetUserByUsername.
-                string sql = "SELECT COUNT(*) FROM fnGetUserByUsername(@username)";
-                using (SqlCommand cmd = new SqlCommand(sql, conn))
+                User? user = userAdapter.GetUserByUsername(ghLogin);
+                if (user != null)
                 {
-                    cmd.Parameters.AddWithValue("@username", ghLogin.Trim());
-                    int count = (int)cmd.ExecuteScalar();
-                    Console.WriteLine($"User lookup count for '{ghLogin}': {count}");
-                    return count > 0;
+                    return true;
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error verifying user: " + ex.Message);
+            }
+            return false;
         }
 
         private Guid CreateUserFromGitHub(string ghLogin)

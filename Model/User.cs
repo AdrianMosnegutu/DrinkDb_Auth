@@ -11,7 +11,7 @@ namespace DrinkDb_Auth.Model
         public required Guid UserId { get; set; }
         public required string Username { get; set; }
         public required string PasswordHash { get; set; }
-        public string? TwoFASecret { get; set; }
+        public required string? TwoFASecret { get; set; }
         public bool ValidateAction(string resource, string action)
         {
             if (string.IsNullOrEmpty(resource))

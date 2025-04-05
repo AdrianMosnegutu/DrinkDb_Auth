@@ -12,6 +12,7 @@ using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.View;
 using DrinkDb_Auth.Model;
 using System.Runtime.CompilerServices;
+using Microsoft.IdentityModel.Tokens;
 
 
 // To learn more about WinUI, the WinUI project structure,
@@ -44,7 +45,7 @@ namespace DrinkDb_Auth
             {
                 var user = _authenticationService.GetUser(res.SessionId);
                 bool twoFAres = false;
-                if (user.TwoFASecret != null)
+                if (!user.TwoFASecret.IsNullOrEmpty())
                 {
                     twoFAres = await _twoFactorAuthService.Verify2FAForUser(this, user.UserId);
                 }
