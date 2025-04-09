@@ -8,32 +8,32 @@ namespace DrinkDb_Auth.OAuthProviders
 {
     public class GitHubLocalOAuthServer
     {
-        private readonly HttpListener _listener;
+        private readonly HttpListener listener;
 
         /// <summary>
         /// Fires when the GitHub code is received from the redirect.
         /// </summary>
         public static event Action<string>? OnCodeReceived;
 
-        private bool _isRunning = false;
+        private bool isRunning = false;
 
         public GitHubLocalOAuthServer(string prefix)
         {
-            _listener = new HttpListener();
-            _listener.Prefixes.Add(prefix);
+            listener = new HttpListener();
+            listener.Prefixes.Add(prefix);
         }
 
         public async Task StartAsync()
         {
-            _isRunning = true;
-            _listener.Start();
-            Console.WriteLine("GitHub local OAuth server listening on: " + string.Join(", ", _listener.Prefixes));
+            isRunning = true;
+            listener.Start();
+            Console.WriteLine("GitHub local OAuth server listening on: " + string.Join(", ", listener.Prefixes));
 
-            while (_isRunning && _listener.IsListening)
+            while (isRunning && listener.IsListening)
             {
                 try
                 {
-                    var context = await _listener.GetContextAsync();
+                    var context = await listener.GetContextAsync();
                     if (context.Request.Url == null)
                     {
                         context.Response.StatusCode = 400;
@@ -42,15 +42,15 @@ namespace DrinkDb_Auth.OAuthProviders
                     }
                     if (context.Request.Url.AbsolutePath.Equals("/auth", StringComparison.OrdinalIgnoreCase))
                     {
-                        // GitHub redirects here with ?code=... 
+                        // GitHub redirects here with ?code=...
                         // We'll show a minimal HTML that triggers a POST to /exchange with the code
                         string code = HttpUtility.ParseQueryString(context.Request.Url.Query).Get("code") ?? throw new Exception("Code not found in request.");
 
                         string responseHtml = GetHtmlResponse(code);
-                        byte[] buffer = Encoding.UTF8.GetBytes(responseHtml);
-                        context.Response.ContentLength64 = buffer.Length;
+                        byte[] responseBuffer = Encoding.UTF8.GetBytes(responseHtml);
+                        context.Response.ContentLength64 = responseBuffer.Length;
                         context.Response.ContentType = "text/html; charset=utf-8";
-                        await context.Response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                        await context.Response.OutputStream.WriteAsync(responseBuffer, 0, responseBuffer.Length);
                         context.Response.OutputStream.Close();
                     }
                     else if (context.Request.Url.AbsolutePath.Equals("/exchange", StringComparison.OrdinalIgnoreCase)
@@ -79,18 +79,19 @@ namespace DrinkDb_Auth.OAuthProviders
                         context.Response.OutputStream.Close();
                     }
                 }
-                catch (Exception ex)
+                catch (Exception exception)
                 {
-                    Console.WriteLine("Error in GitHubLocalOAuthServer: " + ex.Message);
+                    Console.WriteLine("Error in GitHubLocalOAuthServer: " + exception.Message);
                     break;
                 }
             }
         }
 
+        // TODO delete function since it has 0 references
         public void Stop()
         {
-            _isRunning = false;
-            _listener.Stop();
+            isRunning = false;
+            listener.Stop();
         }
 
         private string GetHtmlResponse(string code)

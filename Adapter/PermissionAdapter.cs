@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
 using System.Configuration;
-using DrinkDb_Auth.Adapter;
+using Microsoft.Data.SqlClient;
 using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.Adapter
@@ -11,6 +10,7 @@ namespace DrinkDb_Auth.Adapter
     {
         private readonly string connectionString;
 
+        // TODO delete constructor since it has 0 references
         public PermissionAdapter()
         {
             connectionString = ConfigurationManager.ConnectionStrings["DrinkDbConnection"].ConnectionString;
@@ -20,14 +20,14 @@ namespace DrinkDb_Auth.Adapter
         {
             string query = @"INSERT INTO Permissions (permissionName, resource, action)
                              VALUES (@PermissionName, @Role, @Action)";
-            using (SqlConnection conn = new(connectionString))
-            using (SqlCommand cmd = new(query, conn))
+            using (SqlConnection sqlConnection = new (connectionString))
+            using (SqlCommand sqlCommand = new (query, sqlConnection))
             {
-                cmd.Parameters.AddWithValue("@PermissionName", permission.PermissionName);
-                cmd.Parameters.AddWithValue("@Role", permission.Resource);
-                cmd.Parameters.AddWithValue("@Action", permission.Action);
-                conn.Open();
-                cmd.ExecuteNonQuery();
+                sqlCommand.Parameters.AddWithValue("@PermissionName", permission.PermissionName);
+                sqlCommand.Parameters.AddWithValue("@Role", permission.Resource);
+                sqlCommand.Parameters.AddWithValue("@Action", permission.Action);
+                sqlConnection.Open();
+                sqlCommand.ExecuteNonQuery();
             }
         }
 
@@ -36,39 +36,39 @@ namespace DrinkDb_Auth.Adapter
             string query = @"UPDATE Permissions 
                              SET permissionName=@PermissionName, resource=@Role, action=@Action 
                              WHERE Id=@Id";
-            using (SqlConnection conn = new(connectionString))
-            using (SqlCommand cmd = new(query, conn))
+            using (SqlConnection sqlConnection = new (connectionString))
+            using (SqlCommand sqlCommand = new (query, sqlConnection))
             {
-                cmd.Parameters.AddWithValue("@PermissionName", permission.PermissionName);
-                cmd.Parameters.AddWithValue("@Role", permission.Resource);
-                cmd.Parameters.AddWithValue("@Action", permission.Action);
-                cmd.Parameters.AddWithValue("@Id", permission.PermissionId);
-                conn.Open();
-                cmd.ExecuteNonQuery();
+                sqlCommand.Parameters.AddWithValue("@PermissionName", permission.PermissionName);
+                sqlCommand.Parameters.AddWithValue("@Role", permission.Resource);
+                sqlCommand.Parameters.AddWithValue("@Action", permission.Action);
+                sqlCommand.Parameters.AddWithValue("@Id", permission.PermissionId);
+                sqlConnection.Open();
+                sqlCommand.ExecuteNonQuery();
             }
         }
 
         public void DeletePermission(Permission permission)
         {
             string query = "DELETE FROM Permissions WHERE Id=@Id";
-            using (SqlConnection conn = new(connectionString))
-            using (SqlCommand cmd = new(query, conn))
+            using (SqlConnection sqlConnection = new (connectionString))
+            using (SqlCommand sqlCommand = new (query, sqlConnection))
             {
-                cmd.Parameters.AddWithValue("@Id", permission.PermissionId);
-                conn.Open();
-                cmd.ExecuteNonQuery();
+                sqlCommand.Parameters.AddWithValue("@Id", permission.PermissionId);
+                sqlConnection.Open();
+                sqlCommand.ExecuteNonQuery();
             }
         }
 
         public Permission GetPermissionById(int id)
         {
             string query = "SELECT Id, permissionName, resource, action FROM Permissions WHERE Id=@Id";
-            using (SqlConnection conn = new(connectionString))
-            using (SqlCommand cmd = new(query, conn))
+            using (SqlConnection sqlConnection = new (connectionString))
+            using (SqlCommand sqlCommand = new (query, sqlConnection))
             {
-                cmd.Parameters.AddWithValue("@Id", id);
-                conn.Open();
-                using (SqlDataReader reader = cmd.ExecuteReader())
+                sqlCommand.Parameters.AddWithValue("@Id", id);
+                sqlConnection.Open();
+                using (SqlDataReader reader = sqlCommand.ExecuteReader())
                 {
                     if (reader.Read())
                     {
@@ -87,17 +87,17 @@ namespace DrinkDb_Auth.Adapter
 
         public List<Permission> GetPermissions()
         {
-            List<Permission> permissions = new();
+            List<Permission> permissions = new ();
             string query = "SELECT Id, permissionName, resource, action FROM Permissions";
-            using (SqlConnection conn = new(connectionString))
-            using (SqlCommand cmd = new(query, conn))
+            using (SqlConnection sqlConnection = new (connectionString))
+            using (SqlCommand sqlCommand = new (query, sqlConnection))
             {
-                conn.Open();
-                using (SqlDataReader reader = cmd.ExecuteReader())
+                sqlConnection.Open();
+                using (SqlDataReader reader = sqlCommand.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        Permission permission = new()
+                        Permission permission = new ()
                         {
                             PermissionId = Guid.Parse(reader.GetString(0)),
                             PermissionName = reader.GetString(1),

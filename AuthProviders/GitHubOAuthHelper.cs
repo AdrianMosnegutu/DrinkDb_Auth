@@ -13,12 +13,12 @@ namespace DrinkDb_Auth.OAuthProviders
         private const string ClientSecret = "791dfaf36750b2a34a752c4fe3fb3703cef18836";
         private const string RedirectUri = "http://localhost:8890/auth";
         private const string Scope = "read:user user:email"; // Adjust scopes as needed
-        private static readonly GitHubOAuth2Provider gitHubOAuth2Provider = new();
-        private TaskCompletionSource<AuthResponse> _tcs;
+        private static readonly GitHubOAuth2Provider GitHubOAuth2Provider = new ();
+        private TaskCompletionSource<AuthResponse> authTask;
 
         public GitHubOAuthHelper()
         {
-            _tcs = new TaskCompletionSource<AuthResponse>();
+            authTask = new TaskCompletionSource<AuthResponse>();
             GitHubLocalOAuthServer.OnCodeReceived += OnCodeReceived;
         }
 
@@ -40,19 +40,21 @@ namespace DrinkDb_Auth.OAuthProviders
         /// </summary>
         private async void OnCodeReceived(string code)
         {
-            if (_tcs == null || _tcs.Task.IsCompleted)
+            if (authTask == null || authTask.Task.IsCompleted)
+            {
                 return;
+            }
 
             try
             {
                 // Exchange code for an access token
                 var token = await ExchangeCodeForToken(code);
-                var res = gitHubOAuth2Provider.Authenticate(string.Empty, token);
-                _tcs.SetResult(res);
+                var result = GitHubOAuth2Provider.Authenticate(string.Empty, token);
+                authTask.SetResult(result);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                _tcs.SetException(ex);
+                authTask.SetException(exception);
             }
         }
 
@@ -62,7 +64,7 @@ namespace DrinkDb_Auth.OAuthProviders
         /// </summary>
         public async Task<AuthResponse> AuthenticateAsync()
         {
-            _tcs = new TaskCompletionSource<AuthResponse>();
+            authTask = new TaskCompletionSource<AuthResponse>();
 
             var authorizeUri = new Uri(BuildAuthorizeUrl());
             Process.Start(new ProcessStartInfo
@@ -71,7 +73,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 UseShellExecute = true
             });
 
-            return await _tcs.Task;
+            return await authTask.Task;
         }
 
         /// <summary>
@@ -93,13 +95,13 @@ namespace DrinkDb_Auth.OAuthProviders
                 request.Content = content;
 
                 var response = await client.SendAsync(request);
-                var body = await response.Content.ReadAsStringAsync();
+                var responseBody = await response.Content.ReadAsStringAsync();
 
                 // GitHub returns JSON like: {"access_token":"...","token_type":"bearer","scope":"..."}
-                using var doc = JsonDocument.Parse(body);
-                if (doc.RootElement.TryGetProperty("access_token", out var tokenProp))
+                using var responseDocument = JsonDocument.Parse(responseBody);
+                if (responseDocument.RootElement.TryGetProperty("access_token", out var tokenProperty))
                 {
-                    return tokenProp.GetString() ?? throw new Exception("Access token is null.");
+                    return tokenProperty.GetString() ?? throw new Exception("Access token is null.");
                 }
                 throw new Exception("Failed to get access token from GitHub.");
             }

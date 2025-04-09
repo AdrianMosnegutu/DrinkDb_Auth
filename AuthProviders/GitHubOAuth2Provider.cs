@@ -1,43 +1,41 @@
 ﻿using System;
-using System.Configuration;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.Model;
-using DrinkDb_Auth.OAuthProviders;
-using Microsoft.Data.SqlClient;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
     public class GitHubOAuth2Provider : GenericOAuth2Provider
     {
-        private readonly static UserAdapter userAdapter = new();
-        private readonly static SessionAdapter sessionAdapter = new();
+        private readonly static UserAdapter UserAdapter = new ();
+        private readonly static SessionAdapter SessionAdapter = new ();
+
         public AuthResponse Authenticate(string? userId, string token)
         {
             try
             {
-                var (ghId, ghLogin) = FetchGitHubUserInfo(token);
+                var (gitHubId, gitHubLogin) = FetchGitHubUserInfo(token);
 
-                if (string.IsNullOrEmpty(ghLogin))
+                if (string.IsNullOrEmpty(gitHubLogin))
                 {
                     return new AuthResponse
                     {
                         AuthSuccessful = false,
-                        OAuthToken = String.Empty,
+                        OAuthToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
                 }
 
                 // Check if a user exists by using the GitHub username.
-                if (VerifyUserInDb(ghLogin))
+                if (VerifyUserInDb(gitHubLogin))
                 {
                     // User exists, so proceed.
-                    User user = userAdapter.GetUserByUsername(ghLogin) ?? throw new Exception("User not found");
+                    User user = UserAdapter.GetUserByUsername(gitHubLogin) ?? throw new Exception("User not found");
 
-                    Session session = sessionAdapter.CreateSession(user.UserId);
+                    Session session = SessionAdapter.CreateSession(user.UserId);
 
                     return new AuthResponse
                     {
@@ -50,15 +48,15 @@ namespace DrinkDb_Auth.OAuthProviders
                 else
                 {
                     // User does not exist. Insert the new user.
-                    Guid newUserId = CreateUserFromGitHub(ghLogin);
+                    Guid newUserId = CreateUserFromGitHub(gitHubLogin);
                     if (newUserId != Guid.Empty)
                     {
                         // Successfully inserted, so login is successful.
-                        Session session = sessionAdapter.CreateSession(newUserId);
+                        Session session = SessionAdapter.CreateSession(newUserId);
                         return new AuthResponse
                         {
                             AuthSuccessful = true,
-                            OAuthToken  = token,
+                            OAuthToken = token,
                             SessionId = session.sessionId,
                             NewAccount = true
                         };
@@ -69,7 +67,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         return new AuthResponse
                         {
                             AuthSuccessful = false,
-                            OAuthToken  = token,
+                            OAuthToken = token,
                             SessionId = Guid.Empty,
                             NewAccount = false
                         };
@@ -81,14 +79,14 @@ namespace DrinkDb_Auth.OAuthProviders
                 return new AuthResponse
                 {
                     AuthSuccessful = false,
-                    OAuthToken  = token,
+                    OAuthToken = token,
                     SessionId = Guid.Empty,
                     NewAccount = false
                 };
             }
         }
 
-        private (string ghId, string ghLogin) FetchGitHubUserInfo(string token)
+        private (string gitHubId, string gitHubLogin) FetchGitHubUserInfo(string token)
         {
             using (HttpClient client = new HttpClient())
             {
@@ -97,23 +95,26 @@ namespace DrinkDb_Auth.OAuthProviders
 
                 var response = client.GetAsync("https://api.github.com/user").Result;
                 if (!response.IsSuccessStatusCode)
+                {
                     throw new Exception("Failed to fetch user info from GitHub.");
+                }
 
                 string userJson = response.Content.ReadAsStringAsync().Result;
-                using (JsonDocument doc = JsonDocument.Parse(userJson))
+                using (JsonDocument userDocument = JsonDocument.Parse(userJson))
                 {
-                    var root = doc.RootElement;
-                    string ghId = root.GetProperty("id").GetRawText();
-                    string? ghLogin = root.GetProperty("login").GetString();
-                    if (ghLogin == null)
+                    var root = userDocument.RootElement;
+                    string gitHubId = root.GetProperty("id").GetRawText();
+                    string? gitHubLogin = root.GetProperty("login").GetString();
+                    if (gitHubLogin == null)
                     {
                         throw new Exception("GitHub login is null.");
                     }
-                    return (ghId, ghLogin);
+                    return (gitHubId, gitHubLogin);
                 }
             }
         }
 
+        // TODO delete function since it has 0 references
         public static async Task<string?> GetGitHubUsernameAsync(string token)
         {
             using (HttpClient client = new HttpClient())
@@ -122,55 +123,54 @@ namespace DrinkDb_Auth.OAuthProviders
                 client.DefaultRequestHeaders.Add("User-Agent", "DrinkDb_Auth-App");
                 var response = await client.GetAsync("https://api.github.com/user");
                 if (!response.IsSuccessStatusCode)
-                    return null;
-                string userJson = await response.Content.ReadAsStringAsync();
-                using (JsonDocument doc = JsonDocument.Parse(userJson))
                 {
-                    var root = doc.RootElement;
+                    return null;
+                }
+                string userJson = await response.Content.ReadAsStringAsync();
+                using (JsonDocument userDocument = JsonDocument.Parse(userJson))
+                {
+                    var root = userDocument.RootElement;
                     return root.GetProperty("login").GetString();
                 }
             }
         }
 
-
-        private bool VerifyUserInDb(string ghLogin)
+        private bool VerifyUserInDb(string gitHubLogin)
         {
             try
             {
-                User? user = userAdapter.GetUserByUsername(ghLogin);
+                User? user = UserAdapter.GetUserByUsername(gitHubLogin);
                 if (user != null)
                 {
                     return true;
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Console.WriteLine("Error verifying user: " + ex.Message);
+                Console.WriteLine("Error verifying user: " + exception.Message);
             }
             return false;
         }
 
-        private Guid CreateUserFromGitHub(string ghLogin)
+        private Guid CreateUserFromGitHub(string gitHubLogin)
         {
             try
             {
-                User newUser = new()
+                User newUser = new ()
                 {
                     UserId = Guid.NewGuid(),
-                    Username = ghLogin.Trim(),
+                    Username = gitHubLogin.Trim(),
                     TwoFASecret = string.Empty,
                     PasswordHash = string.Empty,
                 };
-                userAdapter.CreateUser(newUser);
+                UserAdapter.CreateUser(newUser);
                 return newUser.UserId;
-
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                Console.WriteLine("Error creating user: " + ex.Message);
+                Console.WriteLine("Error creating user: " + exception.Message);
             }
             return Guid.Empty;
         }
-
     }
 }
