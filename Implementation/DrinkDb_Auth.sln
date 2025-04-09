@@ -5,6 +5,8 @@ VisualStudioVersion = 17.13.35825.156
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrinkDb_Auth", "DrinkDb_Auth.csproj", "{9BD14E2B-FD49-4D5D-884D-BDC7BD37C3D3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "..\Tests\Tests.csproj", "{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM64 = Debug|ARM64
@@ -33,6 +35,18 @@ Global
 		{9BD14E2B-FD49-4D5D-884D-BDC7BD37C3D3}.Release|x86.ActiveCfg = Release|x86
 		{9BD14E2B-FD49-4D5D-884D-BDC7BD37C3D3}.Release|x86.Build.0 = Release|x86
 		{9BD14E2B-FD49-4D5D-884D-BDC7BD37C3D3}.Release|x86.Deploy.0 = Release|x86
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Debug|x64.Build.0 = Debug|Any CPU
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Debug|x86.Build.0 = Debug|Any CPU
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Release|ARM64.Build.0 = Release|Any CPU
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Release|x64.ActiveCfg = Release|Any CPU
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Release|x64.Build.0 = Release|Any CPU
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Release|x86.ActiveCfg = Release|Any CPU
+		{2C424748-2C6F-4C4F-8F9A-5BD94616CBC9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
