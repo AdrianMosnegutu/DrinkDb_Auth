@@ -54,7 +54,7 @@ namespace DrinkDb_Auth.Service
             {
                 App.CurrentSessionId = authResponse.SessionId;
                 Session session = SessionAdapter.GetSession(App.CurrentSessionId);
-                App.CurrentUserId = session.userId;
+                App.CurrentUserId = session.UserId;
             }
 
             return authResponse;
@@ -70,7 +70,7 @@ namespace DrinkDb_Auth.Service
         public User GetUser(Guid sessionId)
         {
             Session session = SessionAdapter.GetSession(sessionId);
-            return UserAdapter.GetUserById(session.userId) ?? throw new UserNotFoundException("User not found");
+            return UserAdapter.GetUserById(session.UserId) ?? throw new UserNotFoundException("User not found");
         }
 
         public static AuthResponse AuthWithUserPass(string username, string password)
@@ -86,7 +86,7 @@ namespace DrinkDb_Auth.Service
                         AuthSuccessful = true,
                         NewAccount = false,
                         OAuthToken = string.Empty,
-                        SessionId = session.sessionId,
+                        SessionId = session.SessionId,
                     };
                 }
                 else
@@ -117,7 +117,7 @@ namespace DrinkDb_Auth.Service
                     AuthSuccessful = true,
                     NewAccount = true,
                     OAuthToken = string.Empty,
-                    SessionId = session.sessionId,
+                    SessionId = session.SessionId,
                 };
             }
             throw new Exception("Unexpected error during authentication");

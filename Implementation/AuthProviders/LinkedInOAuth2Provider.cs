@@ -3,7 +3,6 @@ using System.Configuration;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.Model;
 using Microsoft.Data.SqlClient;
@@ -12,19 +11,22 @@ namespace DrinkDb_Auth.OAuthProviders
 {
     public class LinkedInOAuth2Provider : GenericOAuth2Provider
     {
-        private readonly static UserAdapter userAdapter = new();
-        private readonly static SessionAdapter sessionAdapter = new();
+        private readonly static UserAdapter UserAdapter = new ();
+        private readonly static SessionAdapter SessionAdapter = new ();
+
         /// <summary>
         /// Performs authentication using the access token, fetches user info via OpenID Connect, and stores/updates the user.
         /// </summary>
         public AuthResponse Authenticate(string userId, string token)
         {
-            using HttpClient client = new();
+            using HttpClient client = new ();
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
             client.DefaultRequestHeaders.Add("User-Agent", "DrinkDb_Auth-App");
             var response = client.GetAsync("https://api.linkedin.com/v2/userinfo").Result;
             if (!response.IsSuccessStatusCode)
+            {
                 throw new Exception("Failed to fetch user info from Linkedin.");
+            }
 
             string json = response.Content.ReadAsStringAsync().Result;
 
@@ -45,7 +47,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 };
             }
 
-            var user = userAdapter.GetUserByUsername(name);
+            var user = UserAdapter.GetUserByUsername(name);
             if (user == null)
             {
                 User newUser = new User
@@ -55,13 +57,13 @@ namespace DrinkDb_Auth.OAuthProviders
                     UserId = Guid.NewGuid(),
                     TwoFASecret = string.Empty,
                 };
-                userAdapter.CreateUser(newUser);
-                Session session = sessionAdapter.CreateSession(newUser.UserId);
+                UserAdapter.CreateUser(newUser);
+                Session session = SessionAdapter.CreateSession(newUser.UserId);
                 return new AuthResponse
                 {
                     AuthSuccessful = true,
                     OAuthToken = token,
-                    SessionId = session.sessionId,
+                    SessionId = session.SessionId,
                     NewAccount = true
                 };
             }
@@ -99,7 +101,9 @@ namespace DrinkDb_Auth.OAuthProviders
                 // Call the userinfo endpoint for OpenID Connect
                 var response = client.GetAsync("https://api.linkedin.com/v2/userinfo").Result;
                 if (!response.IsSuccessStatusCode)
+                {
                     throw new Exception($"Failed to fetch user info from LinkedIn. Status code: {response.StatusCode}");
+                }
 
                 string json = response.Content.ReadAsStringAsync().Result;
                 using (JsonDocument doc = JsonDocument.Parse(json))
@@ -145,7 +149,9 @@ namespace DrinkDb_Auth.OAuthProviders
                             insertCmd.Parameters.AddWithValue("@roleId", GetDefaultRoleId(conn));
                             int result = insertCmd.ExecuteNonQuery();
                             if (result > 0)
+                            {
                                 isNewAccount = true;
+                            }
                         }
                     }
                 }
@@ -160,7 +166,9 @@ namespace DrinkDb_Auth.OAuthProviders
             {
                 object result = cmd.ExecuteScalar();
                 if (result != null)
+                {
                     return (Guid)result;
+                }
             }
             throw new Exception("No default role found in Roles table.");
         }

@@ -265,7 +265,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                     {
                                         AuthSuccessful = true,
                                         OAuthToken = tokenResult.AccessToken,
-                                        SessionId = sessionAdapter.CreateSession(userId).sessionId,
+                                        SessionId = sessionAdapter.CreateSession(userId).SessionId,
                                         NewAccount = false
                                     };
                                 }
@@ -291,7 +291,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                                 {
                                                     AuthSuccessful = true,
                                                     OAuthToken = tokenResult.AccessToken,
-                                                    SessionId = sessionAdapter.CreateSession(userId).sessionId, 
+                                                    SessionId = sessionAdapter.CreateSession(userId).SessionId, 
                                                     NewAccount = false
                                                 };
                                             }
@@ -333,7 +333,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                     {
                                         AuthSuccessful = true,
                                         OAuthToken = tokenResult.AccessToken,
-                                        SessionId = sessionAdapter.CreateSession(userId).sessionId,
+                                        SessionId = sessionAdapter.CreateSession(userId).SessionId,
                                         NewAccount = false
                                     };
                                 }

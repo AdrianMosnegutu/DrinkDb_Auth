@@ -41,7 +41,7 @@ namespace DrinkDb_Auth.OAuthProviders
                             return new AuthResponse
                             {
                                 AuthSuccessful = true,
-                                SessionId = session.sessionId,
+                                SessionId = session.SessionId,
                                 OAuthToken = token,
                                 NewAccount = isNewAccount
                             };

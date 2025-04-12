@@ -41,7 +41,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     {
                         AuthSuccessful = true,
                         OAuthToken = token,
-                        SessionId = session.sessionId,
+                        SessionId = session.SessionId,
                         NewAccount = false
                     };
                 }
@@ -57,7 +57,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         {
                             AuthSuccessful = true,
                             OAuthToken = token,
-                            SessionId = session.sessionId,
+                            SessionId = session.SessionId,
                             NewAccount = true
                         };
                     }

@@ -408,14 +408,14 @@ namespace DrinkDb_Auth.OAuthProviders
                             try
                             {
                                 var session = sessionAdapter.CreateSession(userId);
-                                System.Diagnostics.Debug.WriteLine($"Session created with ID: {session.sessionId}");
+                                System.Diagnostics.Debug.WriteLine($"Session created with ID: {session.SessionId}");
 
                                 // Return a success response with a valid session.
                                 return new AuthResponse
                                 {
                                     AuthSuccessful = true,
                                     OAuthToken = tokenResult.AccessToken,
-                                    SessionId = session.sessionId,
+                                    SessionId = session.SessionId,
                                     NewAccount = false
                                 };
                             }
