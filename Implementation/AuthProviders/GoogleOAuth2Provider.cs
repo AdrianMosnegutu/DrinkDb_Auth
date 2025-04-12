@@ -8,10 +8,9 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
 using DrinkDb_Auth.Adapter;
-using DrinkDb_Auth.Model;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Windows.System;
+using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
@@ -36,8 +35,8 @@ namespace DrinkDb_Auth.OAuthProviders
 
         private readonly string[] userResourcesScope = { "profile", "email" };
         private HttpClient httpClient;
-        private static readonly SessionAdapter SessionDatabaseAdapter = new SessionAdapter();
-        private static readonly UserAdapter UserDatabaseAdapter = new UserAdapter();
+        private static readonly ISessionAdapter SessionDatabaseAdapter = new SessionAdapter();
+        private static readonly IUserAdapter UserDatabaseAdapter = new UserAdapter();
 
         private const string APP_CONFIG_CLIENT_ID_LABEL = "GoogleClientId";
         private const string APP_CONFIG_CLIENT_SECRET_LABEL = "GoogleClientSecret";
@@ -49,13 +48,13 @@ namespace DrinkDb_Auth.OAuthProviders
         private Guid EnsureUserExists(string identifier, string email, string name)
         {
             Guid userId = GoogleOAuth2Provider.CreateGloballyUniqueIdentifier(identifier);
-            Model.User? user = GoogleOAuth2Provider.UserDatabaseAdapter.GetUserById(userId);
+            User? user = GoogleOAuth2Provider.UserDatabaseAdapter.GetUserById(userId);
 
             switch (user)
             {
                 case null:
                     // Don't know why email is used as username but let's vibe with it
-                    Model.User newUser = new Model.User { UserId = userId, Username = email, PasswordHash = string.Empty, TwoFASecret = null };
+                    User newUser = new User { UserId = userId, Username = email, PasswordHash = string.Empty, TwoFASecret = null };
                     bool wasCreated = GoogleOAuth2Provider.UserDatabaseAdapter.CreateUser(newUser);
                     break;
                 case not null:
