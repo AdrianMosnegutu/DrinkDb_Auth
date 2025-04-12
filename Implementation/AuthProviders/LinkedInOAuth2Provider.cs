@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Configuration;
 using System.Diagnostics;
 using System.Net.Http;
@@ -17,7 +17,7 @@ namespace DrinkDb_Auth.OAuthProviders
         /// <summary>
         /// Performs authentication using the access token, fetches user info via OpenID Connect, and stores/updates the user.
         /// </summary>
-        public AuthResponse Authenticate(string userId, string token)
+        public AuthenticationResponse Authenticate(string userId, string token)
         {
             using HttpClient client = new ();
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
@@ -38,10 +38,10 @@ namespace DrinkDb_Auth.OAuthProviders
             if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name))
             {
                 Debug.WriteLine("LinkedIn ID or name is empty.");
-                return new AuthResponse
+                return new AuthenticationResponse
                 {
-                    AuthSuccessful = false,
-                    OAuthToken = string.Empty,
+                    AuthenticationSuccesfull = false,
+                    OAuthenticationToken = string.Empty,
                     SessionId = Guid.Empty,
                     NewAccount = false
                 };
@@ -57,22 +57,22 @@ namespace DrinkDb_Auth.OAuthProviders
                     UserId = Guid.NewGuid(),
                     TwoFASecret = string.Empty,
                 };
-                UserAdapter.CreateUser(newUser);
-                Session session = SessionAdapter.CreateSession(newUser.UserId);
-                return new AuthResponse
+                userAdapter.CreateUser(newUser);
+                Session session = sessionAdapter.CreateSession(newUser.UserId);
+                return new AuthenticationResponse
                 {
-                    AuthSuccessful = true,
-                    OAuthToken = token,
-                    SessionId = session.SessionId,
+                    AuthenticationSuccesfull = true,
+                    OAuthenticationToken = token,
+                    SessionId = session.sessionId,
                     NewAccount = true
                 };
             }
             else
             {
-                return new AuthResponse
+                return new AuthenticationResponse
                 {
-                    AuthSuccessful = true,
-                    OAuthToken = token,
+                    AuthenticationSuccesfull = true,
+                    OAuthenticationToken = token,
                     SessionId = user.UserId,
                     NewAccount = false
                 };

@@ -12,10 +12,8 @@ using System.Threading;
 using Microsoft.UI.Dispatching;
 using System.Text.Json.Serialization;
 using System.Security.Cryptography;
-using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.Model;
-using Microsoft.Data.SqlClient;
-using System.Data;
+using DrinkDb_Auth.Adapter;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
@@ -24,193 +22,37 @@ namespace DrinkDb_Auth.OAuthProviders
     /// </summary>
     public class TwitterOAuth2Provider : GenericOAuth2Provider
     {
+        private static readonly UserAdapter userAdapter = new();
+        private static readonly SessionAdapter sessionAdapter = new();
         // ▼▼▼ 1) Set these appropriately ▼▼▼
-        // Note: For native app flows, a client secret is often unused.
 
+        // In "Native App" flows, we typically do NOT use a Client Secret.
+        // but if you still have one in your config, you can read it; just don't send it.
         private string ClientId { get; }
-        private string ClientSecret { get; } // Usually not used for native app (PKCE) flows
+        private string ClientSecret { get; } // not used if truly "native"
 
-        // This should match the Redirect URI registered in the Twitter Developer Portal.
+        // The same Callback/Redirect URI you registered in Twitter Developer Portal.
+        // e.g. "http://127.0.0.1:5000/x-callback"
         private const string RedirectUri = "http://127.0.0.1:5000/x-callback";
 
-        // Endpoints for Twitter's OAuth 2.0
+        // Twitter endpoints:
         private const string AuthorizationEndpoint = "https://twitter.com/i/oauth2/authorize";
         private const string TokenEndpoint = "https://api.twitter.com/2/oauth2/token";
         private const string UserInfoEndpoint = "https://api.twitter.com/2/users/me";
 
-        // Scopes required for Twitter user details. "offline.access" is needed for refresh tokens.
+        // Example scopes. If you want refresh tokens, include "offline.access".
         private readonly string[] Scopes = { "tweet.read", "users.read" };
 
-        // PKCE details: A code verifier is generated before sending the user to authorize.
+        // Private fields for PKCE
         private string _codeVerifier = string.Empty;
 
         private readonly HttpClient _httpClient;
-        private static readonly SessionAdapter sessionAdapter = new();
-        private static readonly UserAdapter userAdapter = new();
 
-        /// <summary>
-        /// Converts the "sub" (subject) from Twitter into a GUID by hashing with MD5.
-        /// This ensures a unique and consistent ID for users in our system.
-        /// </summary>
-        public static Guid SubToGuid(string sub)
-        {
-            using (var md5 = MD5.Create())
-            {
-                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(sub));
-                return new Guid(hash);
-            }
-        }
-
-        /// <summary>
-        /// Checks if a user exists in the DB, and if not, creates a new one.
-        /// Returns the unique GUID for the user.
-        /// </summary>
-        private Guid EnsureUserExists(string sub, string email, string name)
-        {
-            try
-            {
-                System.Diagnostics.Debug.WriteLine($"Ensuring user exists with sub: {sub}, email: {email}, name: {name}");
-                
-                var userId = SubToGuid(sub);
-                System.Diagnostics.Debug.WriteLine($"Generated userId: {userId}");
-                
-                var existingUser = userAdapter.GetUserById(userId);
-                System.Diagnostics.Debug.WriteLine($"Existing user found: {existingUser != null}");
-                
-                if (existingUser == null)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Creating new user with ID {userId} for Twitter user {email} ({name})");
-                    
-                    // First, ensure the default role exists
-                    Guid defaultRoleId = EnsureDefaultRoleExists();
-                    System.Diagnostics.Debug.WriteLine($"Using default role ID: {defaultRoleId}");
-                    
-                    // Create a new user without RoleId property
-                    var newUser = new User
-                    {
-                        UserId = userId,
-                        Username = email, // Using email as the username
-                        PasswordHash = string.Empty, // OAuth users don't need passwords
-                        TwoFASecret = null
-                    };
-                    
-                    // Use direct SQL to insert the user with a roleId
-                    using (var conn = DrinkDbConnectionHelper.GetConnection())
-                    {
-                        string sql = "INSERT INTO Users (userId, userName, passwordHash, twoFASecret, roleId) VALUES (@userId, @username, @passwordHash, @twoFASecret, @roleId);";
-                        using (var cmd = new SqlCommand(sql, conn))
-                        {
-                            cmd.Parameters.AddWithValue("@userId", newUser.UserId);
-                            cmd.Parameters.AddWithValue("@username", newUser.Username);
-                            cmd.Parameters.AddWithValue("@passwordHash", (object?)newUser.PasswordHash ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@twoFASecret", (object?)newUser.TwoFASecret ?? DBNull.Value);
-                            cmd.Parameters.AddWithValue("@roleId", defaultRoleId);
-                            
-                            var success = cmd.ExecuteNonQuery() > 0;
-                            System.Diagnostics.Debug.WriteLine($"User creation result: {success}");
-                            
-                            if (!success)
-                            {
-                                System.Diagnostics.Debug.WriteLine("Failed to create user in database");
-                                // Instead of throwing, return a default user ID to allow the flow to continue
-                                return Guid.NewGuid();
-                            }
-                        }
-                    }
-                    
-                    return userId;
-                }
-                
-                System.Diagnostics.Debug.WriteLine($"Found existing user with ID {userId}");
-                return userId;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error in EnsureUserExists: {ex.Message}");
-                // Return a default user ID instead of throwing to allow the flow to continue
-                return Guid.NewGuid();
-            }
-        }
-
-        /// <summary>
-        /// Attempts to find a default role in the DB. If none exists, one is created.
-        /// Returns the ID of the found or newly created role.
-        /// </summary>
-        private Guid EnsureDefaultRoleExists()
-        {
-            try
-            {
-                using (var conn = DrinkDbConnectionHelper.GetConnection())
-                {
-                    // Check if at least one role exists.
-                    string findSql = "SELECT TOP 1 roleId FROM Roles";
-                    using (var findCmd = new SqlCommand(findSql, conn))
-                    {
-                        object result = findCmd.ExecuteScalar();
-                        if (result != null)
-                        {
-                            Guid existingRoleId = (Guid)result;
-                            System.Diagnostics.Debug.WriteLine($"Found existing role with ID: {existingRoleId}");
-                            return existingRoleId;
-                        }
-                    }
-
-                    // If no role exists, we need to create one along with a permission.
-                    System.Diagnostics.Debug.WriteLine("No existing roles found, creating a new role with permission");
-
-                    // Create a permission first.
-                    Guid permissionId = Guid.NewGuid();
-                    string createPermissionSql = "INSERT INTO Permissions (permissionId, permissionName, resource, action) VALUES (@permissionId, @permissionName, @resource, @action)";
-                    using (var permCmd = new SqlCommand(createPermissionSql, conn))
-                    {
-                        permCmd.Parameters.AddWithValue("@permissionId", permissionId);
-                        permCmd.Parameters.AddWithValue("@permissionName", "Basic Access");
-                        permCmd.Parameters.AddWithValue("@resource", "general");
-                        permCmd.Parameters.AddWithValue("@action", "read");
-                        permCmd.ExecuteNonQuery();
-                    }
-
-                    // Create a role that references that permission.
-                    Guid roleId = Guid.NewGuid();
-                    string createRoleSql = "INSERT INTO Roles (roleId, roleName, permissionId) VALUES (@roleId, @roleName, @permissionId)";
-                    using (var roleCmd = new SqlCommand(createRoleSql, conn))
-                    {
-                        roleCmd.Parameters.AddWithValue("@roleId", roleId);
-                        roleCmd.Parameters.AddWithValue("@roleName", "User");
-                        roleCmd.Parameters.AddWithValue("@permissionId", permissionId);
-                        roleCmd.ExecuteNonQuery();
-                    }
-
-                    // Create a role-permission mapping (RolePermissions table).
-                    string createRolePermSql = "INSERT INTO RolePermissions (roleId, permissionId) VALUES (@roleId, @permissionId)";
-                    using (var rolePermCmd = new SqlCommand(createRolePermSql, conn))
-                    {
-                        rolePermCmd.Parameters.AddWithValue("@roleId", roleId);
-                        rolePermCmd.Parameters.AddWithValue("@permissionId", permissionId);
-                        rolePermCmd.ExecuteNonQuery();
-                    }
-
-                    System.Diagnostics.Debug.WriteLine($"Created new role with ID: {roleId}");
-                    return roleId;
-                }
-            }
-            catch (Exception ex)
-            {
-                // If we fail to create/find a role, return a new GUID instead of stopping the flow.
-                System.Diagnostics.Debug.WriteLine($"Error in EnsureDefaultRoleExists: {ex.Message}");
-                return Guid.NewGuid();
-            }
-        }
-
-        /// <summary>
-        /// Constructor reads the Client ID and Secret from config (if present) 
-        /// and stores them for use in the flow.
-        /// </summary>
         public TwitterOAuth2Provider()
         {
             _httpClient = new HttpClient();
 
-            // Load from config. If not found, placeholders are used.
+            // Load from config (if you wish):
             ClientId = System.Configuration.ConfigurationManager.AppSettings["TwitterClientId"] ?? "YOUR_CLIENT_ID";
             ClientSecret = System.Configuration.ConfigurationManager.AppSettings["TwitterClientSecret"] ?? "YOUR_CLIENT_SECRET";
 
@@ -219,33 +61,30 @@ namespace DrinkDb_Auth.OAuthProviders
         }
 
         /// <summary>
-        /// Simple token check method (not heavily used in PKCE flows).
+        /// Optional method to quickly verify a stored token (not used in this flow).
         /// </summary>
-        public AuthResponse Authenticate(string userId, string token)
+        public AuthenticationResponse Authenticate(string userId, string token)
         {
-            return new AuthResponse
+            return new AuthenticationResponse
             {
-                AuthSuccessful = !string.IsNullOrEmpty(token),
-                OAuthToken = token,
+                AuthenticationSuccesfull = !string.IsNullOrEmpty(token),
+                OAuthenticationToken = token,
                 SessionId = Guid.Empty,
                 NewAccount = false
             };
         }
 
         /// <summary>
-        /// Constructs the URL for Twitter's authorization endpoint and returns it.
-        /// This includes the PKCE challenge and all required query parameters.
+        /// Generates the full authorization URL with PKCE code challenge and needed query params.
         /// </summary>
         public string GetAuthorizationUrl()
         {
-            // Generate PKCE code verifier and code challenge.
+            // 2) PKCE: Generate a code_verifier & code_challenge
             var (codeVerifier, codeChallenge) = GeneratePkceData();
-            _codeVerifier = codeVerifier;  // We'll need this later to exchange for a token.
+            _codeVerifier = codeVerifier;  // store for later use in token request
 
-            // Build up space-delimited scopes.
             var scopeString = string.Join(" ", Scopes);
 
-            // Prepare the necessary query parameters for Twitter OAuth.
             var queryParameters = new Dictionary<string, string>
             {
                 { "client_id", ClientId },
@@ -254,12 +93,12 @@ namespace DrinkDb_Auth.OAuthProviders
                 { "scope", scopeString },
                 { "state", Guid.NewGuid().ToString() },
 
-                // PKCE parameters
+                // PKCE
                 { "code_challenge", codeChallenge },
                 { "code_challenge_method", "S256" }
             };
 
-            // Encode them into a query string.
+            // Build the query string
             var queryString = string.Join("&", queryParameters
                 .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));
 
@@ -269,19 +108,19 @@ namespace DrinkDb_Auth.OAuthProviders
         }
 
         /// <summary>
-        /// Exchanges the authorization code for an access token.
-        /// This request uses the PKCE code_verifier.
+        /// When we get the code back from Twitter, exchange it for an access token.
+        /// PKCE: We do NOT pass a client_secret, but we DO pass the same code_verifier we generated earlier.
         /// </summary>
-        public async Task<AuthResponse> ExchangeCodeForTokenAsync(string code)
+        public async Task<AuthenticationResponse> ExchangeCodeForTokenAsync(string code)
         {
-            // Prepare form data for token exchange.
+            // 3) PKCE: Provide the stored code_verifier in the token request
             var tokenRequestParameters = new Dictionary<string, string>
             {
                 { "code", code },
                 { "client_id", ClientId },
                 { "redirect_uri", RedirectUri },
                 { "grant_type", "authorization_code" },
-                { "code_verifier", _codeVerifier }, // PKCE requirement
+                { "code_verifier", _codeVerifier }, // crucial for PKCE
             };
 
             System.Diagnostics.Debug.WriteLine("Exchanging code for token (PKCE).");
@@ -292,7 +131,6 @@ namespace DrinkDb_Auth.OAuthProviders
 
             try
             {
-                // Send the request to Twitter's token endpoint.
                 using var content = new FormUrlEncodedContent(tokenRequestParameters);
                 var tokenResponse = await _httpClient.PostAsync(TokenEndpoint, content);
                 var responseContent = await tokenResponse.Content.ReadAsStringAsync();
@@ -302,170 +140,101 @@ namespace DrinkDb_Auth.OAuthProviders
 
                 if (!tokenResponse.IsSuccessStatusCode)
                 {
-                    // If the token endpoint fails, return an unsuccessful AuthResponse.
                     System.Diagnostics.Debug.WriteLine("Token request failed with non-success status.");
-                    return new AuthResponse
-                    {
-                        AuthSuccessful = false,
-                        OAuthToken = string.Empty,
+                    return new AuthenticationResponse {
+                        AuthenticationSuccesfull = false,
+                        OAuthenticationToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
                 }
 
-                // Attempt to deserialize the token response.
+                // Deserialize token response
                 TwitterTokenResponse? tokenResult;
                 try
                 {
                     tokenResult = await tokenResponse.Content.ReadFromJsonAsync<TwitterTokenResponse>();
                 }
-                catch (Exception jsonEx)
+                catch
                 {
-                    // Fallback for any deserialization issues.
-                    System.Diagnostics.Debug.WriteLine($"Error deserializing token response: {jsonEx.Message}");
+                    // fallback if ReadFromJsonAsync fails
                     tokenResult = System.Text.Json.JsonSerializer.Deserialize<TwitterTokenResponse>(responseContent);
                 }
 
-                // If there is no valid access token, return a failure.
                 if (tokenResult == null || string.IsNullOrEmpty(tokenResult.AccessToken))
                 {
                     System.Diagnostics.Debug.WriteLine("No access token in tokenResult.");
-                    return new AuthResponse
+                    return new AuthenticationResponse
                     {
-                        AuthSuccessful = false,
-                        OAuthToken = string.Empty,
+                        AuthenticationSuccesfull = false,
+                        OAuthenticationToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
                 }
 
-                // Optionally retrieve user info from Twitter using the access token.
+                // 4) Optionally, get user info
                 try
                 {
                     using var userInfoClient = new HttpClient();
                     userInfoClient.DefaultRequestHeaders.Authorization =
                         new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
 
-                    System.Diagnostics.Debug.WriteLine($"Making request to Twitter user info endpoint: {UserInfoEndpoint}");
                     var userResp = await userInfoClient.GetAsync(UserInfoEndpoint);
                     var userBody = await userResp.Content.ReadAsStringAsync();
 
-                    System.Diagnostics.Debug.WriteLine($"Twitter user info response status: {userResp.StatusCode}");
-                    System.Diagnostics.Debug.WriteLine($"Twitter user info response body: {userBody}");
-
                     if (!userResp.IsSuccessStatusCode)
                     {
-                        // Even if user info fails, the token itself might still be valid.
                         System.Diagnostics.Debug.WriteLine($"User info request failed. Response: {userBody}");
-                        return new AuthResponse
+                        // We still have a valid token though
+                        return new AuthenticationResponse
                         {
-                            AuthSuccessful = false,
-                            OAuthToken = tokenResult.AccessToken,
+                            AuthenticationSuccesfull = false,
+                            OAuthenticationToken = tokenResult.AccessToken,
                             SessionId = Guid.Empty,
                             NewAccount = false
                         };
                     }
 
-                    try
+                    var userInfo = System.Text.Json.JsonSerializer.Deserialize<TwitterUserInfoResponse>(userBody);
+                    System.Diagnostics.Debug.WriteLine($"Authenticated user: {userInfo?.Data.Id} ({userInfo?.Data.Username})");
+                    User? user = userAdapter.GetUserByUsername(userInfo?.Data.Username ?? throw new Exception("user not found in json response payload for Twitter authentication"));
+                    if (user == null)
                     {
-                        // Parse the JSON response into our user model.
-                        var userInfo = System.Text.Json.JsonSerializer.Deserialize<TwitterUserInfoResponse>(userBody);
-                        System.Diagnostics.Debug.WriteLine($"Authenticated user: {userInfo?.Data.Email} ({userInfo?.Data.Name})");
-
-                        if (userInfo == null)
+                        // Create a new user
+                        user = new User
                         {
-                            // If parsing user info fails, return a negative result.
-                            System.Diagnostics.Debug.WriteLine("Failed to deserialize user info response");
-                            return new AuthResponse
-                            {
-                                AuthSuccessful = false,
-                                OAuthToken = tokenResult.AccessToken,
-                                SessionId = Guid.Empty,
-                                NewAccount = false
-                            };
-                        }
-
-                        // Twitter might not always provide an email. We use the user's ID or fallback.
-                        string sub = userInfo?.Data.Id ?? userInfo?.Data.Email ?? "unknown";
-                        System.Diagnostics.Debug.WriteLine($"Using sub: {sub} for user creation");
-
-                        try
-                        {
-                            // If Twitter doesn't return an email, we create a placeholder using the username.
-                            string email = userInfo?.Data.Email;
-                            if (string.IsNullOrEmpty(email))
-                            {
-                                // Fallback: build a fake email from username if needed.
-                                email = $"{userInfo?.Data.Username ?? "unknown"}@twitter.com";
-                                System.Diagnostics.Debug.WriteLine($"No email provided by Twitter, using fallback: {email}");
-                            }
-
-                            // Check or create the user in the local DB.
-                            var userId = EnsureUserExists(sub, email, userInfo?.Data.Name ?? "Unknown User");
-                            System.Diagnostics.Debug.WriteLine($"User ID after EnsureUserExists: {userId}");
-
-                            // Create a session for the user.
-                            try
-                            {
-                                var session = sessionAdapter.CreateSession(userId);
-                                System.Diagnostics.Debug.WriteLine($"Session created with ID: {session.SessionId}");
-
-                                // Return a success response with a valid session.
-                                return new AuthResponse
-                                {
-                                    AuthSuccessful = true,
-                                    OAuthToken = tokenResult.AccessToken,
-                                    SessionId = session.SessionId,
-                                    NewAccount = false
-                                };
-                            }
-                            catch (Exception sessionEx)
-                            {
-                                // If session creation fails, still inform the client with partial info.
-                                System.Diagnostics.Debug.WriteLine($"Error creating session: {sessionEx.Message}");
-                                return new AuthResponse
-                                {
-                                    AuthSuccessful = false,
-                                    OAuthToken = tokenResult.AccessToken,
-                                    SessionId = Guid.Empty,
-                                    NewAccount = false
-                                };
-                            }
-                        }
-                        catch (Exception userEx)
-                        {
-                            // If user creation fails, return an unsuccessful response.
-                            System.Diagnostics.Debug.WriteLine($"Error in EnsureUserExists: {userEx.Message}");
-                            return new AuthResponse
-                            {
-                                AuthSuccessful = false,
-                                OAuthToken = tokenResult.AccessToken,
-                                SessionId = Guid.Empty,
-                                NewAccount = false
-                            };
-                        }
-                    }
-                    catch (Exception deserializeEx)
-                    {
-                        // In case we cannot deserialize user info properly.
-                        System.Diagnostics.Debug.WriteLine($"Error deserializing user info: {deserializeEx.Message}");
-                        return new AuthResponse
-                        {
-                            AuthSuccessful = false,
-                            OAuthToken = tokenResult.AccessToken,
-                            SessionId = Guid.Empty,
-                            NewAccount = false
+                            Username = userInfo?.Data.Username ?? throw new Exception("user not found in json response payload for Twitter authentication"),
+                            PasswordHash = string.Empty,
+                            UserId = Guid.NewGuid(),
+                            TwoFASecret = string.Empty,
                         };
+                        userAdapter.CreateUser(user);
                     }
+                    else
+                    {
+                        // Update existing user if needed
+                        userAdapter.UpdateUser(user);
+                    }
+
+                    Session session = sessionAdapter.CreateSession(user.UserId);
+                    return new AuthenticationResponse
+                    {
+                        AuthenticationSuccesfull = true,
+                        OAuthenticationToken = tokenResult.AccessToken,
+                        SessionId = session.sessionId,
+                        NewAccount = false
+                    };
+
                 }
                 catch (Exception ex)
                 {
-                    // If we can't fetch user info but got a valid token, let the user proceed with partial data.
                     System.Diagnostics.Debug.WriteLine($"Exception fetching user info: {ex.Message}");
-                    return new AuthResponse
+                    // We'll still consider the token valid
+                    return new AuthenticationResponse
                     {
-                        AuthSuccessful = true,
-                        OAuthToken = tokenResult.AccessToken,
+                        AuthenticationSuccesfull = false,
+                        OAuthenticationToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -473,12 +242,10 @@ namespace DrinkDb_Auth.OAuthProviders
             }
             catch (Exception ex)
             {
-                // Catch any unexpected errors during token exchange.
                 System.Diagnostics.Debug.WriteLine($"ExchangeCodeForTokenAsync exception: {ex.Message}");
-                return new AuthResponse
-                {
-                    AuthSuccessful = false,
-                    OAuthToken = string.Empty,
+                return new AuthenticationResponse {
+                    AuthenticationSuccesfull = false,
+                    OAuthenticationToken = string.Empty,
                     SessionId = Guid.Empty,
                     NewAccount = false,
                 };
@@ -486,12 +253,11 @@ namespace DrinkDb_Auth.OAuthProviders
         }
 
         /// <summary>
-        /// Opens a dialog with a WebView2 control to handle Twitter's OAuth login.
-        /// The WebView is used to navigate and intercept the redirect containing the code.
+        /// Shows a WebView, navigates to the Twitter OAuth page, intercepts the redirect to our local loopback.
         /// </summary>
-        public async Task<AuthResponse> SignInWithTwitterAsync(Window parentWindow)
+        public async Task<AuthenticationResponse> SignInWithTwitterAsync(Window parentWindow)
         {
-            var tcs = new TaskCompletionSource<AuthResponse>();
+            var tcs = new TaskCompletionSource<AuthenticationResponse>();
 
             try
             {
@@ -503,7 +269,6 @@ namespace DrinkDb_Auth.OAuthProviders
                     XamlRoot = parentWindow.Content.XamlRoot
                 };
 
-                // Setup the WebView to display the OAuth login page.
                 var webView = new WebView2
                 {
                     Width = 450,
@@ -511,29 +276,26 @@ namespace DrinkDb_Auth.OAuthProviders
                 };
                 dialog.Content = webView;
 
-                // Ensure WebView2 is ready to navigate.
+                // Initialize the WebView2
                 await webView.EnsureCoreWebView2Async();
 
-                // Listen for navigation events to detect when Twitter redirects back.
+                // Listen for navigations
                 webView.CoreWebView2.NavigationStarting += async (sender, args) =>
                 {
                     var navUrl = args.Uri;
                     System.Diagnostics.Debug.WriteLine($"NavigationStarting -> {navUrl}");
 
-                    // The redirect contains our code when it matches the redirect URI we set.
+                    // If it's the redirect back to our loopback, we parse out the code
                     if (navUrl.StartsWith(RedirectUri, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Stop the WebView from continuing to this local URL.
-                        args.Cancel = true;
+                        args.Cancel = true; // don't actually navigate to 127.0.0.1 in the WebView
 
-                        // Extract the authorization code from the URL.
                         var code = ExtractQueryParameter(navUrl, "code");
                         System.Diagnostics.Debug.WriteLine($"Found 'code' in callback: {code}");
 
-                        // Exchange the code for an access token.
                         var authResponse = await ExchangeCodeForTokenAsync(code);
 
-                        // Close the dialog and let the calling code handle the AuthResponse.
+                        // Close the dialog and return
                         parentWindow.DispatcherQueue.TryEnqueue(() =>
                         {
                             dialog.Hide();
@@ -542,20 +304,19 @@ namespace DrinkDb_Auth.OAuthProviders
                     }
                 };
 
-                // Start the authorization flow by navigating to Twitter's OAuth page.
+                // Start the auth flow
                 webView.CoreWebView2.Navigate(GetAuthorizationUrl());
 
-                // Show the dialog to the user.
+                // Show the dialog
                 var dialogResult = await dialog.ShowAsync();
 
-                // If the user closed the dialog manually, handle the case where we didn't get a code.
+                // If user closed the dialog manually before we got a code
                 if (!tcs.Task.IsCompleted)
                 {
                     System.Diagnostics.Debug.WriteLine("Dialog closed; no code was returned.");
-                    tcs.SetResult(new AuthResponse
-                    {
-                        AuthSuccessful = false,
-                        OAuthToken = string.Empty,
+                    tcs.SetResult(new AuthenticationResponse {
+                        AuthenticationSuccesfull = false,
+                        OAuthenticationToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     });
@@ -563,18 +324,15 @@ namespace DrinkDb_Auth.OAuthProviders
             }
             catch (Exception ex)
             {
-                // Capture any critical errors in the process.
                 System.Diagnostics.Debug.WriteLine($"SignInWithTwitterAsync error: {ex.Message}");
                 tcs.TrySetException(ex);
             }
 
-            // Return the result of this OAuth workflow.
             return await tcs.Task;
         }
 
         /// <summary>
-        /// Extracts a single query parameter value from a URL.
-        /// Throws an exception if the param is missing.
+        /// Helper: parse one query param (e.g. ?code=xxx) from a URL
         /// </summary>
         private string ExtractQueryParameter(string url, string paramName)
         {
@@ -593,23 +351,22 @@ namespace DrinkDb_Auth.OAuthProviders
         }
 
         /// <summary>
-        /// Generates a PKCE code_verifier and code_challenge using SHA256.
-        /// This ensures a secure OAuth exchange without needing a client secret in native apps.
+        /// Generate PKCE code_verifier (random) + code_challenge (SHA256).
         /// </summary>
         private (string codeVerifier, string codeChallenge) GeneratePkceData()
         {
-            // Create a random array of bytes and then Base64Url-encode them to get a code_verifier.
+            // code_verifier: a random 43–128 char string
             var rng = RandomNumberGenerator.Create();
             var bytes = new byte[32];
             rng.GetBytes(bytes);
 
-            // Convert to a safe string for the OAuth request (no +, /, or =).
+            // Base64Url-encode without padding
             var codeVerifier = Convert.ToBase64String(bytes)
                 .TrimEnd('=')
                 .Replace('+', '-')
                 .Replace('/', '_');
 
-            // Create a code_challenge by hashing the code_verifier with SHA256.
+            // code_challenge: SHA256 hash of verifier, then Base64Url-encode
             using (var sha256 = SHA256.Create())
             {
                 var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(codeVerifier));
@@ -623,8 +380,7 @@ namespace DrinkDb_Auth.OAuthProviders
         }
 
         /// <summary>
-        /// If Twitter provides an ID token, this method could parse out user info. 
-        /// Usually not needed for simple flows, since Twitter's user info endpoint is enough.
+        /// If Twitter provides an ID token, you could parse it here. Typically, Twitter doesn't.
         /// </summary>
         private TwitterUserInfoResponse ExtractUserInfoFromIdToken(string idToken)
         {
@@ -644,68 +400,48 @@ namespace DrinkDb_Auth.OAuthProviders
                 PropertyNameCaseInsensitive = true
             };
 
-            return System.Text.Json.JsonSerializer.Deserialize<TwitterUserInfoResponse>(json, options)
-                   ?? throw new Exception("Failed to deserialize ID token payload.");
+            return System.Text.Json.JsonSerializer.Deserialize<TwitterUserInfoResponse>(json, options) ?? throw new Exception("Failed to deserialize ID token payload.");
         }
     }
 
     /// <summary>
-    /// Data model matching Twitter's token response fields.
-    /// Includes optional fields like refresh_token and id_token.
+    /// Model for the token response from Twitter
+    /// Twitter typically returns access_token, token_type, expires_in, refresh_token if "offline.access"
     /// </summary>
     internal class TwitterTokenResponse
     {
         [JsonPropertyName("access_token")]
-        public string AccessToken { get; set; }
+        public required string AccessToken { get; set; }
 
         [JsonPropertyName("token_type")]
-        public string TokenType { get; set; }
+        public required string TokenType { get; set; }
 
         [JsonPropertyName("expires_in")]
-        public int ExpiresIn { get; set; }
+        public required int ExpiresIn { get; set; }
 
         [JsonPropertyName("scope")]
-        public string Scope { get; set; }
-
-        // Included only if requested and granted offline access.
-        [JsonPropertyName("refresh_token")]
-        public string RefreshToken { get; set; }
-
-        [JsonPropertyName("id_token")]
-        public string IdToken { get; set; }
+        public required string IdToken { get; set; }
     }
 
     /// <summary>
-    /// Model for user info returned by Twitter's "/2/users/me" endpoint.
+    /// Model for user info from Twitter /2/users/me
+    /// Fields depend on which you requested (like "email" requires special permission).
     /// </summary>
     internal class TwitterUserInfoResponse
     {
         [JsonPropertyName("data")]
-        public TwitterUserData Data { get; set; }
+        public required TwitterUserData Data { get; set; }
     }
 
-    /// <summary>
-    /// Detailed user data from Twitter's user info response.
-    /// Fields that rely on special permissions (e.g., email) will only be present if your app is authorized.
-    /// </summary>
     internal class TwitterUserData
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public required string Id { get; set; }
 
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [JsonPropertyName("username")]
-        public string Username { get; set; }
-
-        [JsonPropertyName("profile_image_url")]
-        public string ProfileImageUrl { get; set; }
-
-        [JsonPropertyName("email")]
-        public string Email { get; set; }
-
-        [JsonPropertyName("verified")]
-        public bool Verified { get; set; }
+        public required string Username { get; set; }
     }
 }

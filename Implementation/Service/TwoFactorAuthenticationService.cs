@@ -1,149 +1,117 @@
 ﻿using System;
 using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.Model;
 using DrinkDb_Auth.View;
 using DrinkDb_Auth.ViewModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using OtpNet;
-using System.Windows.Input;
 
 namespace DrinkDb_Auth.Service
 {
     internal class TwoFactorAuthenticationService : ITwoFactorAuthenticationService
     {
-        private static readonly UserAdapter _userAdapter = new();
+        private static readonly IUserAdapter UserDatabaseAdapter = new UserAdapter();
 
-        public async Task<bool> Setup2FA(Window window, Guid userId)
+        public async Task<bool> SetupOrVerifyTwoFactor(Window window, Guid userId, bool isFirstTimeSetup)
         {
-            var user = _userAdapter.GetUserById(userId);
+            User? currentUser = UserDatabaseAdapter.GetUserById(userId) ?? throw new ArgumentException("User not found.");
 
-            if (user == null)
+            byte[] twoFactorSecret;
+            TaskCompletionSource<bool> authentificationTask = new TaskCompletionSource<bool>();
+            AuthenticationQRCodeAndTextBoxDigits authentificationHandler;
+            RelayCommand submitRellayCommand;
+            ContentDialog authentificationSubWindow;
+            switch (isFirstTimeSetup)
             {
-                throw new ArgumentException("User not found.");
+                case true:
+                    int keyLength = 42;
+                    twoFactorSecret = OtpNet.KeyGeneration.GenerateRandomKey(keyLength) ?? throw new InvalidOperationException("Failed to generate 2FA secret.");
+                    currentUser.TwoFASecret = Convert.ToBase64String(twoFactorSecret);
+                    string? uniformResourceIdentifier = new OtpUri(OtpType.Totp, twoFactorSecret, currentUser.Username, "DrinkDB").ToString();
+                    authentificationHandler = new AuthenticationQRCodeAndTextBoxDigits(uniformResourceIdentifier);
+                    TwoFactorAuthSetupView twoFactorAuthSetupView = new TwoFactorAuthSetupView(authentificationHandler);
+                    submitRellayCommand = this.CreateRelayCommand(authentificationHandler, currentUser, twoFactorSecret, authentificationTask, isFirstTimeSetup);
+                    authentificationSubWindow = this.CreateAuthentificationSubWindow(window, twoFactorAuthSetupView, submitRellayCommand);
+                    break;
+                case false:
+                    twoFactorSecret = Convert.FromBase64String(currentUser.TwoFASecret ?? string.Empty);
+                    Totp? timeBasedOneTimePassword = new OtpNet.Totp(twoFactorSecret);
+                    authentificationHandler = new AuthenticationQRCodeAndTextBoxDigits();
+                    TwoFactorAuthCheckView twoFactorAuthCheckView = new TwoFactorAuthCheckView(authentificationHandler);
+                    submitRellayCommand = this.CreateRelayCommand(authentificationHandler, currentUser, twoFactorSecret, authentificationTask, isFirstTimeSetup);
+                    authentificationSubWindow = this.CreateAuthentificationSubWindow(window, twoFactorAuthCheckView, submitRellayCommand);
+                    break;
             }
+            await authentificationSubWindow.ShowAsync();
+            bool authentificationResult = await authentificationTask.Task;
 
-            // Generate a new 2FA secret
-            var secret = OtpNet.KeyGeneration.GenerateRandomKey(42);
-            if (secret == null)
-            {
-                throw new InvalidOperationException("Failed to generate 2FA secret.");
-            }
-            user.TwoFASecret = Convert.ToBase64String(secret);
-            var uriString = new OtpUri(OtpType.Totp, secret, user.Username, "DrinkDB").ToString();
-            // set client up by opening the two factor setup view
-            TwoFactorAuthSetupViewModel twoFactorAuthSetupViewModel = new(uriString);
+            TaskCompletionSource<bool> authentificationCompleteTask = new TaskCompletionSource<bool>();
+            authentificationSubWindow.Hide();
 
-            // Watch dialogResult and return its value as this function's result
-            var codeSetupTask = new TaskCompletionSource<bool>();
+            this.ShowResults(window, authentificationCompleteTask, authentificationResult);
+            return await authentificationCompleteTask.Task;
+        }
 
-            TwoFactorAuthSetupView twoFactorAuthSetupView = new(twoFactorAuthSetupViewModel);
+        private bool Verify2FAForSecret(byte[] twoFactorSecret, string token)
+        {
+            Totp? timeBasedOneTimePassword = new OtpNet.Totp(twoFactorSecret);
 
-            ContentDialog setupDialog = new()
+            return timeBasedOneTimePassword.VerifyTotp(token, out long _, new OtpNet.VerificationWindow(1, 1));
+        }
+
+        private ContentDialog CreateAuthentificationSubWindow(Window window, object view, RelayCommand command)
+        {
+            return new ContentDialog
             {
                 Title = "Set up two factor auth",
                 CloseButtonText = "Cancel",
                 PrimaryButtonText = "Submit",
                 DefaultButton = ContentDialogButton.Primary,
-                PrimaryButtonCommand = new RelayCommand(() =>
-                {
-                    string code = twoFactorAuthSetupViewModel.CodeDigit1
-                                + twoFactorAuthSetupViewModel.CodeDigit2
-                                + twoFactorAuthSetupViewModel.CodeDigit3
-                                + twoFactorAuthSetupViewModel.CodeDigit4
-                                + twoFactorAuthSetupViewModel.CodeDigit5
-                                + twoFactorAuthSetupViewModel.CodeDigit6;
-                    // Verify the 2FA code
-                    if (Verify2FAForSecret(secret, code))
-                    {
-                        // Save the secret to the database
-                        var result = _userAdapter.UpdateUser(user);
+                PrimaryButtonCommand = command,
+                XamlRoot = window.Content.XamlRoot,
+                Content = view
+            };
+        }
 
-                        if (!result)
+        private RelayCommand CreateRelayCommand(AuthenticationQRCodeAndTextBoxDigits authentificationHandler, User user, byte[] twoFactorSecret, TaskCompletionSource<bool> codeSetupTask, bool updateDatabase)
+        {
+            return new RelayCommand(() =>
+            {
+                string providedCode = authentificationHandler.FirstDigit
+                            + authentificationHandler.SecondDigit
+                            + authentificationHandler.ThirdDigit
+                            + authentificationHandler.FourthDigit
+                            + authentificationHandler.FifthDigit
+                            + authentificationHandler.SixthDigit;
+                switch (Verify2FAForSecret(twoFactorSecret, providedCode))
+                {
+                    case true:
+                        switch (updateDatabase)
                         {
-                            throw new InvalidOperationException("Failed to update user with 2FA secret.");
+                            case true:
+                                bool result = UserDatabaseAdapter.UpdateUser(user);
+                                if (!result)
+                                {
+                                    throw new InvalidOperationException("Failed to update user with 2FA secret.");
+                                }
+                                break;
+                            case false:
+                                break;
                         }
                         codeSetupTask.SetResult(true);
-                    }
-                    else
-                    {
+                        break;
+                    case false:
                         codeSetupTask.SetResult(false);
-                    }
-                }),
-                XamlRoot = window.Content.XamlRoot,
-                Content = twoFactorAuthSetupView
-            };
-            var authCompletionStatus = new TaskCompletionSource<bool>();
-
-            await setupDialog.ShowAsync();
-            var codeSetupResult = await codeSetupTask.Task;
-            setupDialog.Hide();
-            if(codeSetupResult)
-            {
-                authCompletionStatus.SetResult(true);
-            } else
-            {
-                ContentDialog dialog = new ContentDialog
-                {
-                    Title = "Error",
-                    Content = "Invalid 2FA code. Please try again.",
-                    CloseButtonText = "OK",
-                    XamlRoot = window.Content.XamlRoot,
-                    CloseButtonCommand = new RelayCommand(() =>
-                    {
-                        authCompletionStatus.SetResult(false);
-                    })
-                };
-                await dialog.ShowAsync();
-            }
-            return await authCompletionStatus.Task;
+                        break;
+                }
+            });
         }
-        public async Task<bool> Verify2FAForUser(Window window, Guid userId)
+
+        private async void ShowResults(Window window, TaskCompletionSource<bool> authCompletionStatus, bool codeSetupResult)
         {
-            var user = _userAdapter.GetUserById(userId) ?? throw new ArgumentException("User not found.");
-            // Decode the 2FA secret
-            var secret = Convert.FromBase64String(user.TwoFASecret);
-            // Create a new OTP generator
-            var totp = new OtpNet.Totp(secret);
-            TwoFactorAuthCheckViewModel twoFactorAuthCheckViewModel = new();
-
-            // Watch dialogResult and return its value as this function's result
-            var codeCheckTask = new TaskCompletionSource<bool>();
-            TwoFactorAuthCheckView twoFactorAuthCheckView = new(twoFactorAuthCheckViewModel);
-
-            ContentDialog checkDialog = new()
-            {
-                Title = "Verify two factor auth",
-                CloseButtonText = "Cancel",
-                PrimaryButtonText = "Submit",
-                DefaultButton = ContentDialogButton.Primary,
-                PrimaryButtonCommand = new RelayCommand(() =>
-                {
-                    string code = twoFactorAuthCheckViewModel.CodeDigit1
-                                + twoFactorAuthCheckViewModel.CodeDigit2
-                                + twoFactorAuthCheckViewModel.CodeDigit3
-                                + twoFactorAuthCheckViewModel.CodeDigit4
-                                + twoFactorAuthCheckViewModel.CodeDigit5
-                                + twoFactorAuthCheckViewModel.CodeDigit6;
-                    // Verify the 2FA code
-                    if (Verify2FAForSecret(secret, code))
-                    {
-                        codeCheckTask.SetResult(true);
-                    }
-                    else
-                    {
-                        codeCheckTask.SetResult(false);
-                    }
-                }),
-                XamlRoot = window.Content.XamlRoot,
-                Content = twoFactorAuthCheckView
-            };
-
-            var authCompletionStatus = new TaskCompletionSource<bool>();
-            await checkDialog.ShowAsync();
-            var codeCheckResult = await codeCheckTask.Task;
-            checkDialog.Hide();
-            if (codeCheckResult)
+            if (codeSetupResult)
             {
                 authCompletionStatus.SetResult(true);
             }
@@ -162,16 +130,6 @@ namespace DrinkDb_Auth.Service
                 };
                 await dialog.ShowAsync();
             }
-            return await authCompletionStatus.Task;
-        }
-
-        private bool Verify2FAForSecret(byte[] secret, string token)
-        {
-            // Create a new OTP generator
-            var totp = new OtpNet.Totp(secret);
-            // Verify the token
-            return totp.VerifyTotp(token, out long _, new OtpNet.VerificationWindow(1, 1));
         }
     }
-
 }

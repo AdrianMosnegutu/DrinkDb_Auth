@@ -18,7 +18,7 @@ namespace DrinkDb_Auth.OAuthProviders
             return $"ms-app://s-1-15-2-{packageSid}";
         }
 
-        private const string ClientId = "1356303542234545";
+        private const string ClientId = "667671795847732";
         private string RedirectUri = "http://localhost:8888/auth";
         private const string Scope = "email";
         private string BuildAuthorizeUrl()
@@ -30,11 +30,11 @@ namespace DrinkDb_Auth.OAuthProviders
                    $"&response_type=token&scope={Scope}";
         }
 
-        private TaskCompletionSource<AuthResponse> _tcs;
+        private TaskCompletionSource<AuthenticationResponse> _tcs;
 
         public FacebookOAuthHelper()
         {
-            _tcs = new TaskCompletionSource<AuthResponse>();
+            _tcs = new TaskCompletionSource<AuthenticationResponse>();
             FacebookLocalOAuthServer.OnTokenReceived += OnTokenReceived;
         }
 
@@ -42,15 +42,15 @@ namespace DrinkDb_Auth.OAuthProviders
         {
             if (_tcs != null && !_tcs.Task.IsCompleted)
             {
-                AuthResponse res = facebookOAuth2Provider.Authenticate(string.Empty, accessToken);
+                AuthenticationResponse res = facebookOAuth2Provider.Authenticate(string.Empty, accessToken);
                 
                 _tcs.TrySetResult(res);
             }
         }
 
-        public async Task<AuthResponse> AuthenticateAsync()
+        public async Task<AuthenticationResponse> AuthenticateAsync()
         {
-            _tcs = new TaskCompletionSource<AuthResponse>();
+            _tcs = new TaskCompletionSource<AuthenticationResponse>();
 
             var authorizeUri = new Uri(BuildAuthorizeUrl());
 
@@ -60,7 +60,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 UseShellExecute = true
             });
 
-            AuthResponse response = await _tcs.Task;
+            AuthenticationResponse response = await _tcs.Task;
             return response;
         }
     }

@@ -14,14 +14,14 @@
            <TextBlock Text="Scan the QR code with your authenticator app and enter the 6-digit code below:"  
                       TextWrapping="Wrap" Margin="0,0,0,20" TextAlignment="Center"/>  
            <Image Source="{Binding QrCodeImage}" Width="200" Height="200" Margin="0,0,0,20"/>  
-           <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">  
-               <TextBox Text="{Binding CodeDigit1, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
-               <TextBox Text="{Binding CodeDigit2, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
-               <TextBox Text="{Binding CodeDigit3, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
-               <TextBox Text="{Binding CodeDigit4, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
-               <TextBox Text="{Binding CodeDigit5, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
-               <TextBox Text="{Binding CodeDigit6, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>  
-           </StackPanel>  
+           <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBox Text="{Binding FirstDigit, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>
+                <TextBox Text="{Binding SecondDigit, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>
+                <TextBox Text="{Binding ThirdDigit, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>
+                <TextBox Text="{Binding FourthDigit, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>
+                <TextBox Text="{Binding FifthDigit, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>
+                <TextBox Text="{Binding SixthDigit, Mode=TwoWay}" Width="30" Margin="5" MaxLength="1" KeyUp="TextBox_KeyUp"/>
+            </StackPanel>  
        </StackPanel>  
    </Grid>  
 </Page>

@@ -58,6 +58,9 @@
     <Folder Include="Database\" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="AuthProviders\AuthenticationResponse.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <Page Update="View\TwoFactorAuthCheckView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

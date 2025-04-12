@@ -3,23 +3,25 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.AuthProviders
 {
-
     public class UserNotFoundException : Exception
     {
-        public UserNotFoundException(string message) : base(message) { }
+        public UserNotFoundException(string message) : base(message)
+        {
+        }
     }
     internal class BasicAuthenticationProvider
     {
-        private static readonly IUserAdapter userAdapter = new UserAdapter();
+        private static readonly IUserAdapter UserDatabaseAdapter = new UserAdapter();
 
         public static bool Authenticate(string username, string password)
         {
-            var user = userAdapter.GetUserByUsername(username) ?? throw new UserNotFoundException("User not found");
-            byte[] passwordBytes = SHA256.HashData(Encoding.UTF8.GetBytes(password));
-            string passwordHash = Convert.ToBase64String(passwordBytes);
+            User? user = UserDatabaseAdapter.GetUserByUsername(username) ?? throw new UserNotFoundException("User not found");
+            byte[] passwordInBytes = SHA256.HashData(Encoding.UTF8.GetBytes(password));
+            string passwordHash = Convert.ToBase64String(passwordInBytes);
             return user.PasswordHash.SequenceEqual(passwordHash);
         }
     }

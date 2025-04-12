@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
@@ -57,7 +57,7 @@ namespace DrinkDb_Auth.OAuthProviders
             }
         }
 
-        public async Task<AuthResponse> AuthenticateAsync()
+        public async Task<AuthenticationResponse> AuthenticateAsync()
         {
             taskCompletionSource = new TaskCompletionSource<AuthResponse>();
 

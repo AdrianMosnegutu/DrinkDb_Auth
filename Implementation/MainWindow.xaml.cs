@@ -31,9 +31,9 @@ namespace DrinkDb_Auth
             this.AppWindow.Move(new PointInt32(0, 0));
         }
 
-        private async Task<bool> AuthenticationComplete(AuthResponse res)
+        private async Task<bool> AuthenticationComplete(AuthenticationResponse res)
         {
-            if (res.AuthSuccessful)
+            if (res.AuthenticationSuccesfull)
             {
                 var user = authenticationService.GetUser(res.SessionId);
                 bool twoFAresponse = false;
@@ -74,7 +74,7 @@ namespace DrinkDb_Auth
             string username = UsernameTextBox.Text;
             string password = PasswordBox.Password;
 
-            AuthResponse res = AuthenticationService.AuthWithUserPass(username, password);
+            AuthenticationResponse res = AuthenticationService.AuthWithUserPass(username, password);
             _ = AuthenticationComplete(res);
         }
 

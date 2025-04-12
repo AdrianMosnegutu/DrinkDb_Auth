@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,5 +12,7 @@ namespace DrinkDb_Auth.Adapter
         public bool ValidateAction(Guid userId, string resource, string action);
         public User? GetUserByUsername(string username);
         public User? GetUserById(Guid userId);
+        public bool CreateUser(User user);
+        public bool UpdateUser(User user);
     }
 }

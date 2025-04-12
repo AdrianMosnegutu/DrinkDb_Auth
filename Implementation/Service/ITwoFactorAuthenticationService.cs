@@ -9,8 +9,6 @@ namespace DrinkDb_Auth.Service
 {
     internal interface ITwoFactorAuthenticationService
     {
-        Task<bool> Setup2FA(Window parentWindow, Guid userId);
-
-        Task<bool> Verify2FAForUser(Window window, Guid userId);
+        Task<bool> SetupOrVerifyTwoFactor(Window window, Guid userId, bool isFirstTimeSetup);
     }
 }

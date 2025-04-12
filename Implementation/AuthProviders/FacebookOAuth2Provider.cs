@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Text.Json;
 using DrinkDb_Auth.OAuthProviders;
@@ -13,7 +13,7 @@ namespace DrinkDb_Auth.OAuthProviders
     public class FacebookOAuth2Provider : GenericOAuth2Provider
     {
         private static readonly SessionAdapter sessionAdapter = new();
-        public AuthResponse Authenticate(string userId, string token)
+        public AuthenticationResponse Authenticate(string userId, string token)
         {
             try
             {
@@ -38,20 +38,20 @@ namespace DrinkDb_Auth.OAuthProviders
 
                             Session session = sessionAdapter.CreateSession(user.UserId);
 
-                            return new AuthResponse
+                            return new AuthenticationResponse
                             {
-                                AuthSuccessful = true,
-                                SessionId = session.SessionId,
-                                OAuthToken = token,
+                                AuthenticationSuccesfull = true,
+                                SessionId = session.sessionId,
+                                OAuthenticationToken = token,
                                 NewAccount = isNewAccount
                             };
                         }
                     }
                     
-                    return new AuthResponse
+                    return new AuthenticationResponse
                     {
-                        AuthSuccessful = false,
-                        OAuthToken = token,
+                        AuthenticationSuccesfull = false,
+                        OAuthenticationToken = token,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -59,10 +59,10 @@ namespace DrinkDb_Auth.OAuthProviders
             }
             catch
             {
-                return new AuthResponse
+                return new AuthenticationResponse
                 {
-                    AuthSuccessful = false,
-                    OAuthToken = token,
+                    AuthenticationSuccesfull = false,
+                    OAuthenticationToken = token,
                     SessionId = Guid.Empty,
                     NewAccount = false
                 };
