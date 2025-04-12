@@ -63,12 +63,12 @@ namespace DrinkDb_Auth.OAuthProviders
         /// <summary>
         /// Optional method to quickly verify a stored token (not used in this flow).
         /// </summary>
-        public AuthResponse Authenticate(string userId, string token)
+        public AuthenticationResponse Authenticate(string userId, string token)
         {
-            return new AuthResponse
+            return new AuthenticationResponse
             {
-                AuthSuccessful = !string.IsNullOrEmpty(token),
-                OAuthToken = token,
+                AuthenticationSuccesfull = !string.IsNullOrEmpty(token),
+                OAuthenticationToken = token,
                 SessionId = Guid.Empty,
                 NewAccount = false
             };
@@ -111,7 +111,7 @@ namespace DrinkDb_Auth.OAuthProviders
         /// When we get the code back from Twitter, exchange it for an access token.
         /// PKCE: We do NOT pass a client_secret, but we DO pass the same code_verifier we generated earlier.
         /// </summary>
-        public async Task<AuthResponse> ExchangeCodeForTokenAsync(string code)
+        public async Task<AuthenticationResponse> ExchangeCodeForTokenAsync(string code)
         {
             // 3) PKCE: Provide the stored code_verifier in the token request
             var tokenRequestParameters = new Dictionary<string, string>
@@ -141,9 +141,9 @@ namespace DrinkDb_Auth.OAuthProviders
                 if (!tokenResponse.IsSuccessStatusCode)
                 {
                     System.Diagnostics.Debug.WriteLine("Token request failed with non-success status.");
-                    return new AuthResponse {
-                        AuthSuccessful = false,
-                        OAuthToken = string.Empty,
+                    return new AuthenticationResponse {
+                        AuthenticationSuccesfull = false,
+                        OAuthenticationToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -164,10 +164,10 @@ namespace DrinkDb_Auth.OAuthProviders
                 if (tokenResult == null || string.IsNullOrEmpty(tokenResult.AccessToken))
                 {
                     System.Diagnostics.Debug.WriteLine("No access token in tokenResult.");
-                    return new AuthResponse
+                    return new AuthenticationResponse
                     {
-                        AuthSuccessful = false,
-                        OAuthToken = string.Empty,
+                        AuthenticationSuccesfull = false,
+                        OAuthenticationToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -187,10 +187,10 @@ namespace DrinkDb_Auth.OAuthProviders
                     {
                         System.Diagnostics.Debug.WriteLine($"User info request failed. Response: {userBody}");
                         // We still have a valid token though
-                        return new AuthResponse
+                        return new AuthenticationResponse
                         {
-                            AuthSuccessful = false,
-                            OAuthToken = tokenResult.AccessToken,
+                            AuthenticationSuccesfull = false,
+                            OAuthenticationToken = tokenResult.AccessToken,
                             SessionId = Guid.Empty,
                             NewAccount = false
                         };
@@ -219,10 +219,10 @@ namespace DrinkDb_Auth.OAuthProviders
                     }
 
                     Session session = sessionAdapter.CreateSession(user.UserId);
-                    return new AuthResponse
+                    return new AuthenticationResponse
                     {
-                        AuthSuccessful = true,
-                        OAuthToken = tokenResult.AccessToken,
+                        AuthenticationSuccesfull = true,
+                        OAuthenticationToken = tokenResult.AccessToken,
                         SessionId = session.sessionId,
                         NewAccount = false
                     };
@@ -232,10 +232,10 @@ namespace DrinkDb_Auth.OAuthProviders
                 {
                     System.Diagnostics.Debug.WriteLine($"Exception fetching user info: {ex.Message}");
                     // We'll still consider the token valid
-                    return new AuthResponse
+                    return new AuthenticationResponse
                     {
-                        AuthSuccessful = false,
-                        OAuthToken = string.Empty,
+                        AuthenticationSuccesfull = false,
+                        OAuthenticationToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -244,9 +244,9 @@ namespace DrinkDb_Auth.OAuthProviders
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"ExchangeCodeForTokenAsync exception: {ex.Message}");
-                return new AuthResponse {
-                    AuthSuccessful = false,
-                    OAuthToken = string.Empty,
+                return new AuthenticationResponse {
+                    AuthenticationSuccesfull = false,
+                    OAuthenticationToken = string.Empty,
                     SessionId = Guid.Empty,
                     NewAccount = false,
                 };
@@ -256,9 +256,9 @@ namespace DrinkDb_Auth.OAuthProviders
         /// <summary>
         /// Shows a WebView, navigates to the Twitter OAuth page, intercepts the redirect to our local loopback.
         /// </summary>
-        public async Task<AuthResponse> SignInWithTwitterAsync(Window parentWindow)
+        public async Task<AuthenticationResponse> SignInWithTwitterAsync(Window parentWindow)
         {
-            var tcs = new TaskCompletionSource<AuthResponse>();
+            var tcs = new TaskCompletionSource<AuthenticationResponse>();
 
             try
             {
@@ -315,9 +315,9 @@ namespace DrinkDb_Auth.OAuthProviders
                 if (!tcs.Task.IsCompleted)
                 {
                     System.Diagnostics.Debug.WriteLine("Dialog closed; no code was returned.");
-                    tcs.SetResult(new AuthResponse {
-                        AuthSuccessful = false,
-                        OAuthToken = string.Empty,
+                    tcs.SetResult(new AuthenticationResponse {
+                        AuthenticationSuccesfull = false,
+                        OAuthenticationToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     });

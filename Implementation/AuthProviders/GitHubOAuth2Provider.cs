@@ -12,7 +12,7 @@ namespace DrinkDb_Auth.OAuthProviders
         private readonly static UserAdapter UserAdapter = new ();
         private readonly static SessionAdapter SessionAdapter = new ();
 
-        public AuthResponse Authenticate(string? userId, string token)
+        public AuthenticationResponse Authenticate(string? userId, string token)
         {
             try
             {
@@ -20,10 +20,10 @@ namespace DrinkDb_Auth.OAuthProviders
 
                 if (string.IsNullOrEmpty(gitHubLogin))
                 {
-                    return new AuthResponse
+                    return new AuthenticationResponse
                     {
-                        AuthSuccessful = false,
-                        OAuthToken = string.Empty,
+                        AuthenticationSuccesfull = false,
+                        OAuthenticationToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -37,10 +37,10 @@ namespace DrinkDb_Auth.OAuthProviders
 
                     Session session = SessionAdapter.CreateSession(user.UserId);
 
-                    return new AuthResponse
+                    return new AuthenticationResponse
                     {
-                        AuthSuccessful = true,
-                        OAuthToken = token,
+                        AuthenticationSuccesfull = true,
+                        OAuthenticationToken = token,
                         SessionId = session.sessionId,
                         NewAccount = false
                     };
@@ -53,10 +53,10 @@ namespace DrinkDb_Auth.OAuthProviders
                     {
                         // Successfully inserted, so login is successful.
                         Session session = SessionAdapter.CreateSession(newUserId);
-                        return new AuthResponse
+                        return new AuthenticationResponse
                         {
-                            AuthSuccessful = true,
-                            OAuthToken = token,
+                            AuthenticationSuccesfull = true,
+                            OAuthenticationToken = token,
                             SessionId = session.sessionId,
                             NewAccount = true
                         };
@@ -64,10 +64,10 @@ namespace DrinkDb_Auth.OAuthProviders
                     else
                     {
                         // Insertion failed.
-                        return new AuthResponse
+                        return new AuthenticationResponse
                         {
-                            AuthSuccessful = false,
-                            OAuthToken = token,
+                            AuthenticationSuccesfull = false,
+                            OAuthenticationToken = token,
                             SessionId = Guid.Empty,
                             NewAccount = false
                         };
@@ -76,10 +76,10 @@ namespace DrinkDb_Auth.OAuthProviders
             }
             catch (Exception)
             {
-                return new AuthResponse
+                return new AuthenticationResponse
                 {
-                    AuthSuccessful = false,
-                    OAuthToken = token,
+                    AuthenticationSuccesfull = false,
+                    OAuthenticationToken = token,
                     SessionId = Guid.Empty,
                     NewAccount = false
                 };

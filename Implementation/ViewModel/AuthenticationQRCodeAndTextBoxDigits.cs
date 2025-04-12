@@ -7,7 +7,7 @@ using QRCoder;
 
 namespace DrinkDb_Auth.ViewModel
 {
-    public class AuthentificationQRCodeAndTextBoxDigits : INotifyPropertyChanged
+    public class AuthenticationQRCodeAndTextBoxDigits : INotifyPropertyChanged
     {
         private string firstDigit;
         private string secondDigit;
@@ -22,7 +22,7 @@ namespace DrinkDb_Auth.ViewModel
 
         public const string QRCodeDefaultKeyCode = "none";
 
-        public AuthentificationQRCodeAndTextBoxDigits(string keyCode = AuthentificationQRCodeAndTextBoxDigits.QRCodeDefaultKeyCode)
+        public AuthenticationQRCodeAndTextBoxDigits(string keyCode = AuthenticationQRCodeAndTextBoxDigits.QRCodeDefaultKeyCode)
         {
             this.firstDigit = string.Empty;
             this.secondDigit = string.Empty;

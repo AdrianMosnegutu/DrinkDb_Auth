@@ -14,11 +14,11 @@ namespace DrinkDb_Auth.OAuthProviders
         private const string RedirectUri = "http://localhost:8890/auth";
         private const string Scope = "read:user user:email"; // Adjust scopes as needed
         private static readonly GitHubOAuth2Provider GitHubOAuth2Provider = new ();
-        private TaskCompletionSource<AuthResponse> authTask;
+        private TaskCompletionSource<AuthenticationResponse> authTask;
 
         public GitHubOAuthHelper()
         {
-            authTask = new TaskCompletionSource<AuthResponse>();
+            authTask = new TaskCompletionSource<AuthenticationResponse>();
             GitHubLocalOAuthServer.OnCodeReceived += OnCodeReceived;
         }
 
@@ -62,9 +62,9 @@ namespace DrinkDb_Auth.OAuthProviders
         /// Actually open the user's default browser to the GitHub authorize page,
         /// then wait for the local server to get the code and do the exchange.
         /// </summary>
-        public async Task<AuthResponse> AuthenticateAsync()
+        public async Task<AuthenticationResponse> AuthenticateAsync()
         {
-            authTask = new TaskCompletionSource<AuthResponse>();
+            authTask = new TaskCompletionSource<AuthenticationResponse>();
 
             var authorizeUri = new Uri(BuildAuthorizeUrl());
             Process.Start(new ProcessStartInfo

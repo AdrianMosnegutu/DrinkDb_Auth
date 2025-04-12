@@ -20,7 +20,7 @@ namespace DrinkDb_Auth.Service
 
             byte[] twoFactorSecret;
             TaskCompletionSource<bool> authentificationTask = new TaskCompletionSource<bool>();
-            AuthentificationQRCodeAndTextBoxDigits authentificationHandler;
+            AuthenticationQRCodeAndTextBoxDigits authentificationHandler;
             RelayCommand submitRellayCommand;
             ContentDialog authentificationSubWindow;
             switch (isFirstTimeSetup)
@@ -30,7 +30,7 @@ namespace DrinkDb_Auth.Service
                     twoFactorSecret = OtpNet.KeyGeneration.GenerateRandomKey(keyLength) ?? throw new InvalidOperationException("Failed to generate 2FA secret.");
                     currentUser.TwoFASecret = Convert.ToBase64String(twoFactorSecret);
                     string? uniformResourceIdentifier = new OtpUri(OtpType.Totp, twoFactorSecret, currentUser.Username, "DrinkDB").ToString();
-                    authentificationHandler = new AuthentificationQRCodeAndTextBoxDigits(uniformResourceIdentifier);
+                    authentificationHandler = new AuthenticationQRCodeAndTextBoxDigits(uniformResourceIdentifier);
                     TwoFactorAuthSetupView twoFactorAuthSetupView = new TwoFactorAuthSetupView(authentificationHandler);
                     submitRellayCommand = this.CreateRelay(authentificationHandler, currentUser, twoFactorSecret, authentificationTask, isFirstTimeSetup);
                     authentificationSubWindow = this.CreateAuthentificationSubWindow(window, twoFactorAuthSetupView, submitRellayCommand);
@@ -38,7 +38,7 @@ namespace DrinkDb_Auth.Service
                 case false:
                     twoFactorSecret = Convert.FromBase64String(currentUser.TwoFASecret ?? string.Empty);
                     Totp? timeBasedOneTimePassword = new OtpNet.Totp(twoFactorSecret);
-                    authentificationHandler = new AuthentificationQRCodeAndTextBoxDigits();
+                    authentificationHandler = new AuthenticationQRCodeAndTextBoxDigits();
                     TwoFactorAuthCheckView twoFactorAuthCheckView = new TwoFactorAuthCheckView(authentificationHandler);
                     submitRellayCommand = this.CreateRelay(authentificationHandler, currentUser, twoFactorSecret, authentificationTask, isFirstTimeSetup);
                     authentificationSubWindow = this.CreateAuthentificationSubWindow(window, twoFactorAuthCheckView, submitRellayCommand);
@@ -75,7 +75,7 @@ namespace DrinkDb_Auth.Service
             };
         }
 
-        private RelayCommand CreateRelay(AuthentificationQRCodeAndTextBoxDigits authentificationHandler, User user, byte[] twoFactorSecret, TaskCompletionSource<bool> codeSetupTask, bool updateDatabase)
+        private RelayCommand CreateRelay(AuthenticationQRCodeAndTextBoxDigits authentificationHandler, User user, byte[] twoFactorSecret, TaskCompletionSource<bool> codeSetupTask, bool updateDatabase)
         {
             return new RelayCommand(() =>
             {
