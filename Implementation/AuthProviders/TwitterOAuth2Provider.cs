@@ -26,7 +26,7 @@ namespace DrinkDb_Auth.OAuthProviders
         private static readonly SessionAdapter sessionAdapter = new();
         // ▼▼▼ 1) Set these appropriately ▼▼▼
 
-        // In "Native App" flows, we typically do NOT use a Client Secret
+        // In "Native App" flows, we typically do NOT use a Client Secret.
         // but if you still have one in your config, you can read it; just don't send it.
         private string ClientId { get; }
         private string ClientSecret { get; } // not used if truly "native"

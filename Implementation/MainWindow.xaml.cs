@@ -47,11 +47,11 @@ namespace DrinkDb_Auth
                 bool twoFAres = false;
                 if (!user.TwoFASecret.IsNullOrEmpty())
                 {
-                    twoFAres = await _twoFactorAuthService.Verify2FAForUser(this, user.UserId);
+                    twoFAres = await _twoFactorAuthService.SetupOrVerifyTwoFactor(this, user.UserId, false);
                 }
                 else
                 {
-                    twoFAres = await _twoFactorAuthService.Setup2FA(this, user.UserId);
+                    twoFAres = await _twoFactorAuthService.SetupOrVerifyTwoFactor(this, user.UserId, true);
                 }
 
                 if (twoFAres)
