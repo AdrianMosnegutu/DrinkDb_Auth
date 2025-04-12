@@ -32,7 +32,6 @@ namespace DrinkDb_Auth.Adapter
 
             SqlParameter returnValue = endSessionCommand.Parameters.Add("@RETURN_VALUE", SqlDbType.Int);
             returnValue.Direction = ParameterDirection.ReturnValue;
-
             endSessionCommand.ExecuteNonQuery();
             return (int)returnValue.Value > 0;
         }

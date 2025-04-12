@@ -43,7 +43,7 @@ namespace DrinkDb_Auth.Service
             }
 
             var userService = new UserService();
-            return userService.ValidateAction(session.userId, resource, action);
+            return userService.ValidateAction(session.UserId, resource, action);
         }
     }
 } 

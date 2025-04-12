@@ -4,22 +4,22 @@ namespace DrinkDb_Auth.Model
 {
     public class Session
     {
-        public Guid sessionId { get; private set; }
-        public Guid userId { get; private set; }
-        public bool IsActive => userId != Guid.Empty;
+        public Guid SessionId { get; private set; }
+        public Guid UserId { get; private set; }
+        public bool IsActive => UserId != Guid.Empty;
 
         private Session()
         {
-            sessionId = Guid.NewGuid();
+            SessionId = Guid.NewGuid();
         }
 
         private Session(Guid sessionId, Guid userId)
         {
-            this.sessionId = sessionId;
-            this.userId = userId;
+            this.SessionId = sessionId;
+            this.UserId = userId;
         }
 
-        public static Session createSessionForUser(Guid userId)
+        public static Session CreateSessionForUser(Guid userId)
         {
             if (userId == Guid.Empty)
             {
@@ -27,11 +27,11 @@ namespace DrinkDb_Auth.Model
             }
 
             var session = new Session();
-            session.userId = userId;
+            session.UserId = userId;
             return session;
         }
 
-        public static Session createSessionWithIds(Guid sessionId, Guid userId)
+        public static Session CreateSessionWithIds(Guid sessionId, Guid userId)
         {
             if (userId == Guid.Empty)
             {
@@ -46,38 +46,38 @@ namespace DrinkDb_Auth.Model
             return new Session(sessionId, userId);
         }
 
-        public void endSessionForUser(Guid userId)
+        public void EndSessionForUser(Guid userId)
         {
             if (userId == Guid.Empty)
             {
                 throw new ArgumentException("User ID cannot be empty", nameof(userId));
             }
 
-            if (this.userId != userId)
+            if (this.UserId != userId)
             {
                 throw new InvalidOperationException("Session does not belong to specified user");
             }
 
-            this.userId = Guid.Empty;
+            this.UserId = Guid.Empty;
         }
 
         public override string ToString()
         {
-            return $"Session[ID: {sessionId}, UserID: {userId}, Active: {IsActive}]";
+            return $"Session[ID: {SessionId}, UserID: {UserId}, Active: {IsActive}]";
         }
 
         public override bool Equals(object? obj)
         {
             if (obj is Session other)
             {
-                return sessionId == other.sessionId;
+                return SessionId == other.SessionId;
             }
             return false;
         }
 
         public override int GetHashCode()
         {
-            return sessionId.GetHashCode();
+            return SessionId.GetHashCode();
         }
     }
 } 

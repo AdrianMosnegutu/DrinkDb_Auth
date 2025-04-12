@@ -1,8 +1,7 @@
 using System;
-using Microsoft.Data.SqlClient;
-using DrinkDb_Auth.Model;
 using System.Collections.Generic;
-using System.Reflection.Metadata;
+using DrinkDb_Auth.Model;
+using Microsoft.Data.SqlClient;
 
 namespace DrinkDb_Auth.Adapter
 {
@@ -10,11 +9,11 @@ namespace DrinkDb_Auth.Adapter
     {
         public User? GetUserById(Guid userId)
         {
-            using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
+            using SqlConnection connection = DrinkDbConnectionHelper.GetConnection();
             string sql = "SELECT * FROM Users WHERE userId = @userId;";
-            using SqlCommand cmd = new(sql, conn);
-            cmd.Parameters.AddWithValue("@userId", userId);
-            using SqlDataReader reader = cmd.ExecuteReader();
+            using SqlCommand command = new (sql, connection);
+            command.Parameters.AddWithValue("@userId", userId);
+            using SqlDataReader reader = command.ExecuteReader();
 
             if (reader.Read())
             {
@@ -31,11 +30,11 @@ namespace DrinkDb_Auth.Adapter
 
         public User? GetUserByUsername(string username)
         {
-            using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
+            using SqlConnection connection = DrinkDbConnectionHelper.GetConnection();
             string sql = "SELECT * FROM Users WHERE userName = @username;";
-            using SqlCommand cmd = new(sql, conn);
-            cmd.Parameters.AddWithValue("@username", username);
-            using SqlDataReader reader = cmd.ExecuteReader();
+            using SqlCommand command = new (sql, connection);
+            command.Parameters.AddWithValue("@username", username);
+            using SqlDataReader reader = command.ExecuteReader();
             if (reader.Read())
             {
                 return new User
@@ -51,41 +50,41 @@ namespace DrinkDb_Auth.Adapter
 
         public bool UpdateUser(User user)
         {
-            using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
+            using SqlConnection connection = DrinkDbConnectionHelper.GetConnection();
             string sql = "UPDATE Users SET userName = @username, passwordHash = @passwordHash, twoFASecret = @twoFASecret WHERE userId = @userId;";
-            using (SqlCommand cmd = new(sql, conn))
+            using (SqlCommand command = new (sql, connection))
             {
-                cmd.Parameters.AddWithValue("@userId", user.UserId);
-                cmd.Parameters.AddWithValue("@username", user.Username);
-                cmd.Parameters.AddWithValue("@passwordHash", (object?)user.PasswordHash ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@twoFASecret", (object?)user.TwoFASecret ?? DBNull.Value);
-                return cmd.ExecuteNonQuery() > 0;
+                command.Parameters.AddWithValue("@userId", user.UserId);
+                command.Parameters.AddWithValue("@username", user.Username);
+                command.Parameters.AddWithValue("@passwordHash", (object?)user.PasswordHash ?? DBNull.Value);
+                command.Parameters.AddWithValue("@twoFASecret", (object?)user.TwoFASecret ?? DBNull.Value);
+                return command.ExecuteNonQuery() > 0;
             }
         }
         public bool DeleteUser(Guid userId)
         {
-            using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
+            using SqlConnection connection = DrinkDbConnectionHelper.GetConnection();
             string sql = "DELETE FROM Users WHERE userId = @userId;";
-            using SqlCommand cmd = new(sql, conn);
-            cmd.Parameters.AddWithValue("@userId", userId);
-            return cmd.ExecuteNonQuery() > 0;
+            using SqlCommand command = new (sql, connection);
+            command.Parameters.AddWithValue("@userId", userId);
+            return command.ExecuteNonQuery() > 0;
         }
 
         public bool CreateUser(User user)
         {
-            using SqlConnection conn = DrinkDbConnectionHelper.GetConnection();
+            using SqlConnection connection = DrinkDbConnectionHelper.GetConnection();
             string sql = "INSERT INTO Users (userId, userName, passwordHash, twoFASecret) VALUES (@userId, @username, @passwordHash, @twoFASecret);";
-            using SqlCommand cmd = new(sql, conn);
-            cmd.Parameters.AddWithValue("@userId", user.UserId);
-            cmd.Parameters.AddWithValue("@username", user.Username);
-            cmd.Parameters.AddWithValue("@passwordHash", (object?)user.PasswordHash ?? DBNull.Value);
-            cmd.Parameters.AddWithValue("@twoFASecret", (object?)user.TwoFASecret ?? DBNull.Value);
-            return cmd.ExecuteNonQuery() > 0;
+            using SqlCommand command = new (sql, connection);
+            command.Parameters.AddWithValue("@userId", user.UserId);
+            command.Parameters.AddWithValue("@username", user.Username);
+            command.Parameters.AddWithValue("@passwordHash", (object?)user.PasswordHash ?? DBNull.Value);
+            command.Parameters.AddWithValue("@twoFASecret", (object?)user.TwoFASecret ?? DBNull.Value);
+            return command.ExecuteNonQuery() > 0;
         }
 
-        private List<Permission> GetPermissionsForUser(Guid userId) 
+        private List<Permission> GetPermissionsForUser(Guid userId)
         {
-            List<Permission> permissions = new();
+            List<Permission> permissions = new ();
 
             // SQL query joining User -> UserRoles -> Roles -> RolePermissions -> Permissions
             string sql = @"
@@ -98,18 +97,18 @@ namespace DrinkDb_Auth.Adapter
         WHERE u.userId = @userId;
     ";
 
-            using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
-            using (SqlCommand cmd = new(sql, conn))
+            using (SqlConnection connection = DrinkDbConnectionHelper.GetConnection())
+            using (SqlCommand command = new (sql, connection))
             {
-                cmd.Parameters.AddWithValue("@userId", userId);
+                command.Parameters.AddWithValue("@userId", userId);
 
-                conn.Open();
+                connection.Open();
 
-                using (SqlDataReader reader = cmd.ExecuteReader())
+                using (SqlDataReader reader = command.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        Permission permission = new()
+                        Permission permission = new ()
                         {
                             PermissionId = reader.GetGuid(reader.GetOrdinal("permissionId")),
                             PermissionName = reader.GetString(reader.GetOrdinal("permissionName")),
@@ -129,15 +128,15 @@ namespace DrinkDb_Auth.Adapter
             bool result = false;
             string sql = "SELECT dbo.fnValidateAction(@userId, @resource, @action)";
 
-            using (SqlConnection conn = DrinkDbConnectionHelper.GetConnection())
-            using (SqlCommand cmd = new(sql, conn))
+            using (SqlConnection connection = DrinkDbConnectionHelper.GetConnection())
+            using (SqlCommand command = new (sql, connection))
             {
-                cmd.Parameters.AddWithValue("@userId", userId);
-                cmd.Parameters.AddWithValue("@resource", resource);
-                cmd.Parameters.AddWithValue("@action", action);
+                command.Parameters.AddWithValue("@userId", userId);
+                command.Parameters.AddWithValue("@resource", resource);
+                command.Parameters.AddWithValue("@action", action);
 
-                conn.Open();
-                var scalarResult = cmd.ExecuteScalar();
+                connection.Open();
+                var scalarResult = command.ExecuteScalar();
                 if (scalarResult != null && scalarResult != DBNull.Value)
                 {
                     result = Convert.ToBoolean(scalarResult);
@@ -146,7 +145,5 @@ namespace DrinkDb_Auth.Adapter
 
             return result;
         }
-
-
     }
 }

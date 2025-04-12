@@ -1,29 +1,21 @@
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Windowing;
-using Windows.Graphics;
-using DrinkDb_Auth.OAuthProviders;
-using DrinkDb_Auth.Service;
 using System;
 using System.Threading.Tasks;
-using System.Text.Json;
-using System.Net.Http;
-using DrinkDb_Auth.Adapter;
-using DrinkDb_Auth.View;
-using DrinkDb_Auth.Model;
-using System.Runtime.CompilerServices;
+using DrinkDb_Auth.OAuthProviders;
+using DrinkDb_Auth.Service;
 using Microsoft.IdentityModel.Tokens;
-
+using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Windows.Graphics;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
-
 namespace DrinkDb_Auth
 {
     public sealed partial class MainWindow : Window
     {
-        private AuthenticationService _authenticationService = new();
-        private ITwoFactorAuthenticationService _twoFactorAuthService = new TwoFactorAuthenticationService();
+        private AuthenticationService authenticationService = new ();
+        private ITwoFactorAuthenticationService twoFactorAuthentificationService = new TwoFactorAuthenticationService();
 
         public MainWindow()
         {
@@ -43,18 +35,18 @@ namespace DrinkDb_Auth
         {
             if (res.AuthenticationSuccesfull)
             {
-                var user = _authenticationService.GetUser(res.SessionId);
-                bool twoFAres = false;
+                var user = authenticationService.GetUser(res.SessionId);
+                bool twoFAresponse = false;
                 if (!user.TwoFASecret.IsNullOrEmpty())
                 {
-                    twoFAres = await _twoFactorAuthService.SetupOrVerifyTwoFactor(this, user.UserId, false);
+                    twoFAresponse = await twoFactorAuthentificationService.Verify2FAForUser(this, user.UserId);
                 }
                 else
                 {
-                    twoFAres = await _twoFactorAuthService.SetupOrVerifyTwoFactor(this, user.UserId, true);
+                    twoFAresponse = await twoFactorAuthentificationService.Setup2FA(this, user.UserId);
                 }
 
-                if (twoFAres)
+                if (twoFAresponse)
                 {
                     App.CurrentUserId = user.UserId;
                     App.CurrentSessionId = res.SessionId;
@@ -90,8 +82,8 @@ namespace DrinkDb_Auth
         {
             try
             {
-                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.GitHub);
-                _ = AuthenticationComplete(authResponse);
+                var authentificationResponse = await authenticationService.AuthWithOAuth(this, OAuthService.GitHub);
+                _ = AuthenticationComplete(authentificationResponse);
             }
             catch (Exception ex)
             {
@@ -104,8 +96,8 @@ namespace DrinkDb_Auth
             try
             {
                 GoogleSignInButton.IsEnabled = false;
-                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Google);
-                await AuthenticationComplete(authResponse);
+                var authentificationResponse = await authenticationService.AuthWithOAuth(this, OAuthService.Google);
+                await AuthenticationComplete(authentificationResponse);
             }
             catch (Exception ex)
             {
@@ -121,8 +113,8 @@ namespace DrinkDb_Auth
         {
             try
             {
-                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Facebook);
-                await AuthenticationComplete(authResponse);
+                var authentificationResponse = await authenticationService.AuthWithOAuth(this, OAuthService.Facebook);
+                await AuthenticationComplete(authentificationResponse);
             }
             catch (Exception ex)
             {
@@ -135,8 +127,8 @@ namespace DrinkDb_Auth
             try
             {
                 XSignInButton.IsEnabled = false;
-                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.Twitter);
-                await AuthenticationComplete(authResponse);
+                var authentificationResponse = await authenticationService.AuthWithOAuth(this, OAuthService.Twitter);
+                await AuthenticationComplete(authentificationResponse);
             }
             catch (Exception ex)
             {
@@ -152,8 +144,8 @@ namespace DrinkDb_Auth
         {
             try
             {
-                var authResponse = await _authenticationService.AuthWithOAuth(this, OAuthService.LinkedIn);
-                await AuthenticationComplete(authResponse);
+                var authentificationResponse = await authenticationService.AuthWithOAuth(this, OAuthService.LinkedIn);
+                await AuthenticationComplete(authentificationResponse);
             }
             catch (Exception ex)
             {

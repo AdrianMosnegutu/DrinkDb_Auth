@@ -198,7 +198,6 @@ namespace DrinkDb_Auth.OAuthProviders
 
                     var userInfo = System.Text.Json.JsonSerializer.Deserialize<TwitterUserInfoResponse>(userBody);
                     System.Diagnostics.Debug.WriteLine($"Authenticated user: {userInfo?.Data.Id} ({userInfo?.Data.Username})");
-
                     User? user = userAdapter.GetUserByUsername(userInfo?.Data.Username ?? throw new Exception("user not found in json response payload for Twitter authentication"));
                     if (user == null)
                     {

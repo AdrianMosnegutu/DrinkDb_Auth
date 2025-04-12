@@ -1,30 +1,29 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
-using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
     public class LinkedInOAuthHelper
     {
-        private readonly string _clientId = "86j0ikb93jm78x";
-        private readonly string _clientSecret = "WPL_AP1.pg2Bd1XhCi821VTG.+hatTA==";
-        private readonly string _redirectUri = "http://localhost:8891/auth";
-        private readonly string _scope = "openid profile email";
-        private TaskCompletionSource<AuthenticationResponse>? _tcs;
+        private readonly string clientId = "86j0ikb93jm78x";
+        private readonly string clientSecret = "WPL_AP1.pg2Bd1XhCi821VTG.+hatTA==";
+        private readonly string redirectUrl = "http://localhost:8891/auth";
+        private readonly string scope = "openid profile email";
+        private TaskCompletionSource<AuthResponse>? taskCompletionSource;
         private readonly UserAdapter userAdapter = new UserAdapter();
-        private readonly static LinkedInOAuth2Provider linkedInOAuth2Provider = new();
+        private readonly static LinkedInOAuth2Provider LinkedInOAuth2Provider = new ();
 
         public LinkedInOAuthHelper(string clientId, string clientSecret, string redirectUri, string scope)
         {
-            _clientId = clientId;
-            _clientSecret = clientSecret;
-            _redirectUri = redirectUri;
-            _scope = scope;
+            this.clientId = clientId;
+            this.clientSecret = clientSecret;
+            this.redirectUrl = redirectUri;
+            this.scope = scope;
             LinkedInLocalOAuthServer.OnCodeReceived += OnCodeReceived;
         }
 
@@ -32,32 +31,35 @@ namespace DrinkDb_Auth.OAuthProviders
         {
             var url = $"https://www.linkedin.com/oauth/v2/authorization" +
                       $"?response_type=code" +
-                      $"&client_id={_clientId}" +
-                      $"&redirect_uri={Uri.EscapeDataString(_redirectUri)}" +
-                      $"&scope={Uri.EscapeDataString(_scope)}";
+                      $"&client_id={clientId}" +
+                      $"&redirect_uri={Uri.EscapeDataString(redirectUrl)}" +
+                      $"&scope={Uri.EscapeDataString(scope)}";
             Debug.WriteLine("Authorize URL: " + url);
             return url;
         }
-        
+
         private async void OnCodeReceived(string code)
         {
-            if (_tcs == null || _tcs.Task.IsCompleted) return;
+            if (taskCompletionSource == null || taskCompletionSource.Task.IsCompleted)
+            {
+                return;
+            }
 
             try
             {
                 var token = await ExchangeCodeForToken(code);
-                var res = linkedInOAuth2Provider.Authenticate(string.Empty, token);
-                _tcs.SetResult(res);
+                var res = LinkedInOAuth2Provider.Authenticate(string.Empty, token);
+                taskCompletionSource.SetResult(res);
             }
             catch (Exception ex)
             {
-                _tcs.SetException(ex);
+                taskCompletionSource.SetException(ex);
             }
         }
 
         public async Task<AuthenticationResponse> AuthenticateAsync()
         {
-            _tcs = new TaskCompletionSource<AuthenticationResponse>();
+            taskCompletionSource = new TaskCompletionSource<AuthResponse>();
 
             var authorizeUri = new Uri(BuildAuthorizeUrl());
             Process.Start(new ProcessStartInfo
@@ -66,7 +68,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 UseShellExecute = true
             });
 
-            return await _tcs.Task;
+            return await taskCompletionSource.Task;
         }
 
         private async Task<string> ExchangeCodeForToken(string code)
@@ -79,9 +81,9 @@ namespace DrinkDb_Auth.OAuthProviders
                 {
                     new KeyValuePair<string, string>("grant_type", "authorization_code"),
                     new KeyValuePair<string, string>("code", code),
-                    new KeyValuePair<string, string>("redirect_uri", _redirectUri),
-                    new KeyValuePair<string, string>("client_id", _clientId),
-                    new KeyValuePair<string, string>("client_secret", _clientSecret)
+                    new KeyValuePair<string, string>("redirect_uri", redirectUrl),
+                    new KeyValuePair<string, string>("client_id", clientId),
+                    new KeyValuePair<string, string>("client_secret", clientSecret)
                 });
                 request.Content = content;
 

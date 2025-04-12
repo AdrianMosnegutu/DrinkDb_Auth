@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
@@ -54,7 +54,7 @@ namespace DrinkDb_Auth.Service
             {
                 App.CurrentSessionId = authResponse.SessionId;
                 Session session = SessionAdapter.GetSession(App.CurrentSessionId);
-                App.CurrentUserId = session.userId;
+                App.CurrentUserId = session.UserId;
             }
 
             return authResponse;
@@ -70,7 +70,7 @@ namespace DrinkDb_Auth.Service
         public User GetUser(Guid sessionId)
         {
             Session session = SessionAdapter.GetSession(sessionId);
-            return UserAdapter.GetUserById(session.userId) ?? throw new UserNotFoundException("User not found");
+            return UserAdapter.GetUserById(session.UserId) ?? throw new UserNotFoundException("User not found");
         }
 
         public static AuthenticationResponse AuthWithUserPass(string username, string password)
@@ -85,6 +85,7 @@ namespace DrinkDb_Auth.Service
                     {
                         AuthenticationSuccesfull = true,
                         NewAccount = false,
+                      
                         OAuthenticationToken = string.Empty,
                         SessionId = session.sessionId,
                     };
