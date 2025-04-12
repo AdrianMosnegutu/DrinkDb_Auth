@@ -11,14 +11,14 @@ namespace DrinkDb_Auth.View
     /// </summary>
     public sealed partial class TwoFactorAuthCheckView : Page
     {
-        public TwoFactorAuthCheckView(AuthentificationQRCodeAndTextBoxDigits authentificationHandler)
+        public TwoFactorAuthCheckView(AuthenticationQRCodeAndTextBoxDigits authentificationHandler)
         {
             this.InitializeComponent();
             this.DataContext = authentificationHandler;
         }
         public void TextBox_KeyUp(object sender, KeyRoutedEventArgs @event)
         {
-            AuthentificationTextBox.TextBoxKeyEvent(sender, @event, this);
+            AuthenticationTextBox.TextBoxKeyEvent(sender, @event, this);
         }
     }
 }

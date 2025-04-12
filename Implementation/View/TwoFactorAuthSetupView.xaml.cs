@@ -11,7 +11,7 @@ namespace DrinkDb_Auth.View
     /// </summary>
     public sealed partial class TwoFactorAuthSetupView : Page
     {
-        public TwoFactorAuthSetupView(AuthentificationQRCodeAndTextBoxDigits authentificationHandler)
+        public TwoFactorAuthSetupView(AuthenticationQRCodeAndTextBoxDigits authentificationHandler)
         {
             this.InitializeComponent();
             this.DataContext = authentificationHandler;
@@ -19,7 +19,7 @@ namespace DrinkDb_Auth.View
 
         public void TextBox_KeyUp(object sender, KeyRoutedEventArgs @event)
         {
-            AuthentificationTextBox.TextBoxKeyEvent(sender, @event, this);
+            AuthenticationTextBox.TextBoxKeyEvent(sender, @event, this);
         }
     }
 }

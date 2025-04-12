@@ -12,6 +12,6 @@
         /// <param name="userId">The user identifier (if applicable to your flow).</param>
         /// <param name="token">The OAuth2 token (e.g. an access token) to validate or use.</param>
         /// <returns>An AuthResponse with the authentication result.</returns>
-        AuthResponse Authenticate(string userId, string token);
+        AuthenticationResponse Authenticate(string userId, string token);
     }
 }

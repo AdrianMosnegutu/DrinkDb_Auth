@@ -30,11 +30,11 @@ namespace DrinkDb_Auth.OAuthProviders
                    $"&response_type=token&scope={Scope}";
         }
 
-        private TaskCompletionSource<AuthResponse> _tcs;
+        private TaskCompletionSource<AuthenticationResponse> _tcs;
 
         public FacebookOAuthHelper()
         {
-            _tcs = new TaskCompletionSource<AuthResponse>();
+            _tcs = new TaskCompletionSource<AuthenticationResponse>();
             FacebookLocalOAuthServer.OnTokenReceived += OnTokenReceived;
         }
 
@@ -42,15 +42,15 @@ namespace DrinkDb_Auth.OAuthProviders
         {
             if (_tcs != null && !_tcs.Task.IsCompleted)
             {
-                AuthResponse res = facebookOAuth2Provider.Authenticate(string.Empty, accessToken);
+                AuthenticationResponse res = facebookOAuth2Provider.Authenticate(string.Empty, accessToken);
                 
                 _tcs.TrySetResult(res);
             }
         }
 
-        public async Task<AuthResponse> AuthenticateAsync()
+        public async Task<AuthenticationResponse> AuthenticateAsync()
         {
-            _tcs = new TaskCompletionSource<AuthResponse>();
+            _tcs = new TaskCompletionSource<AuthenticationResponse>();
 
             var authorizeUri = new Uri(BuildAuthorizeUrl());
 
@@ -60,7 +60,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 UseShellExecute = true
             });
 
-            AuthResponse response = await _tcs.Task;
+            AuthenticationResponse response = await _tcs.Task;
             return response;
         }
     }

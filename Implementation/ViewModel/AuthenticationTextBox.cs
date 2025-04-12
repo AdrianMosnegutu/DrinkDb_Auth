@@ -5,7 +5,7 @@ using Microsoft.UI.Xaml.Input;
 
 namespace DrinkDb_Auth.ViewModel
 {
-    public static class AuthentificationTextBox
+    public static class AuthenticationTextBox
     {
         public static void TextBoxKeyEvent(object sender, KeyRoutedEventArgs @event, Microsoft.UI.Xaml.DependencyObject viewInstance)
         {

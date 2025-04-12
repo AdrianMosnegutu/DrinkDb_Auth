@@ -5,51 +5,50 @@ using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.Adapter
 {
-    public class SessionAdapter
+    public class SessionAdapter : ISessionAdapter
     {
         public Session CreateSession(Guid userId)
         {
-            using var connection = DrinkDbConnectionHelper.GetConnection();
-            using var command = new SqlCommand("create_session", connection);
-            command.CommandType = CommandType.StoredProcedure;
-            
-            command.Parameters.Add("@userId", SqlDbType.UniqueIdentifier).Value = userId;
-            var sessionIdParam = command.Parameters.Add("@sessionId", SqlDbType.UniqueIdentifier);
-            sessionIdParam.Direction = ParameterDirection.Output;
+            using SqlConnection databaseConnection = DrinkDbConnectionHelper.GetConnection();
+            using SqlCommand createSessionCommand = new SqlCommand("create_session", databaseConnection);
+            createSessionCommand.CommandType = CommandType.StoredProcedure;
 
-            command.ExecuteNonQuery();
-            
-            var sessionId = (Guid)sessionIdParam.Value;
+            createSessionCommand.Parameters.Add("@userId", SqlDbType.UniqueIdentifier).Value = userId;
+            SqlParameter sessionIdParameter = createSessionCommand.Parameters.Add("@sessionId", SqlDbType.UniqueIdentifier);
+            sessionIdParameter.Direction = ParameterDirection.Output;
+
+            createSessionCommand.ExecuteNonQuery();
+
+            Guid sessionId = (Guid)sessionIdParameter.Value;
             return Session.createSessionWithIds(sessionId, userId);
         }
 
         public bool EndSession(Guid sessionId)
         {
-            using var connection = DrinkDbConnectionHelper.GetConnection();
-            using var command = new SqlCommand("end_session", connection);
-            command.CommandType = CommandType.StoredProcedure;
-            command.Parameters.Add("@sessionId", SqlDbType.UniqueIdentifier).Value = sessionId;
+            using SqlConnection databaseConnection = DrinkDbConnectionHelper.GetConnection();
+            using SqlCommand endSessionCommand = new SqlCommand("end_session", databaseConnection);
+            endSessionCommand.CommandType = CommandType.StoredProcedure;
+            endSessionCommand.Parameters.Add("@sessionId", SqlDbType.UniqueIdentifier).Value = sessionId;
 
-            var returnValue = command.Parameters.Add("@RETURN_VALUE", SqlDbType.Int);
+            SqlParameter returnValue = endSessionCommand.Parameters.Add("@RETURN_VALUE", SqlDbType.Int);
             returnValue.Direction = ParameterDirection.ReturnValue;
-            
-            command.ExecuteNonQuery();
+
+            endSessionCommand.ExecuteNonQuery();
             return (int)returnValue.Value > 0;
         }
 
         public Session GetSession(Guid sessionId)
         {
-            using var connection = DrinkDbConnectionHelper.GetConnection();
-            using var command = new SqlCommand(
-                "SELECT userId FROM Sessions WHERE sessionId = @sessionId", 
-                connection);
-            command.Parameters.Add("@sessionId", SqlDbType.UniqueIdentifier).Value = sessionId;
-            using var reader = command.ExecuteReader();
+            using SqlConnection databaseConnection = DrinkDbConnectionHelper.GetConnection();
+            using SqlCommand getSessionCommand = new SqlCommand("SELECT userId FROM Sessions WHERE sessionId = @sessionId", databaseConnection);
+            getSessionCommand.Parameters.Add("@sessionId", SqlDbType.UniqueIdentifier).Value = sessionId;
+            using SqlDataReader reader = getSessionCommand.ExecuteReader();
             if (reader.Read())
             {
-                return Session.createSessionWithIds(sessionId, reader.GetGuid(0));
+                int firstColumn = 0;
+                return Session.createSessionWithIds(sessionId, reader.GetGuid(firstColumn));
             }
             throw new Exception("Session not found.");
         }
     }
-} 
+}
