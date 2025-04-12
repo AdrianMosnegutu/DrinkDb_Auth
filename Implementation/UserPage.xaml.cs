@@ -1,17 +1,17 @@
-using System;
-using System.Collections.Generic;
 using DrinkDb_Auth.Model;
 using DrinkDb_Auth.Service;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using System;
+using System.Collections.Generic;
 
 namespace DrinkDb_Auth
 {
     public sealed partial class UserPage : Page
     {
-        private static readonly AuthenticationService _authService = new ();
-        private static readonly UserService _userService = new ();
+        private static readonly AuthenticationService _authService = new();
+        private static readonly UserService _userService = new();
 
         public UserPage()
         {

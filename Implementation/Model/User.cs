@@ -22,7 +22,7 @@ namespace DrinkDb_Auth.Model
             {
                 throw new ArgumentException("Action cannot be null or empty.", nameof(action));
             }
-            return _userService.IsUserAuthorized(UserId, resource, action);
+            return _userService.ValidateAction(UserId, resource, action);
         }
     }
 }

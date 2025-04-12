@@ -1,28 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace DrinkDb_Auth.ViewModel
 {
     public class RelayCommand : ICommand
     {
-        private readonly Action _execute;
-        private readonly Func<bool>? _canExecute;
+        private readonly Action executableActions;
+        private readonly Func<bool>? isExecutable;
 
-        public RelayCommand(Action execute, Func<bool>? canExecute = null)
+        public RelayCommand(Action actions, Func<bool>? executableChecker = null)
         {
-            _execute = execute;
-            _canExecute = canExecute;
+            this.executableActions = actions;
+            this.isExecutable = executableChecker;
         }
 
-        public bool CanExecute(object? parameter) => _canExecute == null || _canExecute();
+        public bool CanExecute(object? providedObject) => this.isExecutable == null || this.isExecutable();
 
-        public void Execute(object? parameter)
+        public void Execute(object? providedObject)
         {
-            _execute();
+            this.executableActions();
         }
 
         public event EventHandler? CanExecuteChanged;
