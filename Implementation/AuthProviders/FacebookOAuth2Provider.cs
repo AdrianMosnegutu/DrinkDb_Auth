@@ -1,18 +1,14 @@
 using System;
 using System.Net.Http;
 using System.Text.Json;
-using DrinkDb_Auth.OAuthProviders;
-using Microsoft.Data.SqlClient;
-using System.Configuration;
 using DrinkDb_Auth.Model;
 using DrinkDb_Auth.Adapter;
-using Windows.Networking.Sockets;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
     public class FacebookOAuth2Provider : GenericOAuth2Provider
     {
-        private static readonly SessionAdapter sessionAdapter = new();
+        private static readonly SessionAdapter SessionAdapter = new ();
         public AuthenticationResponse Authenticate(string userId, string token)
         {
             try
@@ -34,9 +30,9 @@ namespace DrinkDb_Auth.OAuthProviders
                             // store or update user in DB - UserService
                             bool isNewAccount = StoreOrUpdateUserInDb(fbId, fbName);
 
-                            User user = userAdapter.GetUserByUsername(fbName) ?? throw new Exception("User not found");
+                            User user = UserAdapter.GetUserByUsername(fbName) ?? throw new Exception("User not found");
 
-                            Session session = sessionAdapter.CreateSession(user.UserId);
+                            Session session = SessionAdapter.CreateSession(user.UserId);
 
                             return new AuthenticationResponse
                             {
@@ -47,7 +43,6 @@ namespace DrinkDb_Auth.OAuthProviders
                             };
                         }
                     }
-                    
                     return new AuthenticationResponse
                     {
                         AuthenticationSuccesfull = false,
@@ -69,14 +64,14 @@ namespace DrinkDb_Auth.OAuthProviders
             }
         }
 
-        private static readonly UserAdapter userAdapter = new();
+        private static readonly UserAdapter UserAdapter = new ();
         private bool StoreOrUpdateUserInDb(string fbId, string fbName)
         {
-            var user = userAdapter.GetUserByUsername(fbName);
+            var user = UserAdapter.GetUserByUsername(fbName);
 
             if (user == null)
             {
-                userAdapter.CreateUser(new User
+                UserAdapter.CreateUser(new User
                 {
                     UserId = Guid.NewGuid(),
                     Username = fbName,
@@ -88,10 +83,9 @@ namespace DrinkDb_Auth.OAuthProviders
             else
             {
                 user.Username = fbName;
-                userAdapter.UpdateUser(user);
+                UserAdapter.UpdateUser(user);
                 return false;
             }
-
         }
     }
 }

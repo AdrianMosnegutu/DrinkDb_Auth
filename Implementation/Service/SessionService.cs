@@ -6,26 +6,26 @@ namespace DrinkDb_Auth.Service
 {
     public class SessionService
     {
-        private readonly SessionAdapter _sessionRepository;
+        private readonly SessionAdapter sessionRepository;
 
         public SessionService()
         {
-            _sessionRepository = new SessionAdapter();
+            sessionRepository = new SessionAdapter();
         }
 
         public Session CreateSession(Guid userId)
         {
-            return _sessionRepository.CreateSession(userId);
+            return sessionRepository.CreateSession(userId);
         }
 
         public bool EndSession(Guid sessionId)
         {
-            return _sessionRepository.EndSession(sessionId);
+            return sessionRepository.EndSession(sessionId);
         }
 
         public Session GetSession(Guid sessionId)
         {
-            return _sessionRepository.GetSession(sessionId);
+            return sessionRepository.GetSession(sessionId);
         }
 
         public bool ValidateSession(Guid sessionId)
@@ -46,4 +46,4 @@ namespace DrinkDb_Auth.Service
             return userService.ValidateAction(session.UserId, resource, action);
         }
     }
-} 
+}
