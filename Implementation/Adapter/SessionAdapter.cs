@@ -20,7 +20,7 @@ namespace DrinkDb_Auth.Adapter
             createSessionCommand.ExecuteNonQuery();
 
             Guid sessionId = (Guid)sessionIdParameter.Value;
-            return Session.createSessionWithIds(sessionId, userId);
+            return Session.CreateSessionWithIds(sessionId, userId);
         }
 
         public bool EndSession(Guid sessionId)
@@ -45,7 +45,7 @@ namespace DrinkDb_Auth.Adapter
             if (reader.Read())
             {
                 int firstColumn = 0;
-                return Session.createSessionWithIds(sessionId, reader.GetGuid(firstColumn));
+                return Session.CreateSessionWithIds(sessionId, reader.GetGuid(firstColumn));
             }
             throw new Exception("Session not found.");
         }

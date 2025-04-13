@@ -222,7 +222,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     {
                         AuthenticationSuccesfull = true,
                         OAuthenticationToken = tokenResult.AccessToken,
-                        SessionId = session.sessionId,
+                        SessionId = session.SessionId,
                         NewAccount = false
                     };
 

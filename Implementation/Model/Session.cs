@@ -80,4 +80,4 @@ namespace DrinkDb_Auth.Model
             return SessionId.GetHashCode();
         }
     }
-} 
+}
