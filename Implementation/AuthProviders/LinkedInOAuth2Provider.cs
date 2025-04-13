@@ -40,8 +40,13 @@ namespace DrinkDb_Auth.OAuthProviders
                 Debug.WriteLine("LinkedIn ID or name is empty.");
                 return new AuthenticationResponse
                 {
-                    AuthenticationSuccesfull = false,
+<<<<<<< Updated upstream
+                    IsAuthenticationSuccessful = false,
                     OAuthenticationToken = string.Empty,
+=======
+                    IsAuthenticationSuccessful = false,
+                    OAuthToken = string.Empty,
+>>>>>>> Stashed changes
                     SessionId = Guid.Empty,
                     NewAccount = false
                 };
@@ -61,9 +66,15 @@ namespace DrinkDb_Auth.OAuthProviders
                 Session session = SessionAdapter.CreateSession(newUser.UserId);
                 return new AuthenticationResponse
                 {
-                    AuthenticationSuccesfull = true,
+<<<<<<< Updated upstream
+                    IsAuthenticationSuccessful = true,
                     OAuthenticationToken = token,
                     SessionId = session.SessionId,
+=======
+                    IsAuthenticationSuccessful = true,
+                    OAuthToken = token,
+                    SessionId = session.sessionId,
+>>>>>>> Stashed changes
                     NewAccount = true
                 };
             }
@@ -71,8 +82,13 @@ namespace DrinkDb_Auth.OAuthProviders
             {
                 return new AuthenticationResponse
                 {
-                    AuthenticationSuccesfull = true,
+<<<<<<< Updated upstream
+                    IsAuthenticationSuccessful = true,
                     OAuthenticationToken = token,
+=======
+                    IsAuthenticationSuccessful = true,
+                    OAuthToken = token,
+>>>>>>> Stashed changes
                     SessionId = user.UserId,
                     NewAccount = false
                 };

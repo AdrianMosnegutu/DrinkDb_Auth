@@ -43,7 +43,11 @@ namespace DrinkDb_Auth.Service
             }
 
             var userService = new UserService();
+<<<<<<< Updated upstream
             return userService.ValidateAction(session.UserId, resource, action);
+=======
+            return userService.IsUserAuthorized(session.userId, resource, action);
+>>>>>>> Stashed changes
         }
     }
-} 
+}

@@ -7,23 +7,28 @@ namespace DrinkDb_Auth.Service
 {
     public class UserService
     {
-        private readonly UserAdapter _userAdapter;
-        private readonly AuthenticationService _authenticationService;
+        private readonly UserAdapter userAdapter;
+        private readonly AuthenticationService authenticationService;
+
+        private const string UserNotFoundMessage = "User not found";
+        private const string NoUserLoggedInMessage = "No user is currently logged in.";
+        private const string NullResourceError = "Resource cannot be null or empty.";
+        private const string NullActionError = "Action cannot be null or empty.";
 
         public UserService()
         {
-            _userAdapter = new UserAdapter();
-            _authenticationService = new AuthenticationService();
+            userAdapter = new UserAdapter();
+            authenticationService = new AuthenticationService();
         }
 
         public User GetUserById(Guid userId)
         {
-            return _userAdapter.GetUserById(userId) ?? throw new ArgumentException("User not found", nameof(userId));
+            return userAdapter.GetUserById(userId) ?? throw new ArgumentException(UserNotFoundMessage, nameof(userId));
         }
 
         public User GetUserByUsername(string username)
         {
-            return _userAdapter.GetUserByUsername(username) ?? throw new ArgumentException("User not found", nameof(username));
+            return userAdapter.GetUserByUsername(username) ?? throw new ArgumentException(UserNotFoundMessage, nameof(username));
         }
 
         public User GetCurrentUser()
@@ -31,27 +36,27 @@ namespace DrinkDb_Auth.Service
             Guid currentSessionId = App.CurrentSessionId;
             if (currentSessionId == Guid.Empty)
             {
-                throw new InvalidOperationException("No user is currently logged in.");
+                throw new InvalidOperationException(NoUserLoggedInMessage);
             }
-            return _authenticationService.GetUser(currentSessionId);
+            return authenticationService.GetUser(currentSessionId);
         }
 
-        public bool ValidateAction(Guid userId, string resource, string action)
+        public bool IsUserAuthorized(Guid userId, string resource, string action)
         {
             if (string.IsNullOrEmpty(resource))
             {
-                throw new ArgumentException("Role cannot be null or empty.", nameof(resource));
+                throw new ArgumentException(NullResourceError, nameof(resource));
             }
             if (string.IsNullOrEmpty(action))
             {
-                throw new ArgumentException("Action cannot be null or empty.", nameof(action));
+                throw new ArgumentException(NullActionError, nameof(action));
             }
-            return _userAdapter.ValidateAction(userId, resource, action);
+            return userAdapter.ValidateAction(userId, resource, action);
         }
 
         public void LogoutUser()
         {
-            _authenticationService.Logout();
+            authenticationService.Logout();
         }
     }
 }

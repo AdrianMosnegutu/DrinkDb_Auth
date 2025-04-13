@@ -80,7 +80,20 @@ namespace DrinkDb_Auth.OAuthProviders
 
         public AuthenticationResponse Authenticate(string userId, string token)
         {
-            return new AuthenticationResponse { AuthenticationSuccesfull = !string.IsNullOrEmpty(token), OAuthenticationToken = token, SessionId = Guid.Empty, NewAccount = false };
+<<<<<<< Updated upstream
+            return new AuthenticationResponse { IsAuthenticationSuccessful = !string.IsNullOrEmpty(token), OAuthenticationToken = token, SessionId = Guid.Empty, NewAccount = false };
+=======
+            // This method is used for validating an existing token, but we'll focus on the initial auth flow
+            var response = new AuthResponse
+            {
+                IsAuthenticationSuccessful = !string.IsNullOrEmpty(token),
+                OAuthToken = token,
+                SessionId = Guid.Empty,
+                NewAccount = false
+            };
+
+            return response;
+>>>>>>> Stashed changes
         }
 
         public string GetAuthorizationUrl()
@@ -146,7 +159,19 @@ namespace DrinkDb_Auth.OAuthProviders
 
                         if (tokenResult == null || string.IsNullOrEmpty(tokenResult.AccessToken))
                         {
-                            return new AuthenticationResponse { AuthenticationSuccesfull = false, OAuthenticationToken = tokenResult?.AccessToken, SessionId = Guid.Empty, NewAccount = false };
+<<<<<<< Updated upstream
+                            return new AuthenticationResponse { IsAuthenticationSuccessful = false, OAuthenticationToken = tokenResult?.AccessToken, SessionId = Guid.Empty, NewAccount = false };
+=======
+                            System.Diagnostics.Debug.WriteLine("ERROR: Token result was null or access token was empty");
+                            System.Diagnostics.Debug.WriteLine($"Raw response content: {responseContent}");
+                            return new AuthResponse
+                            {
+                                IsAuthenticationSuccessful = false,
+                                OAuthToken = tokenResult.AccessToken,
+                                SessionId = Guid.Empty,
+                                NewAccount = false
+                            };
+>>>>>>> Stashed changes
                         }
 
                         UserInfoResponse userInformation;
@@ -160,6 +185,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                 HttpResponseMessage? httpClientResponse = await httpClient.GetAsync(UserInformationEndpoint);
                                 string httpClientResponseContent = await httpClientResponse.Content.ReadAsStringAsync();
 
+<<<<<<< Updated upstream
                                 switch (httpClientResponse.IsSuccessStatusCode)
                                 {
                                     case true:
@@ -172,33 +198,159 @@ namespace DrinkDb_Auth.OAuthProviders
 
                                         userInformation = this.ExtractUserInfoFromIdToken(tokenResult.IdToken);
                                         userId = this.EnsureUserExists(userInformation.Identifier, httpClientInformation.Email, httpClientInformation.Name);
-                                        return new AuthenticationResponse { AuthenticationSuccesfull = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
+                                        return new AuthenticationResponse { IsAuthenticationSuccessful = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
                                     case false:
                                         if (string.IsNullOrEmpty(tokenResult.IdToken))
                                         {
-                                            return new AuthenticationResponse { AuthenticationSuccesfull = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = Guid.Empty, NewAccount = false };
+                                            return new AuthenticationResponse { IsAuthenticationSuccessful = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = Guid.Empty, NewAccount = false };
                                         }
                                         else
                                         {
                                             throw new Exception("Trigger Catch | Repeated code to attempt a succesfull authentication");
                                         }
+=======
+                                    // Extract user info from token
+                                    var tokenUserInfo = ExtractUserInfoFromIdToken(tokenResult.IdToken);
+                                    
+                                    // Ensure the user exists in the database
+                                    var userId = EnsureUserExists(tokenUserInfo.Sub, userInfo.Email, userInfo.Name);
+                                    
+                                    return new AuthResponse
+                                    {
+                                        IsAuthenticationSuccessful = true,
+                                        OAuthToken = tokenResult.AccessToken,
+                                        SessionId = sessionAdapter.CreateSession(userId).sessionId,
+                                        NewAccount = false
+                                    };
+                                }
+                                else
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"User info request failed: {userInfoContent}");
+                                    
+                                    // Try to extract basic info from ID token if available
+                                    if (!string.IsNullOrEmpty(tokenResult.IdToken))
+                                    {
+                                        try
+                                        {
+                                            var basicUserInfo = ExtractUserInfoFromIdToken(tokenResult.IdToken);
+                                            if (basicUserInfo != null)
+                                            {
+                                                System.Diagnostics.Debug.WriteLine($"Extracted user info from ID token: {basicUserInfo.Email} ({basicUserInfo.Name})");
+                                                
+                                                // Ensure the user exists in the database
+                                                var userId = EnsureUserExists(basicUserInfo.Sub, basicUserInfo.Email, basicUserInfo.Name);
+                                                
+                                                // If we couldn't get user info but have a valid token, still return success
+                                                return new AuthResponse
+                                                {
+                                                    IsAuthenticationSuccessful = true,
+                                                    OAuthToken = tokenResult.AccessToken,
+                                                    SessionId = sessionAdapter.CreateSession(userId).sessionId, 
+                                                    NewAccount = false
+                                                };
+                                            }
+                                        }
+                                        catch (Exception idEx)
+                                        {
+                                            System.Diagnostics.Debug.WriteLine($"Failed to extract info from ID token: {idEx.Message}");
+                                        }
+                                    }
+               
+                                    
+
+                                    // If we couldn't get user info but have a valid token, still return success
+                                    return new AuthResponse
+                                    {
+                                        IsAuthenticationSuccessful = true,
+                                        OAuthToken = tokenResult.AccessToken,
+                                        SessionId = Guid.Empty,
+                                        NewAccount = false
+                                    };
+>>>>>>> Stashed changes
                                 }
                             }
                         }
                         catch
                         {
+<<<<<<< Updated upstream
                             userInformation = ExtractUserInfoFromIdToken(tokenResult.IdToken);
                             userId = this.EnsureUserExists(userInformation.Identifier, userInformation.Email, userInformation.Name);
-                            return new AuthenticationResponse { AuthenticationSuccesfull = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
+                            return new AuthenticationResponse { IsAuthenticationSuccessful = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
                         }
                     case false:
                         throw new Exception("Trigger Catch | Repeated code to attempt a failed authentication");
+=======
+                            System.Diagnostics.Debug.WriteLine($"Error getting user info: {ex.Message}");
+
+                            // Try to extract basic info from ID token
+                            try 
+                            {
+                                var basicUserInfo = ExtractUserInfoFromIdToken(tokenResult.IdToken);
+                                if (basicUserInfo != null)
+                                {
+                                    // Ensure the user exists in the database
+                                    var userId = EnsureUserExists(basicUserInfo.Sub, basicUserInfo.Email, basicUserInfo.Name);
+                                    
+                                    // If we couldn't get user info but have a valid token, still return success
+                                    return new AuthResponse
+                                    {
+                                        IsAuthenticationSuccessful = true,
+                                        OAuthToken = tokenResult.AccessToken,
+                                        SessionId = sessionAdapter.CreateSession(userId).sessionId,
+                                        NewAccount = false
+                                    };
+                                }
+                            }
+                            catch (Exception idEx)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Failed to extract info from ID token: {idEx.Message}");
+                            }
+                            
+                            // Unable to extract user info, can't create user
+                            return new AuthResponse
+                            {
+                                IsAuthenticationSuccessful = false,
+                                OAuthToken = string.Empty,
+                                SessionId = Guid.Empty,
+                                NewAccount = false
+                            };
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error processing token response: {ex.Message}");
+                        return new AuthResponse
+                        {
+                            IsAuthenticationSuccessful = false,
+                            OAuthToken = string.Empty,
+                            SessionId = Guid.Empty,
+                            NewAccount = false
+                        };
+                    }
+                }
+                else
+                {
+                    // Log the error response
+                    System.Diagnostics.Debug.WriteLine($"Token request failed: {tokenResponse.StatusCode}");
+                    System.Diagnostics.Debug.WriteLine($"Error details: {responseContent}");
+>>>>>>> Stashed changes
                 }
             }
             catch
             {
-                return new AuthenticationResponse { AuthenticationSuccesfull = false, OAuthenticationToken = string.Empty, SessionId = Guid.Empty, NewAccount = false };
+                return new AuthenticationResponse { IsAuthenticationSuccessful = false, OAuthenticationToken = string.Empty, SessionId = Guid.Empty, NewAccount = false };
             }
+<<<<<<< Updated upstream
+=======
+            
+            return new AuthResponse
+            {
+                IsAuthenticationSuccessful = false,
+                OAuthToken = string.Empty,
+                SessionId = Guid.Empty,
+                NewAccount = false
+            };
+>>>>>>> Stashed changes
         }
 
         public async Task<AuthenticationResponse> SignInWithGoogleAsync(Window parentWindow)
@@ -231,11 +383,135 @@ namespace DrinkDb_Auth.OAuthProviders
                 {
                     try
                     {
+<<<<<<< Updated upstream
                         string currentUrl = webView.CoreWebView2.Source;
                         string title = await webView.CoreWebView2.ExecuteScriptAsync(domTitle);
                         string javaScriptCode = @"(function() 
                                                 {
                                                     const codeElement = document.querySelector('textarea.kHn9Lb');
+=======
+                        // Get the current source URL
+                        var currentUrl = webView.CoreWebView2.Source;
+                        
+                        // Check if this is the success page with the auth code
+                        var title = await webView.CoreWebView2.ExecuteScriptAsync("document.title");
+                        System.Diagnostics.Debug.WriteLine($"Page title: {title}");
+                        
+                        // For the OAuth approval page, we need a more specific approach
+                        if (currentUrl.Contains("accounts.google.com/o/oauth2/approval"))
+                        {
+                            var codeBoxContent = await webView.CoreWebView2.ExecuteScriptAsync(@"
+                                (function() {
+                                    // Look for code specifically in Google's OAuth approval page
+                                    const codeElement = document.querySelector('textarea.kHn9Lb');
+                                    if (codeElement) return codeElement.textContent;
+                                    
+                                    // Try to find code in any element with a specific class or input
+                                    const possibleCodeElements = document.querySelectorAll('code, pre, textarea, input[readonly]');
+                                    for (const el of possibleCodeElements) {
+                                        const content = el.textContent || el.value;
+                                        if (content && content.length > 10) return content;
+                                    }
+                                    
+                                    return '';
+                                })()
+                            ");
+                            
+                            // Clean up the result (remove quotes from JS)
+                            var code = codeBoxContent.Trim('"');
+                            if (!string.IsNullOrEmpty(code) && code != "null" && !authCodeFound)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Found authorization code in OAuth approval page: {code.Substring(0, Math.Min(10, code.Length))}...");
+                                authCodeFound = true;
+                                
+                                // Process the code
+                                var response = await ExchangeCodeForTokenAsync(code);
+                                System.Diagnostics.Debug.WriteLine($"Auth result: {response.IsAuthenticationSuccessful}");
+                                
+                                // Close dialog and return
+                                parentWindow.DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    try { webViewDialog.Hide(); } catch { }
+                                    tcs.SetResult(response);
+                                });
+                                
+                                return; // Exit early once we've found the code
+                            }
+                        }
+                        
+                        // The auth code page has "Success code=" in the title, or the code might be in the page content
+                        if (title.Contains("Success") || title.Contains("code"))
+                        {
+                            string code = string.Empty;
+                            
+                            // Try to get code from title
+                            if (title.Contains("Success code="))
+                            {
+                                // Remove quotes that come from JS
+                                title = title.Replace("\"", "");
+                                code = title.Substring(title.IndexOf("Success code=") + "Success code=".Length);
+                                System.Diagnostics.Debug.WriteLine($"Found code in title: {code.Substring(0, Math.Min(10, code.Length))}...");
+                            }
+                            
+                            // Try to extract code from page if not in title
+                            if (string.IsNullOrEmpty(code))
+                            {
+                                // Try to extract from the page content
+                                var pageText = await webView.CoreWebView2.ExecuteScriptAsync(
+                                    "document.body.innerText");
+                                
+                                // Look for patterns in the text (this may need adjustment based on actual output)
+                                if (pageText.Contains("code="))
+                                {
+                                    int startIndex = pageText.IndexOf("code=") + 5;
+                                    int endIndex = pageText.IndexOf("\"", startIndex);
+                                    if (endIndex > startIndex)
+                                    {
+                                        code = pageText.Substring(startIndex, endIndex - startIndex);
+                                        System.Diagnostics.Debug.WriteLine($"Found code in page: {code.Substring(0, Math.Min(10, code.Length))}...");
+                                    }
+                                }
+                                
+                                // Try to find code in a code element or input field
+                                var codeElement = await webView.CoreWebView2.ExecuteScriptAsync(
+                                    "document.querySelector('code') ? document.querySelector('code').innerText : ''");
+                                if (!string.IsNullOrEmpty(codeElement) && codeElement != "\"\"")
+                                {
+                                    code = codeElement.Trim('"');
+                                    System.Diagnostics.Debug.WriteLine($"Found code in code element: {code.Substring(0, Math.Min(10, code.Length))}...");
+                                }
+                            }
+                            
+                            // If we found a code, process it
+                            if (!string.IsNullOrEmpty(code) && !authCodeFound)
+                            {
+                                authCodeFound = true;
+                                System.Diagnostics.Debug.WriteLine($"Automatically extracted authorization code");
+                                
+                                // Process the authentication code
+                                var response = await ExchangeCodeForTokenAsync(code);
+                                System.Diagnostics.Debug.WriteLine($"Authentication result: {response.IsAuthenticationSuccessful}, Token: {(string.IsNullOrEmpty(response.OAuthToken) ? "Empty" : "Present")}");
+                                
+                                // Close the dialog and return the result
+                                parentWindow.DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    try
+                                    {
+                                        webViewDialog.Hide();
+                                    }
+                                    catch { /* ignore errors if dialog is already closed */ }
+                                    
+                                    tcs.SetResult(response);
+                                });
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error extracting code: {ex.Message}");
+                    }
+                };
+>>>>>>> Stashed changes
 
                                                     if (codeElement) return codeElement.textContent;
                                     
@@ -338,6 +614,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 {
                     try
                     {
+<<<<<<< Updated upstream
                         string uniformResourceIdentifier = webView.Source?.ToString() ?? webView.CoreWebView2.Source;
                         if (uniformResourceIdentifier.Contains(approvalPath) && !authenticationCodeFound)
                         {
@@ -410,6 +687,13 @@ namespace DrinkDb_Auth.OAuthProviders
                 if (!taskResults.Task.IsCompleted)
                 {
                     taskResults.SetResult(new AuthenticationResponse { AuthenticationSuccesfull = false, OAuthenticationToken = string.Empty, SessionId = Guid.Empty, NewAccount = false });
+=======
+                        IsAuthenticationSuccessful = false,
+                        OAuthToken = string.Empty,
+                        SessionId = Guid.Empty,
+                        NewAccount = false
+                    });
+>>>>>>> Stashed changes
                 }
             }
             catch (Exception ex)

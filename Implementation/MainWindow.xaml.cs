@@ -33,7 +33,11 @@ namespace DrinkDb_Auth
 
         private async Task<bool> AuthenticationComplete(AuthenticationResponse res)
         {
-            if (res.AuthenticationSuccesfull)
+<<<<<<< Updated upstream
+            if (res.IsAuthenticationSuccessful)
+=======
+            if (res.IsAuthenticationSuccessful)
+>>>>>>> Stashed changes
             {
                 var user = authenticationService.GetUser(res.SessionId);
                 bool twoFAresponse = false;

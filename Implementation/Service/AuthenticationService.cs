@@ -50,7 +50,11 @@ namespace DrinkDb_Auth.Service
                 _ => throw new ArgumentException("Invalid OAuth service selected"),
             };
 
-            if (authResponse.AuthenticationSuccesfull)
+<<<<<<< Updated upstream
+            if (authResponse.IsAuthenticationSuccessful)
+=======
+            if (authResponse.IsAuthenticationSuccessful)
+>>>>>>> Stashed changes
             {
                 App.CurrentSessionId = authResponse.SessionId;
                 Session session = SessionAdapter.GetSession(App.CurrentSessionId);
@@ -83,7 +87,11 @@ namespace DrinkDb_Auth.Service
                     Session session = SessionAdapter.CreateSession(user.UserId);
                     return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = true,
+<<<<<<< Updated upstream
+                        IsAuthenticationSuccessful = true,
+=======
+                        IsAuthenticationSuccessful = true,
+>>>>>>> Stashed changes
                         NewAccount = false,
                       
                         OAuthenticationToken = string.Empty,
@@ -94,7 +102,11 @@ namespace DrinkDb_Auth.Service
                 {
                     return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = false,
+<<<<<<< Updated upstream
+                        IsAuthenticationSuccessful = false,
+=======
+                        IsAuthenticationSuccessful = false,
+>>>>>>> Stashed changes
                         NewAccount = false,
                         OAuthenticationToken = string.Empty,
                         SessionId = Guid.Empty,
@@ -115,7 +127,11 @@ namespace DrinkDb_Auth.Service
                 Session session = SessionAdapter.CreateSession(user.UserId);
                 return new AuthenticationResponse
                 {
-                    AuthenticationSuccesfull = true,
+<<<<<<< Updated upstream
+                    IsAuthenticationSuccessful = true,
+=======
+                    IsAuthenticationSuccessful = true,
+>>>>>>> Stashed changes
                     NewAccount = true,
                     OAuthenticationToken = string.Empty,
                     SessionId = session.SessionId,

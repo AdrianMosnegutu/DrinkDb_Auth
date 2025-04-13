@@ -6,7 +6,7 @@ namespace DrinkDb_Auth.OAuthProviders
     public class AuthenticationResponse
     {
         /// True if authentication succeeded, false otherwise.
-        public required bool AuthenticationSuccesfull { get; set; }
+        public required bool IsAuthenticationSuccessful { get; set; }
 
         /// The session id
         public required Guid SessionId { get; set; }

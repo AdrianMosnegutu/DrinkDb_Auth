@@ -40,9 +40,15 @@ namespace DrinkDb_Auth.OAuthProviders
 
                             return new AuthenticationResponse
                             {
-                                AuthenticationSuccesfull = true,
+<<<<<<< Updated upstream
+                                IsAuthenticationSuccessful = true,
                                 SessionId = session.SessionId,
                                 OAuthenticationToken = token,
+=======
+                                IsAuthenticationSuccessful = true,
+                                SessionId = session.sessionId,
+                                OAuthToken = token,
+>>>>>>> Stashed changes
                                 NewAccount = isNewAccount
                             };
                         }
@@ -50,8 +56,13 @@ namespace DrinkDb_Auth.OAuthProviders
                     
                     return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = false,
+<<<<<<< Updated upstream
+                        IsAuthenticationSuccessful = false,
                         OAuthenticationToken = token,
+=======
+                        IsAuthenticationSuccessful = false,
+                        OAuthToken = token,
+>>>>>>> Stashed changes
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -61,8 +72,13 @@ namespace DrinkDb_Auth.OAuthProviders
             {
                 return new AuthenticationResponse
                 {
-                    AuthenticationSuccesfull = false,
+<<<<<<< Updated upstream
+                    IsAuthenticationSuccessful = false,
                     OAuthenticationToken = token,
+=======
+                    IsAuthenticationSuccessful = false,
+                    OAuthToken = token,
+>>>>>>> Stashed changes
                     SessionId = Guid.Empty,
                     NewAccount = false
                 };
