@@ -1,109 +1,118 @@
 ﻿using System;
 using System.Collections.Generic;
-using Microsoft.Data.SqlClient;
 using System.Configuration;
-using DrinkDb_Auth.Adapter;
-using DrinkDb_Auth.Database;
+using Microsoft.Data.SqlClient;
 using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.Database
 {
     public class RoleAdapter : IRoleAdapter
     {
-        private readonly string connectionString;
+        private readonly string databaseConnectionString;
 
         public RoleAdapter()
         {
-            connectionString = ConfigurationManager.ConnectionStrings["DrinkDbConnection"].ConnectionString;
+            databaseConnectionString = ConfigurationManager.ConnectionStrings["DrinkDbConnection"].ConnectionString;
         }
 
-        public void CreateResource(Roles resource)
+        public void InsertRole(Roles role)
         {
-            string query = "INSERT INTO Resources (Name, Description) VALUES (@Name, @Description)";
-            using (SqlConnection conn = new(connectionString))
-            using (SqlCommand cmd = new(query, conn))
+            const string insertQuery = "INSERT INTO Roles (roleId, roleName, roleDescription) VALUES (@RoleId, @RoleName, @RoleDescription)";
+
+            using (SqlConnection databaseConnection = new (databaseConnectionString))
+            using (SqlCommand insertCommand = new (insertQuery, databaseConnection))
             {
-                cmd.Parameters.AddWithValue("@Name", resource.Name);
-                cmd.Parameters.AddWithValue("@Description", resource.Description);
-                conn.Open();
-                cmd.ExecuteNonQuery();
+                insertCommand.Parameters.AddWithValue("@RoleId", role.RoleIdentifier);
+                insertCommand.Parameters.AddWithValue("@RoleName", role.RoleName);
+                insertCommand.Parameters.AddWithValue("@RoleDescription", role.RoleDescription);
+                databaseConnection.Open();
+                insertCommand.ExecuteNonQuery();
             }
         }
 
-        public void UpdateResource(Roles resource)
+        public void UpdateRole(Roles role)
         {
-            string query = "UPDATE Resources SET Name=@Name, Description=@Description WHERE Id=@Id";
-            using (SqlConnection conn = new(connectionString))
-            using (SqlCommand cmd = new(query, conn))
+            const string updateQuery = "UPDATE Roles SET roleName = @RoleName, roleDescription = @RoleDescription WHERE roleId = @RoleId";
+
+            using (SqlConnection databaseConnection = new (databaseConnectionString))
+            using (SqlCommand updateCommand = new (updateQuery, databaseConnection))
             {
-                cmd.Parameters.AddWithValue("@Name", resource.Name);
-                cmd.Parameters.AddWithValue("@Description", resource.Description);
-                cmd.Parameters.AddWithValue("@Id", resource.Id);
-                conn.Open();
-                cmd.ExecuteNonQuery();
+                updateCommand.Parameters.AddWithValue("@RoleId", role.RoleIdentifier);
+                updateCommand.Parameters.AddWithValue("@RoleName", role.RoleName);
+                updateCommand.Parameters.AddWithValue("@RoleDescription", role.RoleDescription);
+                databaseConnection.Open();
+                updateCommand.ExecuteNonQuery();
             }
         }
 
-        public void DeleteResource(Roles resource)
+        public void DeleteRoleById(Roles role)
         {
-            string query = "DELETE FROM Resources WHERE Id=@Id";
-            using (SqlConnection conn = new(connectionString))
-            using (SqlCommand cmd = new(query, conn))
+            const string deleteQuery = "DELETE FROM Roles WHERE roleId = @RoleId";
+
+            using (SqlConnection databaseConnection = new (databaseConnectionString))
+            using (SqlCommand deleteCommand = new (deleteQuery, databaseConnection))
             {
-                cmd.Parameters.AddWithValue("@Id", resource.Id);
-                conn.Open();
-                cmd.ExecuteNonQuery();
+                deleteCommand.Parameters.AddWithValue("@RoleId", role.RoleIdentifier);
+                databaseConnection.Open();
+                deleteCommand.ExecuteNonQuery();
             }
         }
 
-        public Roles GetResourceById(int id)
+        public Roles GetRoleById(Guid roleIdentifier)
         {
-            string query = "SELECT Id, Name, Description FROM Resources WHERE Id=@Id";
-            using (SqlConnection conn = new(connectionString))
-            using (SqlCommand cmd = new(query, conn))
+            const string selectQuery = "SELECT roleId, roleName, roleDescription FROM Roles WHERE roleId = @RoleId";
+
+            using (SqlConnection databaseConnection = new (databaseConnectionString))
+            using (SqlCommand selectCommand = new (selectQuery, databaseConnection))
             {
-                cmd.Parameters.AddWithValue("@Id", id);
-                conn.Open();
-                using (SqlDataReader reader = cmd.ExecuteReader())
+                selectCommand.Parameters.AddWithValue("@RoleId", roleIdentifier);
+                databaseConnection.Open();
+
+                using (SqlDataReader dataReader = selectCommand.ExecuteReader())
                 {
-                    if (reader.Read())
+                    if (dataReader.Read())
                     {
                         return new Roles
                         {
-                            Id = Guid.Parse(reader.GetString(0)),
-                            Name = reader.GetString(1),
-                            Description = reader.GetString(2)
+                            RoleIdentifier = dataReader.GetGuid(0),
+                            RoleName = dataReader.GetString(1),
+                            RoleDescription = dataReader.GetString(2)
                         };
                     }
                 }
             }
-            throw new Exception("Resource not found.");
+
+            throw new Exception($"Role with ID {roleIdentifier} not found.");
         }
 
-        public List<Roles> GetResources()
+        public List<Roles> GetAllRoles()
         {
-            List<Roles> resources = [];
-            string query = "SELECT Id, Name, Description FROM Resources";
-            using (SqlConnection conn = new(connectionString))
-            using (SqlCommand cmd = new(query, conn))
+            List<Roles> rolesList = new ();
+
+            const string selectAllQuery = "SELECT roleId, roleName, roleDescription FROM Roles";
+
+            using (SqlConnection databaseConnection = new (databaseConnectionString))
+            using (SqlCommand selectCommand = new (selectAllQuery, databaseConnection))
             {
-                conn.Open();
-                using (SqlDataReader reader = cmd.ExecuteReader())
+                databaseConnection.Open();
+
+                using (SqlDataReader dataReader = selectCommand.ExecuteReader())
                 {
-                    while (reader.Read())
+                    while (dataReader.Read())
                     {
-                        Roles resource = new()
+                        Roles role = new ()
                         {
-                            Id = Guid.Parse(reader.GetString(0)),
-                            Name = reader.GetString(1),
-                            Description = reader.GetString(2)
+                            RoleIdentifier = dataReader.GetGuid(0),
+                            RoleName = dataReader.GetString(1),
+                            RoleDescription = dataReader.GetString(2)
                         };
-                        resources.Add(resource);
+
+                        rolesList.Add(role);
                     }
                 }
             }
-            return resources;
-        }
 
+            return rolesList;
+        }
     }
 }

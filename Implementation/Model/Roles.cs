@@ -4,8 +4,10 @@ namespace DrinkDb_Auth.Model
 {
     public class Roles
     {
-        public required Guid Id { get; set; }
-        public required string Name { get; set; }
-        public required string Description { get; set; }
+        public required Guid RoleIdentifier { get; set; }
+        public required string RoleName { get; set; }
+        public required string RoleDescription { get; set; }
     }
 }
+
+

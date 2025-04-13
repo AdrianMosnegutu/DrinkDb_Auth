@@ -1,14 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.Database
 {
     public interface IRoleAdapter
     {
-        void CreateResource(Roles resource);
-        void DeleteResource(Roles resource);
-        Roles GetResourceById(int id);
-        List<Roles> GetResources();
-        void UpdateResource(Roles resource);
+        void InsertRole(Roles role);
+        void DeleteRoleById(Roles role);
+        Roles GetRoleById(System.Guid roleIdentifier);
+        List<Roles> GetAllRoles();
+        void UpdateRole(Roles role);
     }
 }
+
+
+
+
+
+
