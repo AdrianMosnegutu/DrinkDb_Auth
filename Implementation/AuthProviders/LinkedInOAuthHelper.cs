@@ -14,7 +14,7 @@ namespace DrinkDb_Auth.OAuthProviders
         private readonly string clientSecret = "WPL_AP1.pg2Bd1XhCi821VTG.+hatTA==";
         private readonly string redirectUrl = "http://localhost:8891/auth";
         private readonly string scope = "openid profile email";
-        private TaskCompletionSource<AuthResponse>? taskCompletionSource;
+        private TaskCompletionSource<AuthenticationResponse>? taskCompletionSource;
         private readonly UserAdapter userAdapter = new UserAdapter();
         private readonly static LinkedInOAuth2Provider LinkedInOAuth2Provider = new ();
 
@@ -59,7 +59,7 @@ namespace DrinkDb_Auth.OAuthProviders
 
         public async Task<AuthenticationResponse> AuthenticateAsync()
         {
-            taskCompletionSource = new TaskCompletionSource<AuthResponse>();
+            taskCompletionSource = new TaskCompletionSource<AuthenticationResponse>();
 
             var authorizeUri = new Uri(BuildAuthorizeUrl());
             Process.Start(new ProcessStartInfo

@@ -87,7 +87,7 @@ namespace DrinkDb_Auth.Service
                         NewAccount = false,
                       
                         OAuthenticationToken = string.Empty,
-                        SessionId = session.sessionId,
+                        SessionId = session.SessionId,
                     };
                 }
                 else
@@ -118,7 +118,7 @@ namespace DrinkDb_Auth.Service
                     AuthenticationSuccesfull = true,
                     NewAccount = true,
                     OAuthenticationToken = string.Empty,
-                    SessionId = session.sessionId,
+                    SessionId = session.SessionId,
                 };
             }
             throw new Exception("Unexpected error during authentication");

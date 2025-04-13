@@ -57,13 +57,13 @@ namespace DrinkDb_Auth.OAuthProviders
                     UserId = Guid.NewGuid(),
                     TwoFASecret = string.Empty,
                 };
-                userAdapter.CreateUser(newUser);
-                Session session = sessionAdapter.CreateSession(newUser.UserId);
+                UserAdapter.CreateUser(newUser);
+                Session session = SessionAdapter.CreateSession(newUser.UserId);
                 return new AuthenticationResponse
                 {
                     AuthenticationSuccesfull = true,
                     OAuthenticationToken = token,
-                    SessionId = session.sessionId,
+                    SessionId = session.SessionId,
                     NewAccount = true
                 };
             }

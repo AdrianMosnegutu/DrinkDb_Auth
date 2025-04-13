@@ -172,7 +172,7 @@ namespace DrinkDb_Auth.OAuthProviders
 
                                         userInformation = this.ExtractUserInfoFromIdToken(tokenResult.IdToken);
                                         userId = this.EnsureUserExists(userInformation.Identifier, httpClientInformation.Email, httpClientInformation.Name);
-                                        return new AuthenticationResponse { AuthenticationSuccesfull = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).sessionId, NewAccount = false };
+                                        return new AuthenticationResponse { AuthenticationSuccesfull = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
                                     case false:
                                         if (string.IsNullOrEmpty(tokenResult.IdToken))
                                         {
@@ -189,7 +189,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         {
                             userInformation = ExtractUserInfoFromIdToken(tokenResult.IdToken);
                             userId = this.EnsureUserExists(userInformation.Identifier, userInformation.Email, userInformation.Name);
-                            return new AuthenticationResponse { AuthenticationSuccesfull = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).sessionId, NewAccount = false };
+                            return new AuthenticationResponse { AuthenticationSuccesfull = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
                         }
                     case false:
                         throw new Exception("Trigger Catch | Repeated code to attempt a failed authentication");

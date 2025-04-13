@@ -39,11 +39,11 @@ namespace DrinkDb_Auth
                 bool twoFAresponse = false;
                 if (!user.TwoFASecret.IsNullOrEmpty())
                 {
-                    twoFAresponse = await twoFactorAuthentificationService.Verify2FAForUser(this, user.UserId);
+                    twoFAresponse = await twoFactorAuthentificationService.SetupOrVerifyTwoFactor(this, user.UserId, false);
                 }
                 else
                 {
-                    twoFAresponse = await twoFactorAuthentificationService.Setup2FA(this, user.UserId);
+                    twoFAresponse = await twoFactorAuthentificationService.SetupOrVerifyTwoFactor(this, user.UserId, true);
                 }
 
                 if (twoFAresponse)
