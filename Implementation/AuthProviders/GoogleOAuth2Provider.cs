@@ -23,8 +23,8 @@ using System.Text;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
-   
-    public class GoogleOAuth2Provider : GenericOAuth2Provider
+
+    public class GoogleOAuth2Provider : GenericOAuth2Provider, IGoogleOAuth2Provider
     {
         public static Guid SubToGuid(string sub)
         {
@@ -51,11 +51,11 @@ namespace DrinkDb_Auth.OAuthProviders
         {
             var userId = SubToGuid(sub);
             var existingUser = userAdapter.GetUserById(userId);
-            
+
             if (existingUser == null)
             {
                 System.Diagnostics.Debug.WriteLine($"Creating new user with ID {userId} for Google user {email} ({name})");
-                
+
                 var newUser = new User
                 {
                     UserId = userId,
@@ -63,13 +63,13 @@ namespace DrinkDb_Auth.OAuthProviders
                     PasswordHash = string.Empty, // OAuth users don't need passwords
                     TwoFASecret = null
                 };
-                
+
                 var success = userAdapter.CreateUser(newUser);
                 System.Diagnostics.Debug.WriteLine($"User creation result: {success}");
-                
+
                 return userId;
             }
-            
+
             System.Diagnostics.Debug.WriteLine($"Found existing user with ID {userId}");
             return userId;
         }
@@ -77,22 +77,22 @@ namespace DrinkDb_Auth.OAuthProviders
         public GoogleOAuth2Provider()
         {
             _httpClient = new HttpClient();
-            
+
             // Load credentials from app configuration
             ClientId = System.Configuration.ConfigurationManager.AppSettings["GoogleClientId"] ?? "YOUR_CLIENT_ID";
             ClientSecret = System.Configuration.ConfigurationManager.AppSettings["GoogleClientSecret"] ?? "YOUR_CLIENT_SECRET";
-            
+
             // Debug: Log the loaded credentials
             System.Diagnostics.Debug.WriteLine($"Loaded Google ClientId: {ClientId}");
             System.Diagnostics.Debug.WriteLine($"Loaded Google ClientSecret: {ClientSecret.Substring(0, 4)}..."); // Show only first few chars for security
-            
+
             // Check if using default/placeholder credentials
             if (ClientId == "YOUR_CLIENT_ID" || ClientSecret == "YOUR_CLIENT_SECRET")
             {
                 System.Diagnostics.Debug.WriteLine("WARNING: Using placeholder Google OAuth credentials. Authentication will fail!");
                 System.Diagnostics.Debug.WriteLine("Please configure proper Google OAuth credentials in App.config");
             }
-            
+
             if (ClientId.Contains("apps.googleusercontent.com") == false)
             {
                 System.Diagnostics.Debug.WriteLine("WARNING: Client ID doesn't have the expected format (ending with apps.googleusercontent.com)");
@@ -116,7 +116,7 @@ namespace DrinkDb_Auth.OAuthProviders
         public string GetAuthorizationUrl()
         {
             var scopeString = string.Join(" ", Scopes);
-            
+
             var queryParameters = new Dictionary<string, string>
             {
                 { "client_id", ClientId },
@@ -129,7 +129,7 @@ namespace DrinkDb_Auth.OAuthProviders
 
             var queryString = string.Join("&", queryParameters.Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));
             var authUrl = $"{AuthorizationEndpoint}?{queryString}";
-            
+
             System.Diagnostics.Debug.WriteLine($"Generated authorization URL: {authUrl}");
             return authUrl;
         }
@@ -158,17 +158,17 @@ namespace DrinkDb_Auth.OAuthProviders
                 // Alternative approach using HttpClient with form content
                 var content = new FormUrlEncodedContent(tokenRequestParameters);
                 var tokenResponse = await _httpClient.PostAsync(TokenEndpoint, content);
-                
+
                 var responseContent = await tokenResponse.Content.ReadAsStringAsync();
                 System.Diagnostics.Debug.WriteLine($"Response status: {tokenResponse.StatusCode}");
                 System.Diagnostics.Debug.WriteLine($"Response content: {responseContent}");
-                
+
                 if (tokenResponse.IsSuccessStatusCode)
                 {
-                    try 
+                    try
                     {
                         TokenResponse? tokenResult;
-                        
+
                         try
                         {
                             // Try the default deserialization
@@ -180,7 +180,7 @@ namespace DrinkDb_Auth.OAuthProviders
                             // If deserialization fails, try manual parsing
                             System.Diagnostics.Debug.WriteLine($"Automatic deserialization failed: {jsonEx.Message}");
                             System.Diagnostics.Debug.WriteLine("Attempting manual JSON parsing");
-                            
+
                             try
                             {
                                 // Parse the JSON manually
@@ -188,7 +188,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                 {
                                     PropertyNameCaseInsensitive = true
                                 };
-                                
+
                                 tokenResult = System.Text.Json.JsonSerializer.Deserialize<TokenResponse>(responseContent, options) ?? throw new Exception("Failed to deserialize token response manually");
                             }
                             catch (Exception manualEx)
@@ -197,11 +197,11 @@ namespace DrinkDb_Auth.OAuthProviders
                                 throw; // Let the outer catch handle it
                             }
                         }
-                        
+
                         // Debug the token values
                         if (tokenResult != null)
                         {
-                            System.Diagnostics.Debug.WriteLine($"Token values: AccessToken={tokenResult.AccessToken?.Length ?? 0 } chars, " +
+                            System.Diagnostics.Debug.WriteLine($"Token values: AccessToken={tokenResult.AccessToken?.Length ?? 0} chars, " +
                                                              $"TokenType={tokenResult.TokenType}, " +
                                                              $"ExpiresIn={tokenResult.ExpiresIn}, " +
                                                              $"RefreshToken={tokenResult.RefreshToken?.Length ?? 0} chars");
@@ -210,7 +210,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         {
                             System.Diagnostics.Debug.WriteLine("Token result is null after both deserialization attempts");
                         }
-                        
+
                         // Verify we got a valid access token
                         if (tokenResult == null || string.IsNullOrEmpty(tokenResult.AccessToken))
                         {
@@ -224,7 +224,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                 NewAccount = false
                             };
                         }
-                        
+
                         // Get user info with the access token
                         try
                         {
@@ -232,20 +232,20 @@ namespace DrinkDb_Auth.OAuthProviders
                             using (var userInfoClient = new HttpClient())
                             {
                                 // Set the authorization header correctly
-                                userInfoClient.DefaultRequestHeaders.Authorization = 
+                                userInfoClient.DefaultRequestHeaders.Authorization =
                                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
-                                
+
                                 System.Diagnostics.Debug.WriteLine($"Fetching user info from {UserInfoEndpoint}");
                                 System.Diagnostics.Debug.WriteLine($"Using access token: {tokenResult.AccessToken.Substring(0, Math.Min(15, tokenResult.AccessToken.Length))}...");
-                                
+
                                 // Add a small delay to allow token propagation
                                 await Task.Delay(500);
-                                
+
                                 var userInfoResponse = await userInfoClient.GetAsync(UserInfoEndpoint);
                                 var userInfoContent = await userInfoResponse.Content.ReadAsStringAsync();
-                                
+
                                 System.Diagnostics.Debug.WriteLine($"User info response status: {userInfoResponse.StatusCode}");
-                                
+
                                 if (userInfoResponse.IsSuccessStatusCode)
                                 {
                                     UserInfoResponse? userInfo = await userInfoResponse.Content.ReadFromJsonAsync<UserInfoResponse>();
@@ -257,10 +257,10 @@ namespace DrinkDb_Auth.OAuthProviders
 
                                     // Extract user info from token
                                     var tokenUserInfo = ExtractUserInfoFromIdToken(tokenResult.IdToken);
-                                    
+
                                     // Ensure the user exists in the database
                                     var userId = EnsureUserExists(tokenUserInfo.Sub, userInfo.Email, userInfo.Name);
-                                    
+
                                     return new AuthResponse
                                     {
                                         AuthSuccessful = true,
@@ -272,7 +272,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                 else
                                 {
                                     System.Diagnostics.Debug.WriteLine($"User info request failed: {userInfoContent}");
-                                    
+
                                     // Try to extract basic info from ID token if available
                                     if (!string.IsNullOrEmpty(tokenResult.IdToken))
                                     {
@@ -282,16 +282,16 @@ namespace DrinkDb_Auth.OAuthProviders
                                             if (basicUserInfo != null)
                                             {
                                                 System.Diagnostics.Debug.WriteLine($"Extracted user info from ID token: {basicUserInfo.Email} ({basicUserInfo.Name})");
-                                                
+
                                                 // Ensure the user exists in the database
                                                 var userId = EnsureUserExists(basicUserInfo.Sub, basicUserInfo.Email, basicUserInfo.Name);
-                                                
+
                                                 // If we couldn't get user info but have a valid token, still return success
                                                 return new AuthResponse
                                                 {
                                                     AuthSuccessful = true,
                                                     OAuthToken = tokenResult.AccessToken,
-                                                    SessionId = sessionAdapter.CreateSession(userId).sessionId, 
+                                                    SessionId = sessionAdapter.CreateSession(userId).sessionId,
                                                     NewAccount = false
                                                 };
                                             }
@@ -301,8 +301,8 @@ namespace DrinkDb_Auth.OAuthProviders
                                             System.Diagnostics.Debug.WriteLine($"Failed to extract info from ID token: {idEx.Message}");
                                         }
                                     }
-               
-                                    
+
+
 
                                     // If we couldn't get user info but have a valid token, still return success
                                     return new AuthResponse
@@ -320,14 +320,14 @@ namespace DrinkDb_Auth.OAuthProviders
                             System.Diagnostics.Debug.WriteLine($"Error getting user info: {ex.Message}");
 
                             // Try to extract basic info from ID token
-                            try 
+                            try
                             {
                                 var basicUserInfo = ExtractUserInfoFromIdToken(tokenResult.IdToken);
                                 if (basicUserInfo != null)
                                 {
                                     // Ensure the user exists in the database
                                     var userId = EnsureUserExists(basicUserInfo.Sub, basicUserInfo.Email, basicUserInfo.Name);
-                                    
+
                                     // If we couldn't get user info but have a valid token, still return success
                                     return new AuthResponse
                                     {
@@ -342,7 +342,7 @@ namespace DrinkDb_Auth.OAuthProviders
                             {
                                 System.Diagnostics.Debug.WriteLine($"Failed to extract info from ID token: {idEx.Message}");
                             }
-                            
+
                             // Unable to extract user info, can't create user
                             return new AuthResponse
                             {
@@ -376,7 +376,7 @@ namespace DrinkDb_Auth.OAuthProviders
             {
                 System.Diagnostics.Debug.WriteLine($"Exception during token exchange: {ex.Message}");
             }
-            
+
             return new AuthResponse
             {
                 AuthSuccessful = false,
@@ -389,7 +389,7 @@ namespace DrinkDb_Auth.OAuthProviders
         public async Task<AuthResponse> SignInWithGoogleAsync(Window parentWindow)
         {
             var tcs = new TaskCompletionSource<AuthResponse>();
-            
+
             try
             {
                 // Create and show the WebView dialog for Google sign-in
@@ -408,9 +408,9 @@ namespace DrinkDb_Auth.OAuthProviders
 
                 // Initialize WebView and navigate to auth URL
                 await webView.EnsureCoreWebView2Async();
-                
+
                 bool authCodeFound = false;
-                
+
                 // Monitor document changes to automatically extract the authorization code
                 webView.CoreWebView2.DOMContentLoaded += async (sender, args) =>
                 {
@@ -418,11 +418,11 @@ namespace DrinkDb_Auth.OAuthProviders
                     {
                         // Get the current source URL
                         var currentUrl = webView.CoreWebView2.Source;
-                        
+
                         // Check if this is the success page with the auth code
                         var title = await webView.CoreWebView2.ExecuteScriptAsync("document.title");
                         System.Diagnostics.Debug.WriteLine($"Page title: {title}");
-                        
+
                         // For the OAuth approval page, we need a more specific approach
                         if (currentUrl.Contains("accounts.google.com/o/oauth2/approval"))
                         {
@@ -442,34 +442,34 @@ namespace DrinkDb_Auth.OAuthProviders
                                     return '';
                                 })()
                             ");
-                            
+
                             // Clean up the result (remove quotes from JS)
                             var code = codeBoxContent.Trim('"');
                             if (!string.IsNullOrEmpty(code) && code != "null" && !authCodeFound)
                             {
                                 System.Diagnostics.Debug.WriteLine($"Found authorization code in OAuth approval page: {code.Substring(0, Math.Min(10, code.Length))}...");
                                 authCodeFound = true;
-                                
+
                                 // Process the code
                                 var response = await ExchangeCodeForTokenAsync(code);
                                 System.Diagnostics.Debug.WriteLine($"Auth result: {response.AuthSuccessful}");
-                                
+
                                 // Close dialog and return
                                 parentWindow.DispatcherQueue.TryEnqueue(() =>
                                 {
                                     try { webViewDialog.Hide(); } catch { }
                                     tcs.SetResult(response);
                                 });
-                                
+
                                 return; // Exit early once we've found the code
                             }
                         }
-                        
+
                         // The auth code page has "Success code=" in the title, or the code might be in the page content
                         if (title.Contains("Success") || title.Contains("code"))
                         {
                             string code = string.Empty;
-                            
+
                             // Try to get code from title
                             if (title.Contains("Success code="))
                             {
@@ -478,14 +478,14 @@ namespace DrinkDb_Auth.OAuthProviders
                                 code = title.Substring(title.IndexOf("Success code=") + "Success code=".Length);
                                 System.Diagnostics.Debug.WriteLine($"Found code in title: {code.Substring(0, Math.Min(10, code.Length))}...");
                             }
-                            
+
                             // Try to extract code from page if not in title
                             if (string.IsNullOrEmpty(code))
                             {
                                 // Try to extract from the page content
                                 var pageText = await webView.CoreWebView2.ExecuteScriptAsync(
                                     "document.body.innerText");
-                                
+
                                 // Look for patterns in the text (this may need adjustment based on actual output)
                                 if (pageText.Contains("code="))
                                 {
@@ -497,7 +497,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                         System.Diagnostics.Debug.WriteLine($"Found code in page: {code.Substring(0, Math.Min(10, code.Length))}...");
                                     }
                                 }
-                                
+
                                 // Try to find code in a code element or input field
                                 var codeElement = await webView.CoreWebView2.ExecuteScriptAsync(
                                     "document.querySelector('code') ? document.querySelector('code').innerText : ''");
@@ -507,17 +507,17 @@ namespace DrinkDb_Auth.OAuthProviders
                                     System.Diagnostics.Debug.WriteLine($"Found code in code element: {code.Substring(0, Math.Min(10, code.Length))}...");
                                 }
                             }
-                            
+
                             // If we found a code, process it
                             if (!string.IsNullOrEmpty(code) && !authCodeFound)
                             {
                                 authCodeFound = true;
                                 System.Diagnostics.Debug.WriteLine($"Automatically extracted authorization code");
-                                
+
                                 // Process the authentication code
                                 var response = await ExchangeCodeForTokenAsync(code);
                                 System.Diagnostics.Debug.WriteLine($"Authentication result: {response.AuthSuccessful}, Token: {(string.IsNullOrEmpty(response.OAuthToken) ? "Empty" : "Present")}");
-                                
+
                                 // Close the dialog and return the result
                                 parentWindow.DispatcherQueue.TryEnqueue(() =>
                                 {
@@ -526,7 +526,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                         webViewDialog.Hide();
                                     }
                                     catch { /* ignore errors if dialog is already closed */ }
-                                    
+
                                     tcs.SetResult(response);
                                 });
                             }
@@ -546,7 +546,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         // Use the WebView's Source or CoreWebView2.Source to get the current URI
                         var uri = webView.Source?.ToString() ?? webView.CoreWebView2.Source;
                         System.Diagnostics.Debug.WriteLine($"Navigation completed to: {uri}");
-                        
+
                         // For Google's OOB flow, check if we're on the approval page
                         if (uri.Contains("accounts.google.com/o/oauth2/approval") && !authCodeFound)
                         {
@@ -555,14 +555,14 @@ namespace DrinkDb_Auth.OAuthProviders
                             {
                                 // Wait a moment for page to fully render
                                 await Task.Delay(500);
-                                
+
                                 // Try several ways to extract the code
                                 string code = string.Empty;
-                                
+
                                 // Try to get from page text that might contain "code="
                                 var pageText = await webView.CoreWebView2.ExecuteScriptAsync(
                                     "document.body.innerText");
-                                
+
                                 if (pageText.Contains("code="))
                                 {
                                     int startIndex = pageText.IndexOf("code=") + 5;
@@ -574,11 +574,11 @@ namespace DrinkDb_Auth.OAuthProviders
                                         System.Diagnostics.Debug.WriteLine($"Extracted code from approval page text: {code.Substring(0, Math.Min(10, code.Length))}...");
                                     }
                                 }
-                                
+
                                 // Try to find a code element, which often contains the auth code
                                 var codeElements = await webView.CoreWebView2.ExecuteScriptAsync(
                                     "Array.from(document.querySelectorAll('code, .auth-code, input[readonly]')).map(el => el.innerText || el.value)");
-                                
+
                                 if (codeElements != "[]" && !string.IsNullOrEmpty(codeElements))
                                 {
                                     // Parse the JS array result
@@ -594,14 +594,14 @@ namespace DrinkDb_Auth.OAuthProviders
                                         }
                                     }
                                 }
-                                
+
                                 if (!string.IsNullOrEmpty(code) && !authCodeFound)
                                 {
                                     authCodeFound = true;
-                                    
+
                                     // Process the authentication code
                                     var response = await ExchangeCodeForTokenAsync(code);
-                                    
+
                                     // Close the dialog and return the result
                                     parentWindow.DispatcherQueue.TryEnqueue(() =>
                                     {
@@ -610,7 +610,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                             webViewDialog.Hide();
                                         }
                                         catch { /* ignore errors if dialog is already closed */ }
-                                        
+
                                         tcs.SetResult(response);
                                     });
                                 }
@@ -626,14 +626,14 @@ namespace DrinkDb_Auth.OAuthProviders
                         System.Diagnostics.Debug.WriteLine($"Navigation completed event error: {ex.Message}");
                     }
                 };
-                
+
                 var authUrl = GetAuthorizationUrl();
                 System.Diagnostics.Debug.WriteLine($"Navigating to OAuth URL: {authUrl}");
                 webView.CoreWebView2.Navigate(authUrl);
-                
+
                 // Show the dialog
                 var dialogResult = await webViewDialog.ShowAsync();
-                
+
                 // If user closed the dialog manually and we haven't processed a code yet
                 if (!tcs.Task.IsCompleted)
                 {
@@ -652,7 +652,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 System.Diagnostics.Debug.WriteLine($"Authentication error: {ex.Message}");
                 tcs.TrySetException(ex);
             }
-            
+
             return await tcs.Task;
         }
 
@@ -664,30 +664,31 @@ namespace DrinkDb_Auth.OAuthProviders
             {
                 throw new ArgumentException("Invalid JWT format");
             }
-            
+
             try
             {
                 // Get the payload (second part)
                 var payload = parts[1];
-                
+
                 // Add padding if needed
                 while (payload.Length % 4 != 0)
                 {
                     payload += '=';
                 }
-                
+
                 // Decode the Base64Url encoded JSON
                 var jsonBytes = Convert.FromBase64String(payload.Replace('-', '+').Replace('_', '/'));
                 var json = Encoding.UTF8.GetString(jsonBytes);
-                
+
                 // Parse the JSON
                 var options = new System.Text.Json.JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 };
-                
+
                 var result = System.Text.Json.JsonSerializer.Deserialize<UserInfoResponse>(json, options);
-                if (result == null) {
+                if (result == null)
+                {
                     throw new Exception("Failed to deserialize user info from ID token");
                 }
                 return result;

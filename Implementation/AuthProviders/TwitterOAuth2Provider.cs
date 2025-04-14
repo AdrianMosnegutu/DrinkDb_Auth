@@ -22,7 +22,7 @@ namespace DrinkDb_Auth.OAuthProviders
     /// <summary>
     /// A PKCE-based OAuth 2.0 flow for Twitter in a WinUI desktop app.
     /// </summary>
-    public class TwitterOAuth2Provider : GenericOAuth2Provider
+    public class TwitterOAuth2Provider : GenericOAuth2Provider, ITwitterOAuth2Provider
     {
         // ▼▼▼ 1) Set these appropriately ▼▼▼
         // Note: For native app flows, a client secret is often unused.
@@ -70,21 +70,21 @@ namespace DrinkDb_Auth.OAuthProviders
             try
             {
                 System.Diagnostics.Debug.WriteLine($"Ensuring user exists with sub: {sub}, email: {email}, name: {name}");
-                
+
                 var userId = SubToGuid(sub);
                 System.Diagnostics.Debug.WriteLine($"Generated userId: {userId}");
-                
+
                 var existingUser = userAdapter.GetUserById(userId);
                 System.Diagnostics.Debug.WriteLine($"Existing user found: {existingUser != null}");
-                
+
                 if (existingUser == null)
                 {
                     System.Diagnostics.Debug.WriteLine($"Creating new user with ID {userId} for Twitter user {email} ({name})");
-                    
+
                     // First, ensure the default role exists
                     Guid defaultRoleId = EnsureDefaultRoleExists();
                     System.Diagnostics.Debug.WriteLine($"Using default role ID: {defaultRoleId}");
-                    
+
                     // Create a new user without RoleId property
                     var newUser = new User
                     {
@@ -93,7 +93,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         PasswordHash = string.Empty, // OAuth users don't need passwords
                         TwoFASecret = null
                     };
-                    
+
                     // Use direct SQL to insert the user with a roleId
                     using (var conn = DrinkDbConnectionHelper.GetConnection())
                     {
@@ -105,10 +105,10 @@ namespace DrinkDb_Auth.OAuthProviders
                             cmd.Parameters.AddWithValue("@passwordHash", (object?)newUser.PasswordHash ?? DBNull.Value);
                             cmd.Parameters.AddWithValue("@twoFASecret", (object?)newUser.TwoFASecret ?? DBNull.Value);
                             cmd.Parameters.AddWithValue("@roleId", defaultRoleId);
-                            
+
                             var success = cmd.ExecuteNonQuery() > 0;
                             System.Diagnostics.Debug.WriteLine($"User creation result: {success}");
-                            
+
                             if (!success)
                             {
                                 System.Diagnostics.Debug.WriteLine("Failed to create user in database");
@@ -117,10 +117,10 @@ namespace DrinkDb_Auth.OAuthProviders
                             }
                         }
                     }
-                    
+
                     return userId;
                 }
-                
+
                 System.Diagnostics.Debug.WriteLine($"Found existing user with ID {userId}");
                 return userId;
             }

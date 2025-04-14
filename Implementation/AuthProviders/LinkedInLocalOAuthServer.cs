@@ -6,7 +6,7 @@ using System.Web;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
-    public class LinkedInLocalOAuthServer
+    public class LinkedInLocalOAuthServer : ILinkedInLocalOAuthServer
     {
         private readonly HttpListener _listener;
         public static event Action<string>? OnCodeReceived;

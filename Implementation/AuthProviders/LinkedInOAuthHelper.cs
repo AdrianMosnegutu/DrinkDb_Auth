@@ -9,7 +9,7 @@ using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
-    public class LinkedInOAuthHelper
+    public class LinkedInOAuthHelper : ILinkedInOAuthHelper
     {
         private readonly string _clientId = "86j0ikb93jm78x";
         private readonly string _clientSecret = "WPL_AP1.pg2Bd1XhCi821VTG.+hatTA==";
@@ -38,7 +38,7 @@ namespace DrinkDb_Auth.OAuthProviders
             Debug.WriteLine("Authorize URL: " + url);
             return url;
         }
-        
+
         private async void OnCodeReceived(string code)
         {
             if (_tcs == null || _tcs.Task.IsCompleted) return;

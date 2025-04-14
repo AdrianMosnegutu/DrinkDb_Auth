@@ -6,7 +6,7 @@ using System.Web;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
-    public class GitHubLocalOAuthServer
+    public class GitHubLocalOAuthServer : IGitHubLocalOAuthServer
     {
         private readonly HttpListener listener;
 

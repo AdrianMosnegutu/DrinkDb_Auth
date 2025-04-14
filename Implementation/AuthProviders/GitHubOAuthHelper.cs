@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
-    public class GitHubOAuthHelper
+    public class GitHubOAuthHelper : IGitHubOAuthHelper
     {
         private const string ClientId = "Ov23ligheYgI7JILPWGY";  // Provided in your question
         private const string ClientSecret = "791dfaf36750b2a34a752c4fe3fb3703cef18836";

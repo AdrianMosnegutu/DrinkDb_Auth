@@ -2,7 +2,6 @@ using System;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
-  
     /// Represents the result of an OAuth2 authentication attempt.
     public class AuthResponse
     {
@@ -18,5 +17,15 @@ namespace DrinkDb_Auth.OAuthProviders
 
         /// Indicates whether this authentication created a brand new account.
         public required bool NewAccount { get; set; }
+
+        public override bool Equals(object other)
+        {
+            var otherResponse = other as AuthResponse;
+            if (otherResponse == null)
+            {
+                return false;
+            }
+            return AuthSuccessful == otherResponse.AuthSuccessful && SessionId == otherResponse.SessionId && OAuthToken == otherResponse.OAuthToken && NewAccount == otherResponse.NewAccount;
+        }
     }
 }
