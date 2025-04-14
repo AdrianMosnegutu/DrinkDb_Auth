@@ -54,7 +54,7 @@ namespace DrinkDb_Auth.Service
             _ = linkedinLocalServer.StartAsync();
         }
 
-        public async Task<AuthResponse> AuthWithOAuth(Window window, OAuthService selectedService, object authProvider)
+        public async Task<AuthenticationResponse> AuthWithOAuth(Window window, OAuthService selectedService, object authProvider)
         {
             var authResponse = selectedService switch
             {
@@ -66,11 +66,11 @@ namespace DrinkDb_Auth.Service
                 _ => throw new ArgumentException("Invalid OAuth service selected"),
             };
 
-            if (authResponse.AuthenticationSuccesfull)
+            if (authResponse.AuthenticationSuccessful)
             {
                 App.CurrentSessionId = authResponse.SessionId;
                 Session session = sessionAdapter.GetSession(App.CurrentSessionId);
-                App.CurrentUserId = session.userId;
+                App.CurrentUserId = session.UserId;
             }
 
             return authResponse;
@@ -86,7 +86,7 @@ namespace DrinkDb_Auth.Service
         public User GetUser(Guid sessionId)
         {
             Session session = sessionAdapter.GetSession(sessionId);
-            return userAdapter.GetUserById(session.userId) ?? throw new UserNotFoundException("User not found");
+            return userAdapter.GetUserById(session.UserId) ?? throw new UserNotFoundException("User not found");
         }
 
         public static AuthenticationResponse AuthWithUserPass(string username, string password)
@@ -97,12 +97,11 @@ namespace DrinkDb_Auth.Service
                 {
                     User user = userAdapter.GetUserByUsername(username) ?? throw new UserNotFoundException("User not found");
                     Session session = sessionAdapter.CreateSession(user.UserId);
-                    return new AuthResponse
+                    return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = true,
+                        AuthenticationSuccessful = true,
                         NewAccount = false,
-                      
-                        OAuthenticationToken = string.Empty,
+                        OAuthToken = string.Empty,
                         SessionId = session.SessionId,
                     };
                 }
@@ -110,9 +109,9 @@ namespace DrinkDb_Auth.Service
                 {
                     return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = false,
+                        AuthenticationSuccessful = false,
                         NewAccount = false,
-                        OAuthenticationToken = string.Empty,
+                        OAuthToken = string.Empty,
                         SessionId = Guid.Empty,
                     };
                 }
@@ -129,38 +128,38 @@ namespace DrinkDb_Auth.Service
                 };
                 userAdapter.CreateUser(user);
                 Session session = sessionAdapter.CreateSession(user.UserId);
-                return new AuthResponse
+                return new AuthenticationResponse
                 {
-                    AuthenticationSuccesfull = true,
+                    AuthenticationSuccessful = true,
                     NewAccount = true,
-                    OAuthenticationToken = string.Empty,
+                    OAuthToken = string.Empty,
                     SessionId = session.SessionId,
                 };
             }
             throw new Exception("Unexpected error during authentication");
         }
 
-        private static async Task<AuthResponse> AuthenticateWithGitHubAsync(IGitHubOAuthHelper gitHubHelper)
+        private static async Task<AuthenticationResponse> AuthenticateWithGitHubAsync(IGitHubOAuthHelper gitHubHelper)
         {
             return await gitHubHelper.AuthenticateAsync();
         }
 
-        private static async Task<AuthResponse> AuthenticateWithGoogleAsync(Window window, IGoogleOAuth2Provider googleProvider)
+        private static async Task<AuthenticationResponse> AuthenticateWithGoogleAsync(Window window, IGoogleOAuth2Provider googleProvider)
         {
             return await googleProvider.SignInWithGoogleAsync(window);
         }
 
-        private static async Task<AuthResponse> AuthenticateWithFacebookAsync(IFacebookOAuthHelper faceBookHelper)
+        private static async Task<AuthenticationResponse> AuthenticateWithFacebookAsync(IFacebookOAuthHelper faceBookHelper)
         {
             return await faceBookHelper.AuthenticateAsync();
         }
 
-        private static async Task<AuthResponse> AuthenticateWithTwitterAsync(Window window, ITwitterOAuth2Provider twitterProvider)
+        private static async Task<AuthenticationResponse> AuthenticateWithTwitterAsync(Window window, ITwitterOAuth2Provider twitterProvider)
         {
             return await twitterProvider.SignInWithTwitterAsync(window);
         }
 
-        private static async Task<AuthResponse> AuthenticateWithLinkedInAsync(ILinkedInOAuthHelper linkedInHelper)
+        private static async Task<AuthenticationResponse> AuthenticateWithLinkedInAsync(ILinkedInOAuthHelper linkedInHelper)
         {
             return await linkedInHelper.AuthenticateAsync();
         }

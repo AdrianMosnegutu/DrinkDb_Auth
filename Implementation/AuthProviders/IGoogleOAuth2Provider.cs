@@ -1,15 +1,14 @@
-﻿using Microsoft.UI.Xaml;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Microsoft.UI.Xaml;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
     public interface IGoogleOAuth2Provider
     {
-        static abstract Guid SubToGuid(string sub);
-        AuthResponse Authenticate(string userId, string token);
-        Task<AuthResponse> ExchangeCodeForTokenAsync(string code);
+        AuthenticationResponse Authenticate(string userId, string token);
+        Task<AuthenticationResponse> ExchangeCodeForTokenAsync(string code);
         string GetAuthorizationUrl();
-        Task<AuthResponse> SignInWithGoogleAsync(Window parentWindow);
+        Task<AuthenticationResponse> SignInWithGoogleAsync(Window parentWindow);
     }
 }

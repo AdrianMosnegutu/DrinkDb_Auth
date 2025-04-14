@@ -4,6 +4,6 @@ namespace DrinkDb_Auth.OAuthProviders
 {
     public interface IGitHubOAuthHelper
     {
-        Task<AuthResponse> AuthenticateAsync();
+        Task<AuthenticationResponse> AuthenticateAsync();
     }
 }

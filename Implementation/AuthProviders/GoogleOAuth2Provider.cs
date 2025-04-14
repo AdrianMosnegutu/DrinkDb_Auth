@@ -14,7 +14,6 @@ using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
-
     public class GoogleOAuth2Provider : GenericOAuth2Provider, IGoogleOAuth2Provider
     {
         public static Guid CreateGloballyUniqueIdentifier(string identifier)
@@ -81,7 +80,7 @@ namespace DrinkDb_Auth.OAuthProviders
 
         public AuthenticationResponse Authenticate(string userId, string token)
         {
-            return new AuthenticationResponse { AuthenticationSuccesfull = !string.IsNullOrEmpty(token), OAuthenticationToken = token, SessionId = Guid.Empty, NewAccount = false };
+            return new AuthenticationResponse { AuthenticationSuccessful = !string.IsNullOrEmpty(token), OAuthToken = token, SessionId = Guid.Empty, NewAccount = false };
         }
 
         public string GetAuthorizationUrl()
@@ -147,7 +146,7 @@ namespace DrinkDb_Auth.OAuthProviders
 
                         if (tokenResult == null || string.IsNullOrEmpty(tokenResult.AccessToken))
                         {
-                            return new AuthenticationResponse { AuthenticationSuccesfull = false, OAuthenticationToken = tokenResult?.AccessToken, SessionId = Guid.Empty, NewAccount = false };
+                            return new AuthenticationResponse { AuthenticationSuccessful = false, OAuthToken = tokenResult?.AccessToken, SessionId = Guid.Empty, NewAccount = false };
                         }
 
                         UserInfoResponse userInformation;
@@ -173,11 +172,11 @@ namespace DrinkDb_Auth.OAuthProviders
 
                                         userInformation = this.ExtractUserInfoFromIdToken(tokenResult.IdToken);
                                         userId = this.EnsureUserExists(userInformation.Identifier, httpClientInformation.Email, httpClientInformation.Name);
-                                        return new AuthenticationResponse { AuthenticationSuccesfull = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
+                                        return new AuthenticationResponse { AuthenticationSuccessful = true, OAuthToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
                                     case false:
                                         if (string.IsNullOrEmpty(tokenResult.IdToken))
                                         {
-                                            return new AuthenticationResponse { AuthenticationSuccesfull = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = Guid.Empty, NewAccount = false };
+                                            return new AuthenticationResponse { AuthenticationSuccessful = true, OAuthToken = tokenResult.AccessToken, SessionId = Guid.Empty, NewAccount = false };
                                         }
                                         else
                                         {
@@ -190,7 +189,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         {
                             userInformation = ExtractUserInfoFromIdToken(tokenResult.IdToken);
                             userId = this.EnsureUserExists(userInformation.Identifier, userInformation.Email, userInformation.Name);
-                            return new AuthenticationResponse { AuthenticationSuccesfull = true, OAuthenticationToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
+                            return new AuthenticationResponse { AuthenticationSuccessful = true, OAuthToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
                         }
                     case false:
                         throw new Exception("Trigger Catch | Repeated code to attempt a failed authentication");
@@ -198,7 +197,7 @@ namespace DrinkDb_Auth.OAuthProviders
             }
             catch
             {
-                return new AuthenticationResponse { AuthenticationSuccesfull = false, OAuthenticationToken = string.Empty, SessionId = Guid.Empty, NewAccount = false };
+                return new AuthenticationResponse { AuthenticationSuccessful = false, OAuthToken = string.Empty, SessionId = Guid.Empty, NewAccount = false };
             }
         }
 
@@ -410,7 +409,7 @@ namespace DrinkDb_Auth.OAuthProviders
 
                 if (!taskResults.Task.IsCompleted)
                 {
-                    taskResults.SetResult(new AuthenticationResponse { AuthenticationSuccesfull = false, OAuthenticationToken = string.Empty, SessionId = Guid.Empty, NewAccount = false });
+                    taskResults.SetResult(new AuthenticationResponse { AuthenticationSuccessful = false, OAuthToken = string.Empty, SessionId = Guid.Empty, NewAccount = false });
                 }
             }
             catch (Exception ex)

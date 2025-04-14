@@ -21,7 +21,7 @@ namespace Tests
             google.MockId = id;
             var response = await service.AuthWithOAuth(null, OAuthService.Google, google);
 
-            AuthResponse authResponse = new AuthResponse { AuthSuccessful = false, NewAccount = false, OAuthToken = string.Empty, SessionId = id };
+            AuthenticationResponse authResponse = new AuthenticationResponse { AuthenticationSuccessful = false, NewAccount = false, OAuthToken = string.Empty, SessionId = id };
 
             Assert.AreEqual(response, authResponse);
         }

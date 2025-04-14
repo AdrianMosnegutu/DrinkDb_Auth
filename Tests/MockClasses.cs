@@ -9,7 +9,7 @@ namespace Tests
     {
         public Session CreateSession(Guid userId)
         {
-            return Session.createSessionWithIds(userId, userId);
+            return Session.CreateSessionWithIds(userId, userId);
         }
 
         public bool EndSession(Guid sessionId)
@@ -31,12 +31,12 @@ namespace Tests
             throw new NotImplementedException();
         }
 
-        public AuthResponse Authenticate(string userId, string token)
+        public AuthenticationResponse Authenticate(string userId, string token)
         {
             throw new NotImplementedException();
         }
 
-        public Task<AuthResponse> ExchangeCodeForTokenAsync(string code)
+        public Task<AuthenticationResponse> ExchangeCodeForTokenAsync(string code)
         {
             throw new NotImplementedException();
         }
@@ -46,11 +46,11 @@ namespace Tests
             throw new NotImplementedException();
         }
 
-        public Task<AuthResponse> SignInWithGoogleAsync(Window parentWindow)
+        public Task<AuthenticationResponse> SignInWithGoogleAsync(Window parentWindow)
         {
-            AuthResponse mockResponse = new AuthResponse
+            AuthenticationResponse mockResponse = new AuthenticationResponse
             {
-                AuthSuccessful = false,
+                AuthenticationSuccessful = false,
                 NewAccount = false,
                 OAuthToken = string.Empty,
                 SessionId = MockId,
@@ -73,6 +73,11 @@ namespace Tests
         }
 
         public User? GetUserByUsername(string username)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool UpdateUser(User user)
         {
             throw new NotImplementedException();
         }
