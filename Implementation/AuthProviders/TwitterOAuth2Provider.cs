@@ -48,12 +48,12 @@ namespace DrinkDb_Auth.OAuthProviders
         private string codeVerifier = string.Empty;
 
         // Scopes required for Twitter user details. "offline.access" is needed for refresh tokens.
-        private readonly string[] scopes = { "tweet.read", "users.read" };
+        private readonly string[] scopes = { "tweet.read", "users.read", "email", "offline.access" };
 
         // ──────── Dependencies ────────
         private readonly HttpClient httpClient;
-        private static readonly SessionAdapter SessionAdapterInstance = new ();
-        private static readonly UserAdapter UserAdapterInstance = new ();
+        private static readonly SessionAdapter SessionAdapter = new ();
+        private static readonly UserAdapter UserAdapter = new ();
 
         /// <summary>
         /// Converts the "sub" (subject) from Twitter into a GUID by hashing with MD5.
@@ -61,10 +61,10 @@ namespace DrinkDb_Auth.OAuthProviders
         /// </summary>
         public static Guid ConvertSubToGuid(string twitterUserId)
         {
-            using (var md5HashAlgorithm = MD5.Create()) // // Generates a 128-bit hashedBytes (same size as a Guid)
+            using (var md5 = MD5.Create())
             {
-                byte[] hashedBytes = md5HashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(twitterUserId));
-                return new Guid(hashedBytes);
+                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(twitterUserId));
+                return new Guid(hash);
             }
         }
 
@@ -72,27 +72,28 @@ namespace DrinkDb_Auth.OAuthProviders
         /// Checks if a user exists in the DB, and if not, creates a new one.
         /// Returns the unique GUID for the user.
         /// </summary>
-        private Guid EnsureUserExists(string twitterUserId, string email, string fullName)
+        private bool EnsureUserExists(string twitterUserId, string username, string name)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"Ensuring user exists with twitterUserId: {twitterUserId}, userEmail: {email}, fullName: {fullName}");
+                System.Diagnostics.Debug.WriteLine($"Ensuring user exists with twitterUserId: {twitterUserId}, userEmail: {username}, fullName: {name}");
                 var userId = ConvertSubToGuid(twitterUserId);
                 System.Diagnostics.Debug.WriteLine($"Generated userId: {userId}");
-                var existingUser = UserAdapterInstance.GetUserById(userId);
+                var existingUser = UserAdapter.GetUserById(userId);
                 System.Diagnostics.Debug.WriteLine($"Existing user found: {existingUser != null}");
                 if (existingUser == null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Creating new user with ID {userId} for Twitter user {email} ({fullName})");
+                    System.Diagnostics.Debug.WriteLine($"Creating new user with ID {userId} for Twitter user {username} ({name})");
 
-                // First, ensure the default role exists
-                  Guid defaultRoleId = EnsureDefaultRoleExists();
+                    // First, ensure the default role exists
+                    Guid defaultRoleId = EnsureDefaultRoleExists();
                     System.Diagnostics.Debug.WriteLine($"Using default role ID: {defaultRoleId}");
-                 // Create a new user without RoleId property
+
+                    // Create a new user without RoleId property
                     var newUser = new User
                     {
                         UserId = userId,
-                        Username = email, // Using email as the username
+                        Username = username, // Using email as the username
                         PasswordHash = string.Empty, // OAuth users don't need passwords
                         TwoFASecret = null
                     };
@@ -114,21 +115,21 @@ namespace DrinkDb_Auth.OAuthProviders
                             if (!insertSucceded)
                             {
                                 System.Diagnostics.Debug.WriteLine("Failed to create user in database");
-                                // Instead of throwing, return a default user ID to allow the flow to continue
-                                return Guid.NewGuid();
+                                // Instead of throwing, return false to indicate a new account
+                                return true;
                             }
                         }
                     }
-                    return userId;
+                    return true; // New account
                 }
                 System.Diagnostics.Debug.WriteLine($"Found existing user with ID {userId}");
-                return userId;
+                return false; // Existing account
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error in EnsureUserExists: {ex.Message}");
-                // Return a default user ID instead of throwing to allow the flow to continue
-                return Guid.NewGuid();
+                // Return false to indicate a new account
+                return true;
             }
         }
 
@@ -142,19 +143,15 @@ namespace DrinkDb_Auth.OAuthProviders
             {
                 using (var databaseConnection = DrinkDbConnectionHelper.GetConnection())
                 {
-                    // Check if at least one role exists.
                     string checkRoleSql = "SELECT TOP 1 roleId FROM Roles";
                     using (var checkRoleCommand = new SqlCommand(checkRoleSql, databaseConnection))
                     {
                         object result = checkRoleCommand.ExecuteScalar();
                         if (result != null)
                         {
-                            Guid existingRoleId = (Guid)result;
-                            System.Diagnostics.Debug.WriteLine($"Found existing role with ID: {existingRoleId}");
-                            return existingRoleId;
+                            return (Guid)result;
                         }
                     }
-
                     // If no role exists, we need to create one along with a permission.
                     System.Diagnostics.Debug.WriteLine("No existing roles found, creating a new role with permission");
 
@@ -190,15 +187,12 @@ namespace DrinkDb_Auth.OAuthProviders
                         linkCommand.ExecuteNonQuery();
                     }
 
-                    System.Diagnostics.Debug.WriteLine($"Created new role with ID: {roleId}");
                     return roleId;
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                // If we fail to create/find a role, return a new GUID instead of stopping the flow.
-                System.Diagnostics.Debug.WriteLine($"Error in EnsureDefaultRoleExists: {ex.Message}");
-                return Guid.NewGuid(); // Fallback
+                return Guid.NewGuid();
             }
         }
 
@@ -237,32 +231,27 @@ namespace DrinkDb_Auth.OAuthProviders
         /// </summary>
         public string GetAuthorizationUrl()
         {
-            // Generate PKCE code verifier and code challenge.
-            var (generatedCodeVerifier, generatedCodeChallenge) = GeneratePkceData();
-            this.codeVerifier = generatedCodeVerifier;  // We'll need this later to exchange for a token.
+            var (codeVerifier, codeChallenge) = GeneratePkceData();
+            this.codeVerifier = codeVerifier;
 
-            // Build up space-delimited scopes.
-            var requestedScopes = string.Join(" ", scopes);
+            var scopeString = string.Join(" ", scopes);
             var queryParameters = new Dictionary<string, string>
             {
                 { "client_id", ClientId },
                 { "redirect_uri", RedirectUri },
                 { "response_type", "code" },
-                { "scope", requestedScopes },
+                { "scope", scopeString },
                 { "state", Guid.NewGuid().ToString() },
-
-                // PKCE parameters
-                { "code_challenge", generatedCodeChallenge },
+                { "code_challenge", codeChallenge },
                 { "code_challenge_method", "S256" }
             };
 
-            // Build the query string
             var queryString = string.Join("&", queryParameters
-                .Select(pair => $"{Uri.EscapeDataString(pair.Key)}={Uri.EscapeDataString(pair.Value)}"));
+                .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));
 
-            var authorizationUrl = $"{AuthorizationEndpoint}?{queryString}";
-            System.Diagnostics.Debug.WriteLine($"Generated authorization URL: {authorizationUrl}");
-            return authorizationUrl;
+            var authUrl = $"{AuthorizationEndpoint}?{queryString}";
+            System.Diagnostics.Debug.WriteLine($"Generated authorization URL: {authUrl}");
+            return authUrl;
         }
 
         /// <summary>
@@ -271,26 +260,25 @@ namespace DrinkDb_Auth.OAuthProviders
         /// </summary>
         public async Task<AuthenticationResponse> ExchangeCodeForTokenAsync(string code)
         {
-            // Prepare form data for token exchange.
-            var tokenExchangeParameters = new Dictionary<string, string>
-            {
-                { "code", code },
-                { "client_id", ClientId },
-                { "redirect_uri", RedirectUri },
-                { "grant_type", "authorization_code" },
-                { "code_verifier", codeVerifier }, // PKCE requirement
-            };
-
-            System.Diagnostics.Debug.WriteLine("Exchanging code for token (PKCE).");
-            foreach (var tokenExchangeParameter in tokenExchangeParameters)
-            {
-                System.Diagnostics.Debug.WriteLine($"  {tokenExchangeParameter.Key}: {tokenExchangeParameter.Value}");
-            }
-
             try
             {
+                var tokenRequestParameters = new Dictionary<string, string>
+                {
+                    { "grant_type", "authorization_code" },
+                    { "code", code },
+                    { "redirect_uri", RedirectUri },
+                    { "client_id", ClientId },
+                    { "code_verifier", codeVerifier }
+                };
+
+                System.Diagnostics.Debug.WriteLine("Exchanging code for token (PKCE).");
+                foreach (var tokenRequestParameter in tokenRequestParameters)
+                {
+                    System.Diagnostics.Debug.WriteLine($"  {tokenRequestParameter.Key}: {tokenRequestParameter.Value}");
+                }
+
                 // Send the request to Twitter's token endpoint.
-                using var content = new FormUrlEncodedContent(tokenExchangeParameters);
+                using var content = new FormUrlEncodedContent(tokenRequestParameters);
                 var tokenResponse = await httpClient.PostAsync(TokenEndpoint, content);
                 var responseContent = await tokenResponse.Content.ReadAsStringAsync();
 
@@ -336,10 +324,10 @@ namespace DrinkDb_Auth.OAuthProviders
                 // 4) Optionally, get user info
                 try
                 {
-                    using var twitterUserInfoClient = new HttpClient();
-                    twitterUserInfoClient.DefaultRequestHeaders.Authorization =
+                    using var userInfoClient = new HttpClient();
+                    userInfoClient.DefaultRequestHeaders.Authorization =
                         new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
-                    var userResp = await twitterUserInfoClient.GetAsync(UserInfoEndpoint);
+                    var userResp = await userInfoClient.GetAsync(UserInfoEndpoint);
 
                     System.Diagnostics.Debug.WriteLine($"Making request to Twitter user info endpoint: {UserInfoEndpoint}");
 
@@ -357,13 +345,17 @@ namespace DrinkDb_Auth.OAuthProviders
                             NewAccount = false
                         };
                     }
+
+                    // Declare isNewUser at the beginning of the outer try block
+                    bool isNewUser = false;
+
                     try
                     {
                         // Parse the JSON response into our user model.
-                        var twitterUserInfoObject = System.Text.Json.JsonSerializer.Deserialize<TwitterUserInfoResponse>(userBody);
-                        System.Diagnostics.Debug.WriteLine($"Authenticated user: {twitterUserInfoObject?.Data.Email} ({twitterUserInfoObject?.Data.Name})");
+                        var userInfo = System.Text.Json.JsonSerializer.Deserialize<TwitterUserInfoResponse>(userBody);
+                        System.Diagnostics.Debug.WriteLine($"Authenticated user: {userInfo?.Data?.Email} ({userInfo?.Data?.Name})");
 
-                        if (twitterUserInfoObject == null)
+                        if (userInfo == null || userInfo.Data == null)
                         {
                             // If parsing user info fails, return a negative result.
                             System.Diagnostics.Debug.WriteLine("Failed to deserialize user info response");
@@ -377,28 +369,33 @@ namespace DrinkDb_Auth.OAuthProviders
                         }
 
                         // Twitter might not always provide an email. We use the user's ID or fallback.
-                        string twitterUserId = twitterUserInfoObject?.Data.Id ?? twitterUserInfoObject?.Data.Email ?? "unknown";
+                        string twitterUserId = userInfo.Data.Id ?? userInfo.Data.Email ?? "unknown";
                         System.Diagnostics.Debug.WriteLine($"Using twitterUserId: {twitterUserId} for user creation");
 
                         try
                         {
                             // If Twitter doesn't return an email, we create a placeholder using the username.
-                            string userEmail = twitterUserInfoObject?.Data.Email;
+                            string userEmail = userInfo.Data.Email ?? string.Empty;
                             if (string.IsNullOrEmpty(userEmail))
                             {
                                 // Fallback: build a fake email from username if needed.
-                                userEmail = $"{twitterUserInfoObject?.Data.Username ?? "unknown"}@twitter.com";
+                                userEmail = $"{userInfo.Data.Username ?? "unknown"}@twitter.com";
                                 System.Diagnostics.Debug.WriteLine($"No email provided by Twitter, using fallback: {userEmail}");
                             }
 
                             // Check or create the user in the local DB.
-                            var applicationUserId = EnsureUserExists(twitterUserId, userEmail, twitterUserInfoObject?.Data.Name ?? "Unknown User");
-                            System.Diagnostics.Debug.WriteLine($"User ID after EnsureUserExists: {applicationUserId}");
+                            isNewUser = EnsureUserExists(
+                                twitterUserId,
+                                userEmail,
+                                userInfo.Data.Name ?? "Unknown User");
+                            System.Diagnostics.Debug.WriteLine($"User ID after EnsureUserExists: {twitterUserId}");
 
                             // Create a session for the user.
                             try
                             {
-                                var sessionDetails = SessionAdapterInstance.CreateSession(applicationUserId);
+                                // Convert the twitterUserId to Guid before creating the session
+                                var userGuid = ConvertSubToGuid(twitterUserId);
+                                var sessionDetails = SessionAdapter.CreateSession(userGuid);
                                 System.Diagnostics.Debug.WriteLine($"Session created with ID: {sessionDetails.SessionId}");
 
                                 // Return a success response with a valid session.
@@ -407,7 +404,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                     AuthenticationSuccesfull = true,
                                     OAuthenticationToken = tokenResult.AccessToken,
                                     SessionId = sessionDetails.SessionId,
-                                    NewAccount = false
+                                    NewAccount = isNewUser
                                 };
                             }
                             catch (Exception sessionCreationException)
@@ -419,7 +416,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                     AuthenticationSuccesfull = false,
                                     OAuthenticationToken = tokenResult.AccessToken,
                                     SessionId = Guid.Empty,
-                                    NewAccount = false
+                                    NewAccount = isNewUser
                                 };
                             }
                         }
@@ -432,7 +429,7 @@ namespace DrinkDb_Auth.OAuthProviders
                                 AuthenticationSuccesfull = false,
                                 OAuthenticationToken = tokenResult.AccessToken,
                                 SessionId = Guid.Empty,
-                                NewAccount = false
+                                NewAccount = isNewUser
                             };
                         }
                     }
@@ -482,11 +479,11 @@ namespace DrinkDb_Auth.OAuthProviders
         [System.Runtime.Versioning.SupportedOSPlatform("windows10.0.17763")]
         public async Task<AuthenticationResponse> SignInWithTwitterAsync(Window parentWindow)
         {
-            var oauthFlowCompletionSource = new TaskCompletionSource<AuthenticationResponse>();
+            var tcs = new TaskCompletionSource<AuthenticationResponse>();
 
             try
             {
-                var twitterLoginDialog = new ContentDialog
+                var dialog = new ContentDialog
                 {
                     Title = "Sign in with Twitter",
                     CloseButtonText = "Cancel",
@@ -495,55 +492,55 @@ namespace DrinkDb_Auth.OAuthProviders
                 };
 
                 // Setup the WebView to display the OAuth login page.
-                var twitterOAuthWebView = new WebView2
+                var webView = new WebView2
                 {
                     Width = 450,
                     Height = 600
                 };
-                twitterLoginDialog.Content = twitterOAuthWebView;
+                dialog.Content = webView;
 
                 // Ensure WebView2 is ready to navigate.
-                await twitterOAuthWebView.EnsureCoreWebView2Async();
+                await webView.EnsureCoreWebView2Async();
 
                 // Listen for navigation events to detect when Twitter redirects back.
-                twitterOAuthWebView.CoreWebView2.NavigationStarting += async (sender, navigationArgs) =>
+                webView.CoreWebView2.NavigationStarting += async (sender, args) =>
                 {
-                    var navigatedUrl = navigationArgs.Uri;
-                    System.Diagnostics.Debug.WriteLine($"NavigationStarting -> {navigatedUrl}");
+                    var navUrl = args.Uri;
+                    System.Diagnostics.Debug.WriteLine($"NavigationStarting -> {navUrl}");
 
                     // The redirect contains our authorization Code when it matches the redirect URI we set.
-                    if (navigatedUrl.StartsWith(RedirectUri, StringComparison.OrdinalIgnoreCase))
+                    if (navUrl.StartsWith(RedirectUri, StringComparison.OrdinalIgnoreCase))
                     {
                         // Stop the WebView from continuing to this local URL.
-                        navigationArgs.Cancel = true;
+                        args.Cancel = true;
 
                         // Extract the  authorization Code from the URL.
-                        var authorizationCode = ExtractQueryParameter(navigatedUrl, "code");
-                        System.Diagnostics.Debug.WriteLine($"Found 'oauthResult]' in callback: {authorizationCode}");
+                        var code = ExtractQueryParameter(navUrl, "code");
+                        System.Diagnostics.Debug.WriteLine($"Found 'code' in callback: {code}");
 
                         // Exchange the authorization Code for an access token.
-                        var oauthResult = await ExchangeCodeForTokenAsync(authorizationCode);
+                        var authResponse = await ExchangeCodeForTokenAsync(code);
 
-                        // Close the twitterLoginDialog and let the calling authorization Code handle the AuthenticationResult.
+                        // Close the dialog and let the calling authorization Code handle the AuthenticationResult.
                         parentWindow.DispatcherQueue.TryEnqueue(() =>
                         {
-                            twitterLoginDialog.Hide();
-                            oauthFlowCompletionSource.SetResult(oauthResult);
+                            dialog.Hide();
+                            tcs.SetResult(authResponse);
                         });
                     }
                 };
 
                 // Start the authorization flow by navigating to Twitter's OAuth page.
-                twitterOAuthWebView.CoreWebView2.Navigate(GetAuthorizationUrl());
+                webView.CoreWebView2.Navigate(GetAuthorizationUrl());
 
-                // Show the twitterLoginDialog to the user.
-                await twitterLoginDialog.ShowAsync();
+                // Show the dialog to the user.
+                var dialogResult = await dialog.ShowAsync();
 
-                // If the user closed the twitterLoginDialog manually, handle the case where we didn't get a authorization Code.
-                if (!oauthFlowCompletionSource.Task.IsCompleted)
+                // If the user closed the dialog manually, handle the case where we didn't get a authorization Code.
+                if (!tcs.Task.IsCompleted)
                 {
                     System.Diagnostics.Debug.WriteLine("Dialog closed; no oauth code was returned.");
-                    oauthFlowCompletionSource.SetResult(new AuthenticationResponse
+                    tcs.SetResult(new AuthenticationResponse
                     {
                         AuthenticationSuccesfull = false,
                         OAuthenticationToken = string.Empty,
@@ -556,11 +553,11 @@ namespace DrinkDb_Auth.OAuthProviders
             {
                 // Capture any critical errors in the process.
                 System.Diagnostics.Debug.WriteLine($"SignInWithTwitterAsync critical failure: {webViewError.Message}");
-                oauthFlowCompletionSource.TrySetException(webViewError);
+                tcs.TrySetException(webViewError);
             }
 
             // Return the result of this OAuth workflow.
-            return await oauthFlowCompletionSource.Task;
+            return await tcs.Task;
         }
 
         /// <summary>
@@ -588,12 +585,11 @@ namespace DrinkDb_Auth.OAuthProviders
         private (string codeVerifier, string codeChallenge) GeneratePkceData()
         {
             // Create a random array of bytes and then Base64Url-encode them to get a code_verifier.
-            var secureRandom = RandomNumberGenerator.Create();
+            var rng = RandomNumberGenerator.Create();
             var randomBytes = new byte[32];
-            secureRandom.GetBytes(randomBytes);
+            rng.GetBytes(randomBytes);
             // Convert to a safe string for the OAuth request (no +, /, or =).
             var generatedCodeVerifier = Convert.ToBase64String(randomBytes)
-
                 .TrimEnd('=')
                 .Replace('+', '-')
                 .Replace('/', '_');
@@ -648,23 +644,23 @@ namespace DrinkDb_Auth.OAuthProviders
     internal class TwitterTokenResponse
     {
         [JsonPropertyName("access_token")]
-        public required string AccessToken { get; set; }
+        public string AccessToken { get; set; } = string.Empty;
 
         [JsonPropertyName("token_type")]
-        public required string TokenType { get; set; }
+        public string TokenType { get; set; } = string.Empty;
 
         [JsonPropertyName("expires_in")]
-        public required int ExpiresIn { get; set; }
+        public int ExpiresIn { get; set; }
 
         [JsonPropertyName("scope")]
-         public required string Scope { get; set; }
+        public string Scope { get; set; } = string.Empty;
 
-        // Included only if requested and granted offline access.
+        // These should be optional since they might not always be present
         [JsonPropertyName("refresh_token")]
-        public required string RefreshToken { get; set; }
+        public string? RefreshToken { get; set; }
 
         [JsonPropertyName("id_token")]
-        public required string IdToken { get; set; }
+        public string? IdToken { get; set; }
     }
 
     /// <summary>
@@ -682,7 +678,7 @@ namespace DrinkDb_Auth.OAuthProviders
         [JsonPropertyName("id")]
         public required string Id { get; set; }
 
-        [JsonPropertyName("fullName")]
+        [JsonPropertyName("name")]
 
         public required string Name { get; set; }
 
