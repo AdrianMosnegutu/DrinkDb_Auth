@@ -48,8 +48,8 @@ namespace DrinkDb_Auth.OAuthProviders
             try
             {
                 var token = await ExchangeCodeForToken(code);
-                var res = LinkedInOAuth2Provider.Authenticate(string.Empty, token);
-                taskCompletionSource.SetResult(res);
+                var response = LinkedInOAuth2Provider.Authenticate(string.Empty, token);
+                taskCompletionSource.SetResult(response);
             }
             catch (Exception ex)
             {
@@ -90,8 +90,8 @@ namespace DrinkDb_Auth.OAuthProviders
                 var response = await client.SendAsync(request);
                 var body = await response.Content.ReadAsStringAsync();
 
-                using var doc = JsonDocument.Parse(body);
-                if (doc.RootElement.TryGetProperty("access_token", out var tokenProp))
+                using var document = JsonDocument.Parse(body);
+                if (document.RootElement.TryGetProperty("access_token", out var tokenProp))
                 {
                     return tokenProp.GetString() ?? throw new Exception("Token is null");
                 }

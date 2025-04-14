@@ -14,7 +14,7 @@ namespace DrinkDb_Auth
 {
     public sealed partial class MainWindow : Window
     {
-        private AuthenticationService authenticationService = new ();
+        private IAuthenticationService authenticationService = new AuthenticationService();
         private ITwoFactorAuthenticationService twoFactorAuthentificationService = new TwoFactorAuthenticationService();
 
         public MainWindow()
@@ -74,8 +74,8 @@ namespace DrinkDb_Auth
             string username = UsernameTextBox.Text;
             string password = PasswordBox.Password;
 
-            AuthenticationResponse res = AuthenticationService.AuthWithUserPass(username, password);
-            _ = AuthenticationComplete(res);
+            AuthenticationResponse response = AuthenticationService.AuthWithUserPass(username, password);
+            _ = AuthenticationComplete(response);
         }
 
         public async void GithubSignInButton_Click(object sender, RoutedEventArgs e)

@@ -30,8 +30,8 @@ namespace DrinkDb_Auth.OAuthProviders
 
             string json = response.Content.ReadAsStringAsync().Result;
 
-            using JsonDocument doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
+            using JsonDocument document = JsonDocument.Parse(json);
+            var root = document.RootElement;
             string id = root.GetProperty("sub").GetString() ?? throw new Exception("LinkedIn ID not found in response.");
             string name = root.GetProperty("name").GetString() ?? throw new Exception("LinkedIn name not found in response.");
 
@@ -69,11 +69,12 @@ namespace DrinkDb_Auth.OAuthProviders
             }
             else
             {
+                Session session = SessionAdapter.CreateSession(user.UserId);
                 return new AuthenticationResponse
                 {
                     AuthenticationSuccesfull = true,
                     OAuthenticationToken = token,
-                    SessionId = user.UserId,
+                    SessionId = session.SessionId,
                     NewAccount = false
                 };
             }
@@ -106,9 +107,9 @@ namespace DrinkDb_Auth.OAuthProviders
                 }
 
                 string json = response.Content.ReadAsStringAsync().Result;
-                using (JsonDocument doc = JsonDocument.Parse(json))
+                using (JsonDocument document = JsonDocument.Parse(json))
                 {
-                    var root = doc.RootElement;
+                    var root = document.RootElement;
                     // Use "sub" as LinkedIn's unique identifier
                     string lnId = root.GetProperty("sub").ToString() ?? throw new Exception("No LinkedIn ID found in the response.");
                     string fullName = root.GetProperty("name").ToString() ?? throw new Exception("No LinkedIn ID found in the response.");
@@ -127,27 +128,27 @@ namespace DrinkDb_Auth.OAuthProviders
             bool isNewAccount = false;
             string connectionString = ConfigurationManager.ConnectionStrings["DrinkDbConnection"].ConnectionString;
 
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                conn.Open();
+                connection.Open();
 
                 // Check if a user with this lnId already exists (stored as userName)
                 string checkQuery = "SELECT COUNT(*) FROM User WHERE userName = @lnId";
-                using (SqlCommand checkCmd = new SqlCommand(checkQuery, conn))
+                using (SqlCommand checkCommand = new SqlCommand(checkQuery, connection))
                 {
-                    checkCmd.Parameters.AddWithValue("@lnId", lnId);
-                    int count = (int)checkCmd.ExecuteScalar();
+                    checkCommand.Parameters.AddWithValue("@lnId", lnId);
+                    int count = (int)checkCommand.ExecuteScalar();
                     if (count == 0)
                     {
                         // Insert a new user
                         string insertQuery = @"
                             INSERT INTO User (userId, userName, passwordHash, twoFASecret, roleId)
                             VALUES (NEWID(), @lnId, '', NULL, @roleId)";
-                        using (SqlCommand insertCmd = new SqlCommand(insertQuery, conn))
+                        using (SqlCommand insertCommand = new SqlCommand(insertQuery, connection))
                         {
-                            insertCmd.Parameters.AddWithValue("@lnId", lnId);
-                            insertCmd.Parameters.AddWithValue("@roleId", GetDefaultRoleId(conn));
-                            int result = insertCmd.ExecuteNonQuery();
+                            insertCommand.Parameters.AddWithValue("@lnId", lnId);
+                            insertCommand.Parameters.AddWithValue("@roleId", GetDefaultRoleId(connection));
+                            int result = insertCommand.ExecuteNonQuery();
                             if (result > 0)
                             {
                                 isNewAccount = true;
@@ -162,9 +163,9 @@ namespace DrinkDb_Auth.OAuthProviders
         private Guid GetDefaultRoleId(SqlConnection conn)
         {
             string sql = "SELECT TOP 1 roleId FROM Roles ORDER BY roleName";
-            using (SqlCommand cmd = new SqlCommand(sql, conn))
+            using (SqlCommand command = new SqlCommand(sql, conn))
             {
-                object result = cmd.ExecuteScalar();
+                object result = command.ExecuteScalar();
                 if (result != null)
                 {
                     return (Guid)result;

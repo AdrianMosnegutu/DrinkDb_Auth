@@ -1,7 +1,7 @@
 using System;
 using System.Data;
-using Microsoft.Data.SqlClient;
 using DrinkDb_Auth.Model;
+using Microsoft.Data.SqlClient;
 
 namespace DrinkDb_Auth.Adapter
 {

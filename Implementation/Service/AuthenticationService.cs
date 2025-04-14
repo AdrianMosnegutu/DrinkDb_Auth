@@ -18,7 +18,7 @@ namespace DrinkDb_Auth.Service
         LinkedIn
     }
 
-    public class AuthenticationService
+    public class AuthenticationService : IAuthenticationService
     {
         private static readonly SessionAdapter SessionAdapter = new ();
         private static readonly UserAdapter UserAdapter = new ();
@@ -85,7 +85,7 @@ namespace DrinkDb_Auth.Service
                     {
                         AuthenticationSuccesfull = true,
                         NewAccount = false,
-                      
+
                         OAuthenticationToken = string.Empty,
                         SessionId = session.SessionId,
                     };
