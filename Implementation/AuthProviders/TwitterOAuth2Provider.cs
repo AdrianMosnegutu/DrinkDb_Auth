@@ -23,7 +23,7 @@ namespace DrinkDb_Auth.OAuthProviders
     /// <summary>
     /// A PKCE-based OAuth 2.0 flow for Twitter in a WinUI desktop app.
     /// </summary>
-    public class TwitterOAuth2Provider : GenericOAuth2Provider
+    public class TwitterOAuth2Provider : GenericOAuth2Provider, ITwitterOAuth2Provider
     {
         // ──────── Constants ────────
         // The same Callback/Redirect URI you registered in Twitter Developer Portal.

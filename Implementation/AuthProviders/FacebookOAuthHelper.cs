@@ -5,8 +5,8 @@ using DrinkDb_Auth.Model;
 using Windows.ApplicationModel;
 
 namespace DrinkDb_Auth.OAuthProviders
-{ 
-    public class FacebookOAuthHelper
+{
+    public class FacebookOAuthHelper : IFacebookOAuthHelper
     {
         private static readonly FacebookOAuth2Provider facebookOAuth2Provider = new();
         private static readonly SessionAdapter sessionAdapter = new();
@@ -25,7 +25,7 @@ namespace DrinkDb_Auth.OAuthProviders
         {
             Console.WriteLine($"RedirectUri: {RedirectUri}");
             return $"https://www.facebook.com/v22.0/dialog/oauth?client_id={ClientId}" +
-                   $"&display=popup"+
+                   $"&display=popup" +
                    $"&redirect_uri={Uri.EscapeDataString(RedirectUri)}" +
                    $"&response_type=token&scope={Scope}";
         }

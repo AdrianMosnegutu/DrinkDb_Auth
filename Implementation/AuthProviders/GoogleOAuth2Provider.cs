@@ -14,7 +14,8 @@ using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
-    public class GoogleOAuth2Provider : GenericOAuth2Provider
+
+    public class GoogleOAuth2Provider : GenericOAuth2Provider, IGoogleOAuth2Provider
     {
         public static Guid CreateGloballyUniqueIdentifier(string identifier)
         {
