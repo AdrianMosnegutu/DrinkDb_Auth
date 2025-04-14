@@ -1,14 +1,13 @@
-﻿using Microsoft.UI.Xaml;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Microsoft.UI.Xaml;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
     public interface ITwitterOAuth2Provider
     {
-        static abstract Guid SubToGuid(string sub);
-        Task<AuthResponse> ExchangeCodeForTokenAsync(string code);
+        Task<AuthenticationResponse> ExchangeCodeForTokenAsync(string code);
         string GetAuthorizationUrl();
-        Task<AuthResponse> SignInWithTwitterAsync(Window parentWindow);
+        Task<AuthenticationResponse> SignInWithTwitterAsync(Window parentWindow);
     }
 }

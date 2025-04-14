@@ -4,6 +4,6 @@ namespace DrinkDb_Auth.OAuthProviders
 {
     public interface IFacebookOAuthHelper
     {
-        Task<AuthResponse> AuthenticateAsync();
+        Task<AuthenticationResponse> AuthenticateAsync();
     }
 }

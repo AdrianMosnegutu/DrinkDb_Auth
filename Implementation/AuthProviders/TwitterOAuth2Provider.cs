@@ -225,8 +225,8 @@ namespace DrinkDb_Auth.OAuthProviders
         {
             return new AuthenticationResponse
             {
-                AuthenticationSuccesfull = !string.IsNullOrEmpty(token),
-                OAuthenticationToken = token,
+                AuthenticationSuccessful = !string.IsNullOrEmpty(token),
+                OAuthToken = token,
                 SessionId = Guid.Empty,
                 NewAccount = false
             };
@@ -302,8 +302,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     System.Diagnostics.Debug.WriteLine("Token request failed with non-success status.");
                     return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = false,
-                        OAuthenticationToken = string.Empty,
+                        AuthenticationSuccessful = false,
+                        OAuthToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -326,8 +326,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     System.Diagnostics.Debug.WriteLine("No access token in tokenResult.");
                     return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = false,
-                        OAuthenticationToken = string.Empty,
+                        AuthenticationSuccessful = false,
+                        OAuthToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -351,8 +351,8 @@ namespace DrinkDb_Auth.OAuthProviders
                         // We still have a valid token though
                         return new AuthenticationResponse
                         {
-                            AuthenticationSuccesfull = false,
-                            OAuthenticationToken = tokenResult.AccessToken,
+                            AuthenticationSuccessful = false,
+                            OAuthToken = tokenResult.AccessToken,
                             SessionId = Guid.Empty,
                             NewAccount = false
                         };
@@ -369,8 +369,8 @@ namespace DrinkDb_Auth.OAuthProviders
                             System.Diagnostics.Debug.WriteLine("Failed to deserialize user info response");
                             return new AuthenticationResponse
                             {
-                                AuthenticationSuccesfull = false,
-                                OAuthenticationToken = tokenResult.AccessToken,
+                                AuthenticationSuccessful = false,
+                                OAuthToken = tokenResult.AccessToken,
                                 SessionId = Guid.Empty,
                                 NewAccount = false
                             };
@@ -404,8 +404,8 @@ namespace DrinkDb_Auth.OAuthProviders
                                 // Return a success response with a valid session.
                                 return new AuthenticationResponse
                                 {
-                                    AuthenticationSuccesfull = true,
-                                    OAuthenticationToken = tokenResult.AccessToken,
+                                    AuthenticationSuccessful = true,
+                                    OAuthToken = tokenResult.AccessToken,
                                     SessionId = sessionDetails.SessionId,
                                     NewAccount = false
                                 };
@@ -416,8 +416,8 @@ namespace DrinkDb_Auth.OAuthProviders
                                 System.Diagnostics.Debug.WriteLine($"Error creating session: {sessionCreationException.Message}");
                                 return new AuthenticationResponse
                                 {
-                                    AuthenticationSuccesfull = false,
-                                    OAuthenticationToken = tokenResult.AccessToken,
+                                    AuthenticationSuccessful = false,
+                                    OAuthToken = tokenResult.AccessToken,
                                     SessionId = Guid.Empty,
                                     NewAccount = false
                                 };
@@ -429,8 +429,8 @@ namespace DrinkDb_Auth.OAuthProviders
                             System.Diagnostics.Debug.WriteLine($"Error in EnsureUserExists: {userCreationException.Message}");
                             return new AuthenticationResponse
                             {
-                                AuthenticationSuccesfull = false,
-                                OAuthenticationToken = tokenResult.AccessToken,
+                                AuthenticationSuccessful = false,
+                                OAuthToken = tokenResult.AccessToken,
                                 SessionId = Guid.Empty,
                                 NewAccount = false
                             };
@@ -442,8 +442,8 @@ namespace DrinkDb_Auth.OAuthProviders
                         System.Diagnostics.Debug.WriteLine($"Error deserializing user info: {userInfoDeserializationException.Message}");
                         return new AuthenticationResponse
                         {
-                            AuthenticationSuccesfull = false,
-                            OAuthenticationToken = tokenResult.AccessToken,
+                            AuthenticationSuccessful = false,
+                            OAuthToken = tokenResult.AccessToken,
                             SessionId = Guid.Empty,
                             NewAccount = false
                         };
@@ -455,8 +455,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     System.Diagnostics.Debug.WriteLine($"Exception fetching user info: {userInfoFetchException.Message}");
                     return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = true,
-                        OAuthenticationToken = tokenResult.AccessToken,
+                        AuthenticationSuccessful = true,
+                        OAuthToken = tokenResult.AccessToken,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -468,8 +468,8 @@ namespace DrinkDb_Auth.OAuthProviders
                 System.Diagnostics.Debug.WriteLine($"ExchangeCodeForTokenAsync exception: {exceptionDuringTokenExchange.Message}");
                 return new AuthenticationResponse
                 {
-                    AuthenticationSuccesfull = false,
-                    OAuthenticationToken = string.Empty,
+                    AuthenticationSuccessful = false,
+                    OAuthToken = string.Empty,
                     SessionId = Guid.Empty,
                     NewAccount = false,
                 };
@@ -545,8 +545,8 @@ namespace DrinkDb_Auth.OAuthProviders
                     System.Diagnostics.Debug.WriteLine("Dialog closed; no oauth code was returned.");
                     oauthFlowCompletionSource.SetResult(new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = false,
-                        OAuthenticationToken = string.Empty,
+                        AuthenticationSuccessful = false,
+                        OAuthToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     });
