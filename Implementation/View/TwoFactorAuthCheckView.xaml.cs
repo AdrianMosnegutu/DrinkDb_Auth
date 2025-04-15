@@ -9,9 +9,9 @@ namespace DrinkDb_Auth.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class TwoFactorAuthCheckView : Page
+    public sealed partial class TwoFactorAuthCheckView : Page, ITwoFactorAuthenticationView
     {
-        public TwoFactorAuthCheckView(AuthenticationQRCodeAndTextBoxDigits authentificationHandler)
+        public TwoFactorAuthCheckView(IAuthenticationWindowSetup authentificationHandler)
         {
             this.InitializeComponent();
             this.DataContext = authentificationHandler;

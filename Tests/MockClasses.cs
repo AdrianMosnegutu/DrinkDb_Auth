@@ -3,7 +3,9 @@ using DrinkDb_Auth.AuthProviders;
 using DrinkDb_Auth.Model;
 using DrinkDb_Auth.OAuthProviders;
 using Microsoft.UI.Xaml;
+using System;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace Tests
 {
@@ -22,6 +24,11 @@ namespace Tests
         }
 
         public Session GetSession(Guid sessionId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Session GetSessionByUserId(Guid userId)
         {
             throw new NotImplementedException();
         }

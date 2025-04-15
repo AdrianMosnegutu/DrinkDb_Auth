@@ -1,5 +1,8 @@
 ﻿using DrinkDb_Auth.OAuthProviders;
 using DrinkDb_Auth.Service;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
+using System.Threading.Tasks;
 
 namespace Tests
 {

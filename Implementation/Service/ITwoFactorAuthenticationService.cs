@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DrinkDb_Auth.View;
+using DrinkDb_Auth.ViewModel;
 using Microsoft.UI.Xaml;
 
 namespace DrinkDb_Auth.Service
 {
     internal interface ITwoFactorAuthenticationService
     {
-        Task<bool> SetupOrVerifyTwoFactor(Window window, Guid userId, bool isFirstTimeSetup);
+        Task<bool> SetupOrVerifyTwoFactor();
+        void InitializeOtherComponents(IAuthenticationWindowSetup? windowSetup = null, ITwoFactorAuthenticationView? authenticationWindow = null, IDialog? dialog = null, IDialog? invalidDialog = null);
     }
 }

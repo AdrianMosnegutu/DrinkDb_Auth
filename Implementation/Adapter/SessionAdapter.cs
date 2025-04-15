@@ -1,7 +1,7 @@
 using System;
 using System.Data;
-using Microsoft.Data.SqlClient;
 using DrinkDb_Auth.Model;
+using Microsoft.Data.SqlClient;
 
 namespace DrinkDb_Auth.Adapter
 {
@@ -46,6 +46,20 @@ namespace DrinkDb_Auth.Adapter
             {
                 int firstColumn = 0;
                 return Session.CreateSessionWithIds(sessionId, reader.GetGuid(firstColumn));
+            }
+            throw new Exception("Session not found.");
+        }
+
+        public Session GetSessionByUserId(Guid userId)
+        {
+            using SqlConnection databaseConnection = DrinkDbConnectionHelper.GetConnection();
+            using SqlCommand getSessionCommand = new SqlCommand("SELECT sessionId FROM Sessions WHERE userId = @userId", databaseConnection);
+            getSessionCommand.Parameters.Add("@userId", SqlDbType.UniqueIdentifier).Value = userId;
+            using SqlDataReader reader = getSessionCommand.ExecuteReader();
+            if (reader.Read())
+            {
+                int firstColumn = 0;
+                return Session.CreateSessionWithIds(reader.GetGuid(firstColumn), userId);
             }
             throw new Exception("Session not found.");
         }
