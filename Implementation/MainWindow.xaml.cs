@@ -74,7 +74,7 @@ namespace DrinkDb_Auth
             string username = UsernameTextBox.Text;
             string password = PasswordBox.Password;
 
-            AuthenticationResponse res = AuthenticationService.AuthWithUserPass(username, password);
+            AuthenticationResponse res = authenticationService.AuthWithUserPass(username, password);
             _ = AuthenticationComplete(res);
         }
 

@@ -1,14 +1,14 @@
 ﻿using System;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using DrinkDb_Auth.AuthProviders;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
     public class GitHubLocalOAuthServer : IGitHubLocalOAuthServer
     {
-        private readonly HttpListener listener;
+        private readonly IGitHubHttpHelper listener;
 
         /// <summary>
         /// Fires when the GitHub code is received from the redirect.
@@ -19,8 +19,13 @@ namespace DrinkDb_Auth.OAuthProviders
 
         public GitHubLocalOAuthServer(string prefix)
         {
-            listener = new HttpListener();
+            listener = new GitHubHttpHelper();
             listener.Prefixes.Add(prefix);
+        }
+
+        public GitHubLocalOAuthServer(IGitHubHttpHelper listener)
+        {
+            this.listener = listener;
         }
 
         public async Task StartAsync()
