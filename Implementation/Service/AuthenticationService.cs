@@ -20,11 +20,12 @@ namespace DrinkDb_Auth.Service
 
     public class AuthenticationService
     {
-        private static ISessionAdapter sessionAdapter;
-        private static IUserAdapter userAdapter;
+        private ISessionAdapter sessionAdapter;
+        private IUserAdapter userAdapter;
         private ILinkedInLocalOAuthServer linkedinLocalServer;
         private IGitHubLocalOAuthServer githubLocalServer;
         private IFacebookLocalOAuthServer facebookLocalServer;
+        private IBasicAuthenticationProvider basicAuthenticationProvider;
 
         public AuthenticationService()
         {
@@ -39,16 +40,19 @@ namespace DrinkDb_Auth.Service
 
             sessionAdapter = new SessionAdapter();
 
+            basicAuthenticationProvider = new BasicAuthenticationProvider();
+
             userAdapter = new UserAdapter();
         }
 
-        public AuthenticationService(ILinkedInLocalOAuthServer linkedinLocalServer, IGitHubLocalOAuthServer githubLocalServer, IFacebookLocalOAuthServer facebookLocalServer, IUserAdapter userAdapter, ISessionAdapter sessionAdapter)
+        public AuthenticationService(ILinkedInLocalOAuthServer linkedinLocalServer, IGitHubLocalOAuthServer githubLocalServer, IFacebookLocalOAuthServer facebookLocalServer, IUserAdapter userAdapter, ISessionAdapter sessionAdapter, IBasicAuthenticationProvider basicAuthenticationProvider)
         {
             this.linkedinLocalServer = linkedinLocalServer;
             this.githubLocalServer = githubLocalServer;
             this.facebookLocalServer = facebookLocalServer;
-            AuthenticationService.userAdapter = userAdapter;
-            AuthenticationService.sessionAdapter = sessionAdapter;
+            this.userAdapter = userAdapter;
+            this.sessionAdapter = sessionAdapter;
+            this.basicAuthenticationProvider = basicAuthenticationProvider;
             _ = githubLocalServer.StartAsync();
             _ = facebookLocalServer.StartAsync();
             _ = linkedinLocalServer.StartAsync();
@@ -89,11 +93,11 @@ namespace DrinkDb_Auth.Service
             return userAdapter.GetUserById(session.UserId) ?? throw new UserNotFoundException("User not found");
         }
 
-        public static AuthenticationResponse AuthWithUserPass(string username, string password)
+        public AuthenticationResponse AuthWithUserPass(string username, string password)
         {
             try
             {
-                if (BasicAuthenticationProvider.Authenticate(username, password))
+                if (basicAuthenticationProvider.Authenticate(username, password))
                 {
                     User user = userAdapter.GetUserByUsername(username) ?? throw new UserNotFoundException("User not found");
                     Session session = sessionAdapter.CreateSession(user.UserId);

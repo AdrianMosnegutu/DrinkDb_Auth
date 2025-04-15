@@ -1,15 +1,19 @@
 ﻿using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.AuthProviders;
 using DrinkDb_Auth.Model;
 using DrinkDb_Auth.OAuthProviders;
 using Microsoft.UI.Xaml;
+using System.Net;
 
 namespace Tests
 {
     public class MockSessionAdapter : ISessionAdapter
     {
+        public Guid MockId { get; set; }
+
         public Session CreateSession(Guid userId)
         {
-            return Session.CreateSessionWithIds(userId, userId);
+            return Session.CreateSessionWithIds(MockId, MockId);
         }
 
         public bool EndSession(Guid sessionId)
@@ -31,10 +35,6 @@ namespace Tests
     public class MockGoogleAuthProvider : IGoogleOAuth2Provider
     {
         public Guid MockId { get; set; }
-        public static Guid SubToGuid(string sub)
-        {
-            throw new NotImplementedException();
-        }
 
         public AuthenticationResponse Authenticate(string userId, string token)
         {
@@ -67,29 +67,37 @@ namespace Tests
 
     public class MockUserAdapter : IUserAdapter
     {
+        public bool Throws { get; set; } = false;
+        public Guid MockId { get; set; }
+        public string MockUsername { get; set; } = "";
+        public string MockPassword { get; set; } = "";
+        public string? MockTwoFASecret { get; set; } = null;
+
         public bool CreateUser(User user)
         {
-            throw new NotImplementedException();
+            if (Throws)
+                throw new Exception();
+            return true;
         }
 
         public User? GetUserById(Guid userId)
         {
-            throw new NotImplementedException();
+            return userId == MockId ? new User { PasswordHash = MockPassword, TwoFASecret = MockTwoFASecret, UserId = MockId, Username = MockUsername } : null;
         }
 
         public User? GetUserByUsername(string username)
         {
-            throw new NotImplementedException();
+            return username == MockUsername ? new User { PasswordHash = MockPassword, TwoFASecret = MockTwoFASecret, UserId = MockId, Username = MockUsername } : null;
         }
 
         public bool UpdateUser(User user)
         {
-            throw new NotImplementedException();
+            return true;
         }
 
         public bool ValidateAction(Guid userId, string resource, string action)
         {
-            throw new NotImplementedException();
+            return true;
         }
     }
 
@@ -135,6 +143,124 @@ namespace Tests
         public void Stop()
         {
             /* does nothing */
+        }
+    }
+
+    public class MockFacebookAuthProvider : IFacebookOAuthHelper
+    {
+        public Guid MockId { get; set; }
+        public Task<AuthenticationResponse> AuthenticateAsync()
+        {
+            AuthenticationResponse mockResponse = new AuthenticationResponse
+            {
+                AuthenticationSuccessful = false,
+                NewAccount = false,
+                OAuthToken = string.Empty,
+                SessionId = MockId,
+            };
+
+            return Task.FromResult(mockResponse);
+        }
+    }
+
+    public class MockBasicAuth : IBasicAuthenticationProvider
+    {
+        public bool Succeeds { get; set; }
+        public bool Authenticate(string username, string password)
+        {
+            return Succeeds;
+        }
+    }
+
+    public class MockTwitterAuthProvider : ITwitterOAuth2Provider
+    {
+        public Guid MockId { get; set; }
+        public Task<AuthenticationResponse> ExchangeCodeForTokenAsync(string code)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string GetAuthorizationUrl()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<AuthenticationResponse> SignInWithTwitterAsync(Window parentWindow)
+        {
+            AuthenticationResponse mockResponse = new AuthenticationResponse
+            {
+                AuthenticationSuccessful = false,
+                NewAccount = false,
+                OAuthToken = string.Empty,
+                SessionId = MockId,
+            };
+
+            return Task.FromResult(mockResponse);
+        }
+    }
+
+    public class MockGitHubAuthProvider : IGitHubOAuthHelper
+    {
+        public Guid MockId { get; set;}
+        public Task<AuthenticationResponse> AuthenticateAsync()
+        {
+            AuthenticationResponse mockResponse = new AuthenticationResponse
+            {
+                AuthenticationSuccessful = false,
+                NewAccount = false,
+                OAuthToken = string.Empty,
+                SessionId = MockId,
+            };
+
+            return Task.FromResult(mockResponse);
+        }
+    }
+
+    public class MockLinkedInAuthProvider : ILinkedInOAuthHelper
+    {
+        public Guid MockId { get; set;}
+        public Task<AuthenticationResponse> AuthenticateAsync()
+        {
+            AuthenticationResponse mockResponse = new AuthenticationResponse
+            {
+                AuthenticationSuccessful = false,
+                NewAccount = false,
+                OAuthToken = string.Empty,
+                SessionId = MockId,
+            };
+
+            return Task.FromResult(mockResponse);
+        }
+    }
+
+    public class MockGitHubHttpHelper : IGitHubHttpHelper
+    {
+        public bool Throws { get; set; } = false;
+        public string MockGitHubId { get; set;}
+        public string MockGitHubLogin { get; set;}
+
+        public bool IsListening { get; set; }
+
+        public HttpListenerPrefixCollection Prefixes { get; set; }
+
+        public (string gitHubId, string gitHubLogin) FetchGitHubUserInfo(string token)
+        {
+            if (Throws)
+                throw new Exception();
+            return (MockGitHubId, MockGitHubLogin);
+        }
+
+        public Task<HttpListenerContext> GetContextAsync()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Start()
+        {
+        }
+
+        public void Stop()
+        {
         }
     }
 }

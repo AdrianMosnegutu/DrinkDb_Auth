@@ -1,16 +1,29 @@
 using System;
-using System.Net.Http;
-using System.Text.Json;
-using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.AuthProviders;
 using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
     public class GitHubOAuth2Provider : GenericOAuth2Provider
     {
-        private readonly static UserAdapter UserAdapter = new ();
-        private readonly static SessionAdapter SessionAdapter = new ();
+        private IUserAdapter userAdapter;
+        private ISessionAdapter sessionAdapter;
+        private IGitHubHttpHelper gitHubHttpHelper;
+
+        public GitHubOAuth2Provider()
+        {
+            userAdapter = new UserAdapter();
+            sessionAdapter = new SessionAdapter();
+            gitHubHttpHelper = new GitHubHttpHelper();
+        }
+
+        public GitHubOAuth2Provider(IUserAdapter userAdapter, ISessionAdapter sessionAdapter, IGitHubHttpHelper gitHubHttpHelper)
+        {
+            this.userAdapter = userAdapter;
+            this.sessionAdapter = sessionAdapter;
+            this.gitHubHttpHelper = gitHubHttpHelper;
+        }
 
         public AuthenticationResponse Authenticate(string? userId, string token)
         {
@@ -30,12 +43,12 @@ namespace DrinkDb_Auth.OAuthProviders
                 }
 
                 // Check if a user exists by using the GitHub username.
-                if (VerifyUserInDb(gitHubLogin))
+                if (UserExists(gitHubLogin))
                 {
                     // User exists, so proceed.
-                    User user = UserAdapter.GetUserByUsername(gitHubLogin) ?? throw new Exception("User not found");
+                    User user = userAdapter.GetUserByUsername(gitHubLogin) ?? throw new Exception("User not found");
 
-                    Session session = SessionAdapter.CreateSession(user.UserId);
+                    Session session = sessionAdapter.CreateSession(user.UserId);
 
                     return new AuthenticationResponse
                     {
@@ -52,7 +65,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     if (newUserId != Guid.Empty)
                     {
                         // Successfully inserted, so login is successful.
-                        Session session = SessionAdapter.CreateSession(newUserId);
+                        Session session = sessionAdapter.CreateSession(newUserId);
                         return new AuthenticationResponse
                         {
                             AuthenticationSuccessful = true,
@@ -88,58 +101,14 @@ namespace DrinkDb_Auth.OAuthProviders
 
         private (string gitHubId, string gitHubLogin) FetchGitHubUserInfo(string token)
         {
-            using (HttpClient client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Add("Authorization", $"token {token}");
-                client.DefaultRequestHeaders.Add("User-Agent", "DrinkDb_Auth-App");
-
-                var response = client.GetAsync("https://api.github.com/user").Result;
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new Exception("Failed to fetch user info from GitHub.");
-                }
-
-                string userJson = response.Content.ReadAsStringAsync().Result;
-                using (JsonDocument userDocument = JsonDocument.Parse(userJson))
-                {
-                    var root = userDocument.RootElement;
-                    string gitHubId = root.GetProperty("id").GetRawText();
-                    string? gitHubLogin = root.GetProperty("login").GetString();
-                    if (gitHubLogin == null)
-                    {
-                        throw new Exception("GitHub login is null.");
-                    }
-                    return (gitHubId, gitHubLogin);
-                }
-            }
+            return gitHubHttpHelper.FetchGitHubUserInfo(token);
         }
 
-        // TODO delete function since it has 0 references
-        public static async Task<string?> GetGitHubUsernameAsync(string token)
-        {
-            using (HttpClient client = new HttpClient())
-            {
-                client.DefaultRequestHeaders.Add("Authorization", $"token {token}");
-                client.DefaultRequestHeaders.Add("User-Agent", "DrinkDb_Auth-App");
-                var response = await client.GetAsync("https://api.github.com/user");
-                if (!response.IsSuccessStatusCode)
-                {
-                    return null;
-                }
-                string userJson = await response.Content.ReadAsStringAsync();
-                using (JsonDocument userDocument = JsonDocument.Parse(userJson))
-                {
-                    var root = userDocument.RootElement;
-                    return root.GetProperty("login").GetString();
-                }
-            }
-        }
-
-        private bool VerifyUserInDb(string gitHubLogin)
+        private bool UserExists(string gitHubLogin)
         {
             try
             {
-                User? user = UserAdapter.GetUserByUsername(gitHubLogin);
+                User? user = userAdapter.GetUserByUsername(gitHubLogin);
                 if (user != null)
                 {
                     return true;
@@ -163,7 +132,7 @@ namespace DrinkDb_Auth.OAuthProviders
                     TwoFASecret = string.Empty,
                     PasswordHash = string.Empty,
                 };
-                UserAdapter.CreateUser(newUser);
+                userAdapter.CreateUser(newUser);
                 return newUser.UserId;
             }
             catch (Exception exception)
