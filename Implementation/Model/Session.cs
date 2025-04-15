@@ -4,16 +4,16 @@ namespace DrinkDb_Auth.Model
 {
     public class Session
     {
-        public Guid SessionId { get; private set; }
-        public Guid UserId { get; private set; }
+        public Guid SessionId { get; set; }
+        public Guid UserId { get; set; }
         public bool IsActive => UserId != Guid.Empty;
 
-        private Session()
+        public Session()
         {
             SessionId = Guid.NewGuid();
         }
 
-        private Session(Guid sessionId, Guid userId)
+        public Session(Guid sessionId, Guid userId)
         {
             this.SessionId = sessionId;
             this.UserId = userId;

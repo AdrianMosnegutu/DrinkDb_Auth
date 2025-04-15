@@ -18,7 +18,7 @@ namespace DrinkDb_Auth.Service
         LinkedIn
     }
 
-    public class AuthenticationService
+    public class AuthenticationService : IAuthenticationService
     {
         private ISessionAdapter sessionAdapter;
         private IUserAdapter userAdapter;

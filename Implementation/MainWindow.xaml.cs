@@ -78,8 +78,8 @@ namespace DrinkDb_Auth
             string username = UsernameTextBox.Text;
             string password = PasswordBox.Password;
 
-            AuthenticationResponse res = authenticationService.AuthWithUserPass(username, password);
-            _ = AuthenticationComplete(res);
+            AuthenticationResponse response = authenticationService.AuthWithUserPass(username, password);
+            _ = AuthenticationComplete(response);
         }
 
         public async void GithubSignInButton_Click(object sender, RoutedEventArgs e)
