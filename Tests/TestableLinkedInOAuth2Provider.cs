@@ -1,6 +1,7 @@
 using System;
 using System.Net.Http;
 using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.AuthProviders.LinkedIn;
 using DrinkDb_Auth.Model;
 using DrinkDb_Auth.OAuthProviders;
 

@@ -5,8 +5,9 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.OAuthProviders;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.LinkedIn
 {
     public class LinkedInOAuthHelper : ILinkedInOAuthHelper
     {
@@ -22,7 +23,7 @@ namespace DrinkDb_Auth.OAuthProviders
         {
             this.clientId = clientId;
             this.clientSecret = clientSecret;
-            this.redirectUrl = redirectUri;
+            redirectUrl = redirectUri;
             this.scope = scope;
             LinkedInLocalOAuthServer.OnCodeReceived += OnCodeReceived;
         }

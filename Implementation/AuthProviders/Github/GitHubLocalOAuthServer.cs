@@ -2,9 +2,8 @@
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
-using DrinkDb_Auth.AuthProviders;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.Github
 {
     public class GitHubLocalOAuthServer : IGitHubLocalOAuthServer
     {

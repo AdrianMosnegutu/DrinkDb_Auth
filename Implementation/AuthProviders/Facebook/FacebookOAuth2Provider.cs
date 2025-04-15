@@ -8,7 +8,7 @@ using DrinkDb_Auth.Model;
 using DrinkDb_Auth.Adapter;
 using Windows.Networking.Sockets;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.Facebook
 {
     public class FacebookOAuth2Provider : GenericOAuth2Provider
     {

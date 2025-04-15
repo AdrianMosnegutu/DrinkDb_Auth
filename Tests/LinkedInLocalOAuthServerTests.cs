@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using DrinkDb_Auth.OAuthProviders;
+using DrinkDb_Auth.AuthProviders.LinkedIn;
 using NUnit.Framework;
 
 namespace DrinkDb_Auth.Tests

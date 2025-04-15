@@ -11,8 +11,10 @@ using DrinkDb_Auth.Adapter;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using DrinkDb_Auth.Model;
+using Microsoft.AspNetCore.Http;
+using DrinkDb_Auth.OAuthProviders;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.Google
 {
     public class GoogleOAuth2Provider : GenericOAuth2Provider, IGoogleOAuth2Provider
     {
@@ -37,18 +39,17 @@ namespace DrinkDb_Auth.OAuthProviders
         private HttpClient httpClient;
         private static readonly ISessionAdapter SessionDatabaseAdapter = new SessionAdapter();
         private static readonly IUserAdapter UserDatabaseAdapter = new UserAdapter();
-
         private Guid EnsureUserExists(string identifier, string email, string name)
         {
-            Guid userId = GoogleOAuth2Provider.CreateGloballyUniqueIdentifier(identifier);
-            User? user = GoogleOAuth2Provider.UserDatabaseAdapter.GetUserById(userId);
+            Guid userId = CreateGloballyUniqueIdentifier(identifier);
+            User? user = UserDatabaseAdapter.GetUserById(userId);
 
             switch (user)
             {
                 case null:
                     // Don't know why email is used as username but let's vibe with it
                     User newUser = new User { UserId = userId, Username = email, PasswordHash = string.Empty, TwoFASecret = null };
-                    bool wasCreated = GoogleOAuth2Provider.UserDatabaseAdapter.CreateUser(newUser);
+                    bool wasCreated = UserDatabaseAdapter.CreateUser(newUser);
                     break;
                 case not null:
                     break;
@@ -60,14 +61,14 @@ namespace DrinkDb_Auth.OAuthProviders
         public GoogleOAuth2Provider()
         {
             System.Collections.Specialized.NameValueCollection appSettings = System.Configuration.ConfigurationManager.AppSettings;
-            this.httpClient = new HttpClient();
+            httpClient = new HttpClient();
 
-            this.ClientId = "311954949107-k5agbsvuvrsuttupcu7av2lceuk4vlag.apps.googleusercontent.com";
-            this.ClientSecret = "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";
-            this.RedirectUniformResourceIdentifier = "urn:ietf:wg:oauth:2.0:oob";
-            this.AuthorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
-            this.TokenEndpoint = "https://oauth2.googleapis.com/token";
-            this.UserInformationEndpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
+            ClientId = "311954949107-k5agbsvuvrsuttupcu7av2lceuk4vlag.apps.googleusercontent.com";
+            ClientSecret = "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";
+            RedirectUniformResourceIdentifier = "urn:ietf:wg:oauth:2.0:oob";
+            AuthorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
+            TokenEndpoint = "https://oauth2.googleapis.com/token";
+            UserInformationEndpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
         }
 
         public AuthenticationResponse Authenticate(string userId, string token)
@@ -81,8 +82,8 @@ namespace DrinkDb_Auth.OAuthProviders
 
             Dictionary<string, string> authorizationData = new Dictionary<string, string>
             {
-                { "client_id", this.ClientId },
-                { "redirect_uri", this.RedirectUniformResourceIdentifier },
+                { "client_id", ClientId },
+                { "redirect_uri", RedirectUniformResourceIdentifier },
                 { "response_type", "code" },
                 { "scope", allowedResourcesScope },
                 { "access_type", "offline" },
@@ -142,7 +143,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         }
 
                         UserInfoResponse userInformation;
-                        System.Guid userId;
+                        Guid userId;
                         try
                         {
                             using (HttpClient httpClient = new HttpClient())
@@ -162,8 +163,8 @@ namespace DrinkDb_Auth.OAuthProviders
                                             throw new Exception("Couldn't get http client informatin");
                                         }
 
-                                        userInformation = this.ExtractUserInfoFromIdToken(tokenResult.IdToken);
-                                        userId = this.EnsureUserExists(userInformation.Identifier, httpClientInformation.Email, httpClientInformation.Name);
+                                        userInformation = ExtractUserInfoFromIdToken(tokenResult.IdToken);
+                                        userId = EnsureUserExists(userInformation.Identifier, httpClientInformation.Email, httpClientInformation.Name);
                                         return new AuthenticationResponse { AuthenticationSuccessful = true, OAuthToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
                                     case false:
                                         if (string.IsNullOrEmpty(tokenResult.IdToken))
@@ -180,7 +181,7 @@ namespace DrinkDb_Auth.OAuthProviders
                         catch
                         {
                             userInformation = ExtractUserInfoFromIdToken(tokenResult.IdToken);
-                            userId = this.EnsureUserExists(userInformation.Identifier, userInformation.Email, userInformation.Name);
+                            userId = EnsureUserExists(userInformation.Identifier, userInformation.Email, userInformation.Name);
                             return new AuthenticationResponse { AuthenticationSuccessful = true, OAuthToken = tokenResult.AccessToken, SessionId = SessionDatabaseAdapter.CreateSession(userId).SessionId, NewAccount = false };
                         }
                     case false:

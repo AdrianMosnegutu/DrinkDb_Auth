@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
+using DrinkDb_Auth.OAuthProviders;
 using Microsoft.UI.Xaml;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.Google
 {
     public interface IGoogleOAuth2Provider
     {

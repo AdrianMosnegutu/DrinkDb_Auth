@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Threading.Tasks;
 
-namespace DrinkDb_Auth.AuthProviders
+namespace DrinkDb_Auth.AuthProviders.Github
 {
     public interface IGitHubHttpHelper
     {

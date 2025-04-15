@@ -1,11 +1,12 @@
-﻿using System;
+﻿using DrinkDb_Auth.OAuthProviders;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.Github
 {
     public class GitHubOAuthHelper : IGitHubOAuthHelper
     {

@@ -8,7 +8,7 @@ using DrinkDb_Auth.ViewModel;
 using Microsoft.UI.Xaml;
 using OtpNet;
 
-namespace DrinkDb_Auth.Service
+namespace DrinkDb_Auth.Service.TwoFactor
 {
     public class TwoFactorAuthenticationService : ITwoFactorAuthenticationService
     {
@@ -36,14 +36,14 @@ namespace DrinkDb_Auth.Service
             this.userId = userId;
             this.isFirstTimeSetup = isFirstTimeSetup;
 
-            this.authentificationTask = new TaskCompletionSource<bool>();
-            this.authentificationCompleteTask = new TaskCompletionSource<bool>();
+            authentificationTask = new TaskCompletionSource<bool>();
+            authentificationCompleteTask = new TaskCompletionSource<bool>();
 
-            this.cancelRelayCommand = new RelayCommand(() => { this.authentificationCompleteTask.SetResult(false); });
+            cancelRelayCommand = new RelayCommand(() => { authentificationCompleteTask.SetResult(false); });
         }
         public void InitializeOtherComponents(IAuthenticationWindowSetup? windowSetup = null, ITwoFactorAuthenticationView? authenticationWindow = null, IDialog? dialog = null, IDialog? invalidDialog = null)
         {
-            this.currentUser = userDatabaseAdapter?.GetUserById(userId) ?? throw new ArgumentException("User not found.");
+            currentUser = userDatabaseAdapter?.GetUserById(userId) ?? throw new ArgumentException("User not found.");
 
             int keyLength = 42;
             byte[] twoFactorSecret;
@@ -59,15 +59,15 @@ namespace DrinkDb_Auth.Service
                     break;
                 case false:
                     twoFactorSecret = Convert.FromBase64String(currentUser.TwoFASecret ?? string.Empty);
-                    Totp? timeBasedOneTimePassword = new OtpNet.Totp(twoFactorSecret);
+                    Totp? timeBasedOneTimePassword = new Totp(twoFactorSecret);
                     this.windowSetup = windowSetup == null ? new AuthenticationQRCodeAndTextBoxDigits() : windowSetup;
                     this.authenticationWindow = authenticationWindow == null ? new TwoFactorAuthCheckView(this.windowSetup) : authenticationWindow;
                     break;
             }
 
-            this.submitRelayCommand = this.CreateSubmitRelayCommand(this.windowSetup, currentUser, twoFactorSecret, authentificationTask, isFirstTimeSetup);
-            this.dialog = this.CreateAuthentificationSubWindow(window, this.authenticationWindow, submitRelayCommand, dialog);
-            this.invalidDialog = invalidDialog == null ? new InvalidAuthenticationWindow("Error", "Invalid 2FA code. Please try again.", "OK", this.cancelRelayCommand, this.window) : invalidDialog;
+            submitRelayCommand = CreateSubmitRelayCommand(this.windowSetup, currentUser, twoFactorSecret, authentificationTask, isFirstTimeSetup);
+            this.dialog = CreateAuthentificationSubWindow(window, this.authenticationWindow, submitRelayCommand, dialog);
+            this.invalidDialog = invalidDialog == null ? new InvalidAuthenticationWindow("Error", "Invalid 2FA code. Please try again.", "OK", cancelRelayCommand, window) : invalidDialog;
             this.invalidDialog.CreateContentDialog();
         }
 
@@ -83,13 +83,13 @@ namespace DrinkDb_Auth.Service
 
         public async Task<bool> SetupOrVerifyTwoFactor()
         {
-            this.dialog?.ShowAsync();
+            dialog?.ShowAsync();
             bool authentificationResult = await authentificationTask.Task;
 
-            this.authentificationCompleteTask = new TaskCompletionSource<bool>();
-            this.dialog?.Hide();
+            authentificationCompleteTask = new TaskCompletionSource<bool>();
+            dialog?.Hide();
 
-            this.ShowResults(this.window, authentificationCompleteTask, authentificationResult);
+            ShowResults(window, authentificationCompleteTask, authentificationResult);
             return await authentificationCompleteTask.Task;
         }
 
@@ -111,7 +111,7 @@ namespace DrinkDb_Auth.Service
                             + authentificationHandler.FourthDigit
                             + authentificationHandler.FifthDigit
                             + authentificationHandler.SixthDigit;
-                switch (this.twoFactorSecretVerifier?.Verify2FAForSecret(twoFactorSecret, providedCode))
+                switch (twoFactorSecretVerifier?.Verify2FAForSecret(twoFactorSecret, providedCode))
                 {
                     case true:
                         // Test updating database or not
@@ -146,11 +146,11 @@ namespace DrinkDb_Auth.Service
             }
             else
             {
-                if (this.invalidDialog != null)
+                if (invalidDialog != null)
                 {
-                    this.invalidDialog.Command = this.cancelRelayCommand;
+                    invalidDialog.Command = cancelRelayCommand;
                 }
-                this.invalidDialog?.ShowAsync();
+                invalidDialog?.ShowAsync();
             }
         }
     }

@@ -1,4 +1,6 @@
-﻿namespace DrinkDb_Auth.Service
+﻿using DrinkDb_Auth.Service.TwoFactor;
+
+namespace DrinkDb_Auth.Service
 {
     public class OtpKeyGeneration : IKeyGeneration
     {

@@ -6,6 +6,7 @@ using DrinkDb_Auth.ViewModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Threading.Tasks;
 using System;
+using DrinkDb_Auth.Service.TwoFactor;
 
 namespace Tests
 {

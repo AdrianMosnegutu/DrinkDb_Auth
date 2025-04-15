@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace DrinkDb_Auth.AuthProviders
+namespace DrinkDb_Auth.AuthProviders.Github
 {
     /// <summary>
     /// Everything HTTP class. You need some HTTP? GitHubHttpHelper has it.

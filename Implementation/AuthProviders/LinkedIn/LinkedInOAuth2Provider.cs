@@ -5,9 +5,10 @@ using System.Net.Http;
 using System.Text.Json;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.Model;
+using DrinkDb_Auth.OAuthProviders;
 using Microsoft.Data.SqlClient;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.LinkedIn
 {
     public class LinkedInOAuth2Provider : GenericOAuth2Provider
     {

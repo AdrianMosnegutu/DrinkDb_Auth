@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.Github
 {
-    public interface ILinkedInLocalOAuthServer
+    public interface IGitHubLocalOAuthServer
     {
         static abstract event Action<string>? OnCodeReceived;
 

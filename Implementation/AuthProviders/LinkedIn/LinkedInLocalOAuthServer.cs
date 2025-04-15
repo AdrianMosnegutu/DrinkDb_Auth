@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.LinkedIn
 {
     public class LinkedInLocalOAuthServer : ILinkedInLocalOAuthServer
     {

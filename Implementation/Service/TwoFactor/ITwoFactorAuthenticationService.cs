@@ -7,7 +7,7 @@ using DrinkDb_Auth.View;
 using DrinkDb_Auth.ViewModel;
 using Microsoft.UI.Xaml;
 
-namespace DrinkDb_Auth.Service
+namespace DrinkDb_Auth.Service.TwoFactor
 {
     internal interface ITwoFactorAuthenticationService
     {

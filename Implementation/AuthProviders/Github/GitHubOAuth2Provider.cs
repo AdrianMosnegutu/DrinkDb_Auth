@@ -1,9 +1,9 @@
 using System;
 using DrinkDb_Auth.Adapter;
-using DrinkDb_Auth.AuthProviders;
 using DrinkDb_Auth.Model;
+using DrinkDb_Auth.OAuthProviders;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.Github
 {
     public class GitHubOAuth2Provider : GenericOAuth2Provider
     {

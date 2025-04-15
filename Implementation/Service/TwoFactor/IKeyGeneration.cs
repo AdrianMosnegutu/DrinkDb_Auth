@@ -1,4 +1,4 @@
-﻿namespace DrinkDb_Auth.Service
+﻿namespace DrinkDb_Auth.Service.TwoFactor
 {
     public interface IKeyGeneration
     {

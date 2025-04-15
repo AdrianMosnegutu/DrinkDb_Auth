@@ -19,4 +19,4 @@ namespace DrinkDb_Auth
             }
         }
     }
-} 
+}

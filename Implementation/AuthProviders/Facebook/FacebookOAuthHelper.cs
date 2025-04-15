@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
+using DrinkDb_Auth.OAuthProviders;
 using Windows.ApplicationModel;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.Facebook
 {
     public class FacebookOAuthHelper : IFacebookOAuthHelper
     {

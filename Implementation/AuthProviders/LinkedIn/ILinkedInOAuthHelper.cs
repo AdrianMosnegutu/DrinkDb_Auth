@@ -1,6 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using DrinkDb_Auth.OAuthProviders;
+using System.Threading.Tasks;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.LinkedIn
 {
     public interface ILinkedInOAuthHelper
     {

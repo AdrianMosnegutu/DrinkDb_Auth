@@ -17,8 +17,9 @@ using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.Model;
 using Microsoft.Data.SqlClient;
 using Microsoft.Identity.Client;
+using DrinkDb_Auth.OAuthProviders;
 
-namespace DrinkDb_Auth.OAuthProviders
+namespace DrinkDb_Auth.AuthProviders.Twitter
 {
     /// <summary>
     /// A PKCE-based OAuth 2.0 flow for Twitter in a WinUI desktop app.
@@ -239,7 +240,7 @@ namespace DrinkDb_Auth.OAuthProviders
         {
             // Generate PKCE code verifier and code challenge.
             var (generatedCodeVerifier, generatedCodeChallenge) = GeneratePkceData();
-            this.codeVerifier = generatedCodeVerifier;  // We'll need this later to exchange for a token.
+            codeVerifier = generatedCodeVerifier;  // We'll need this later to exchange for a token.
 
             // Build up space-delimited scopes.
             var requestedScopes = string.Join(" ", scopes);
