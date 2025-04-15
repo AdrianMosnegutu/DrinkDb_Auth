@@ -68,14 +68,13 @@ namespace DrinkDb_Auth.OAuthProviders
         {
             System.Collections.Specialized.NameValueCollection appSettings = System.Configuration.ConfigurationManager.AppSettings;
             this.httpClient = new HttpClient();
-            string notFoundMessage = "not found";
 
-            this.ClientId = appSettings[GoogleOAuth2Provider.APP_CONFIG_CLIENT_ID_LABEL] ?? notFoundMessage;
-            this.ClientSecret = appSettings[GoogleOAuth2Provider.APP_CONFIG_CLIENT_SECRET_LABEL] ?? notFoundMessage;
-            this.RedirectUniformResourceIdentifier = appSettings[GoogleOAuth2Provider.APP_CONFIG_REDIRECT_URI_LABEL] ?? notFoundMessage;
-            this.AuthorizationEndpoint = appSettings[GoogleOAuth2Provider.APP_CONFIG_AUTORIZATION_ENDPOINT_LABEL] ?? notFoundMessage;
-            this.TokenEndpoint = appSettings[GoogleOAuth2Provider.APP_CONFIG_TOKEN_ENDPOINT_LABEL] ?? notFoundMessage;
-            this.UserInformationEndpoint = appSettings[GoogleOAuth2Provider.APP_CONFIG_USER_INFO_ENDPOINT_LABEL] ?? notFoundMessage;
+            this.ClientId = "311954949107-k5agbsvuvrsuttupcu7av2lceuk4vlag.apps.googleusercontent.com";
+            this.ClientSecret = "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";
+            this.RedirectUniformResourceIdentifier = "urn:ietf:wg:oauth:2.0:oob";
+            this.AuthorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
+            this.TokenEndpoint = "https://oauth2.googleapis.com/token";
+            this.UserInformationEndpoint = "https://www.googleapis.com/oauth2/v3/userinfo";
         }
 
         public AuthenticationResponse Authenticate(string userId, string token)

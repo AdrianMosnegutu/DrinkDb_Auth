@@ -15,7 +15,7 @@ namespace DrinkDb_Auth
     public sealed partial class MainWindow : Window
     {
         private AuthenticationService authenticationService = new ();
-        private ITwoFactorAuthenticationService twoFactorAuthentificationService = new TwoFactorAuthenticationService();
+        private ITwoFactorAuthenticationService? twoFactorAuthentificationService;
 
         public MainWindow()
         {
@@ -39,11 +39,15 @@ namespace DrinkDb_Auth
                 bool twoFAresponse = false;
                 if (!user.TwoFASecret.IsNullOrEmpty())
                 {
-                    twoFAresponse = await twoFactorAuthentificationService.SetupOrVerifyTwoFactor(this, user.UserId, false);
+                    this.twoFactorAuthentificationService = new TwoFactorAuthenticationService(this, user.UserId, false);
+                    this.twoFactorAuthentificationService.InitializeOtherComponents();
+                    twoFAresponse = await this.twoFactorAuthentificationService.SetupOrVerifyTwoFactor();
                 }
                 else
                 {
-                    twoFAresponse = await twoFactorAuthentificationService.SetupOrVerifyTwoFactor(this, user.UserId, true);
+                    this.twoFactorAuthentificationService = new TwoFactorAuthenticationService(this, user.UserId, true);
+                    this.twoFactorAuthentificationService.InitializeOtherComponents();
+                    twoFAresponse = await this.twoFactorAuthentificationService.SetupOrVerifyTwoFactor();
                 }
 
                 if (twoFAresponse)
