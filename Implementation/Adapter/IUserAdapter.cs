@@ -3,7 +3,7 @@ using DrinkDb_Auth.Model;
 
 namespace DrinkDb_Auth.Adapter
 {
-    internal interface IUserAdapter
+ internal interface IUserAdapter
     {
         public bool ValidateAction(Guid userId, string resource, string action);
         public User? GetUserByUsername(string username);

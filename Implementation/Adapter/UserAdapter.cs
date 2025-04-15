@@ -7,7 +7,7 @@ namespace DrinkDb_Auth.Adapter
 {
     public class UserAdapter : IUserAdapter
     {
-        public User? GetUserById(Guid userId)
+        public virtual User? GetUserById(Guid userId)
         {
             using SqlConnection connection = DrinkDbConnectionHelper.GetConnection();
             string sql = "SELECT * FROM Users WHERE userId = @userId;";
@@ -28,7 +28,7 @@ namespace DrinkDb_Auth.Adapter
             return null;
         }
 
-        public User? GetUserByUsername(string username)
+        public virtual User? GetUserByUsername(string username)
         {
             using SqlConnection connection = DrinkDbConnectionHelper.GetConnection();
             string sql = "SELECT * FROM Users WHERE userName = @username;";
@@ -123,7 +123,7 @@ namespace DrinkDb_Auth.Adapter
             return permissions;
         }
 
-        public bool ValidateAction(Guid userId, string resource, string action)
+        public virtual bool ValidateAction(Guid userId, string resource, string action)
         {
             bool result = false;
             string sql = "SELECT dbo.fnValidateAction(@userId, @resource, @action)";
