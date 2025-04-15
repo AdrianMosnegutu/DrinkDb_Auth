@@ -38,13 +38,6 @@ namespace DrinkDb_Auth.OAuthProviders
         private static readonly ISessionAdapter SessionDatabaseAdapter = new SessionAdapter();
         private static readonly IUserAdapter UserDatabaseAdapter = new UserAdapter();
 
-        private const string APP_CONFIG_CLIENT_ID_LABEL = "GoogleClientId";
-        private const string APP_CONFIG_CLIENT_SECRET_LABEL = "GoogleClientSecret";
-        private const string APP_CONFIG_REDIRECT_URI_LABEL = "GoogleRedirectUniformResourceIdentifier";
-        private const string APP_CONFIG_AUTORIZATION_ENDPOINT_LABEL = "GoogleAuthorizationEndpoint";
-        private const string APP_CONFIG_TOKEN_ENDPOINT_LABEL = "GoogleTokenEndpoint";
-        private const string APP_CONFIG_USER_INFO_ENDPOINT_LABEL = "GoogleUserInfoEndpoint";
-
         private Guid EnsureUserExists(string identifier, string email, string name)
         {
             Guid userId = GoogleOAuth2Provider.CreateGloballyUniqueIdentifier(identifier);

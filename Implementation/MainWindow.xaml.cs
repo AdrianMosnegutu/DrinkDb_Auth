@@ -100,7 +100,7 @@ namespace DrinkDb_Auth
             try
             {
                 GoogleSignInButton.IsEnabled = false;
-                var authResponse = await authenticationService.AuthWithOAuth(this, OAuthService.Google, new GitHubOAuthHelper());
+                var authResponse = await authenticationService.AuthWithOAuth(this, OAuthService.Google, new GoogleOAuth2Provider());
                 await AuthenticationComplete(authResponse);
             }
             catch (Exception ex)

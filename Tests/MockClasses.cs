@@ -21,6 +21,11 @@ namespace Tests
         {
             throw new NotImplementedException();
         }
+
+        public Session GetSessionByUserId(Guid userId)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class MockGoogleAuthProvider : IGoogleOAuth2Provider
