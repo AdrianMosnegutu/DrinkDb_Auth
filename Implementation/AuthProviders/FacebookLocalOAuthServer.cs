@@ -7,7 +7,7 @@ using System.Web;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
-    public class FacebookLocalOAuthServer
+    public class FacebookLocalOAuthServer : IFacebookLocalOAuthServer
     {
         private readonly HttpListener _listener;
 

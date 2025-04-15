@@ -8,7 +8,7 @@ using DrinkDb_Auth.Adapter;
 
 namespace DrinkDb_Auth.OAuthProviders
 {
-    public class LinkedInOAuthHelper
+    public class LinkedInOAuthHelper : ILinkedInOAuthHelper
     {
         private readonly string clientId = "86j0ikb93jm78x";
         private readonly string clientSecret = "WPL_AP1.pg2Bd1XhCi821VTG.+hatTA==";

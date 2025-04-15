@@ -33,7 +33,7 @@ namespace DrinkDb_Auth
 
         private async Task<bool> AuthenticationComplete(AuthenticationResponse res)
         {
-            if (res.AuthenticationSuccesfull)
+            if (res.AuthenticationSuccessful)
             {
                 var user = authenticationService.GetUser(res.SessionId);
                 bool twoFAresponse = false;
@@ -86,8 +86,8 @@ namespace DrinkDb_Auth
         {
             try
             {
-                var authentificationResponse = await authenticationService.AuthWithOAuth(this, OAuthService.GitHub);
-                _ = AuthenticationComplete(authentificationResponse);
+                var authResponse = await authenticationService.AuthWithOAuth(this, OAuthService.GitHub, new GitHubOAuthHelper());
+                _ = AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
             {
@@ -100,8 +100,8 @@ namespace DrinkDb_Auth
             try
             {
                 GoogleSignInButton.IsEnabled = false;
-                var authentificationResponse = await authenticationService.AuthWithOAuth(this, OAuthService.Google);
-                await AuthenticationComplete(authentificationResponse);
+                var authResponse = await authenticationService.AuthWithOAuth(this, OAuthService.Google, new GitHubOAuthHelper());
+                await AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
             {
@@ -117,8 +117,8 @@ namespace DrinkDb_Auth
         {
             try
             {
-                var authentificationResponse = await authenticationService.AuthWithOAuth(this, OAuthService.Facebook);
-                await AuthenticationComplete(authentificationResponse);
+                var authResponse = await authenticationService.AuthWithOAuth(this, OAuthService.Facebook, new FacebookOAuthHelper());
+                await AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
             {
@@ -131,8 +131,8 @@ namespace DrinkDb_Auth
             try
             {
                 XSignInButton.IsEnabled = false;
-                var authentificationResponse = await authenticationService.AuthWithOAuth(this, OAuthService.Twitter);
-                await AuthenticationComplete(authentificationResponse);
+                var authResponse = await authenticationService.AuthWithOAuth(this, OAuthService.Twitter, new TwitterOAuth2Provider());
+                await AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
             {
@@ -148,8 +148,12 @@ namespace DrinkDb_Auth
         {
             try
             {
-                var authentificationResponse = await authenticationService.AuthWithOAuth(this, OAuthService.LinkedIn);
-                await AuthenticationComplete(authentificationResponse);
+                var authResponse = await authenticationService.AuthWithOAuth(this, OAuthService.LinkedIn, new LinkedInOAuthHelper(
+                    clientId: "86j0ikb93jm78x",
+                    clientSecret: "WPL_AP1.pg2Bd1XhCi821VTG.+hatTA==",
+                    redirectUri: "http://localhost:8891/auth",
+                    scope: "openid profile email"));
+                await AuthenticationComplete(authResponse);
             }
             catch (Exception ex)
             {
