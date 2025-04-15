@@ -13,11 +13,11 @@ namespace DrinkDb_Auth.AuthProviders
         {
         }
     }
-    internal class BasicAuthenticationProvider
+    public class BasicAuthenticationProvider : IBasicAuthenticationProvider
     {
         private static readonly IUserAdapter UserDatabaseAdapter = new UserAdapter();
 
-        public static bool Authenticate(string username, string password)
+        public bool Authenticate(string username, string password)
         {
             User? user = UserDatabaseAdapter.GetUserByUsername(username) ?? throw new UserNotFoundException("User not found");
             byte[] passwordInBytes = SHA256.HashData(Encoding.UTF8.GetBytes(password));

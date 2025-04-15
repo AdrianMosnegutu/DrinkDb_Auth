@@ -9,17 +9,24 @@ namespace DrinkDb_Auth.OAuthProviders
 {
     public class GitHubOAuthHelper : IGitHubOAuthHelper
     {
-        private const string ClientId = "Ov23ligheYgI7JILPWGY";  // Provided in your question
+        private const string ClientId = "Ov23ligheYgI7JILPWGY";
         private const string ClientSecret = "791dfaf36750b2a34a752c4fe3fb3703cef18836";
         private const string RedirectUri = "http://localhost:8890/auth";
-        private const string Scope = "read:user user:email"; // Adjust scopes as needed
-        private static readonly GitHubOAuth2Provider GitHubOAuth2Provider = new ();
-        private TaskCompletionSource<AuthenticationResponse> authTask;
+        private const string Scope = "read:user user:email";
+        private GenericOAuth2Provider gitHubOAuth2Provider;
+        private TaskCompletionSource<AuthenticationResponse> taskCompletionSource;
 
         public GitHubOAuthHelper()
         {
-            authTask = new TaskCompletionSource<AuthenticationResponse>();
+            gitHubOAuth2Provider = new GitHubOAuth2Provider();
+            taskCompletionSource = new TaskCompletionSource<AuthenticationResponse>();
             GitHubLocalOAuthServer.OnCodeReceived += OnCodeReceived;
+        }
+
+        public GitHubOAuthHelper(GenericOAuth2Provider gitHubOAuth2Provider)
+        {
+            this.gitHubOAuth2Provider = gitHubOAuth2Provider;
+            taskCompletionSource = new TaskCompletionSource<AuthenticationResponse>();
         }
 
         /// <summary>
@@ -40,7 +47,7 @@ namespace DrinkDb_Auth.OAuthProviders
         /// </summary>
         private async void OnCodeReceived(string code)
         {
-            if (authTask == null || authTask.Task.IsCompleted)
+            if (taskCompletionSource == null || taskCompletionSource.Task.IsCompleted)
             {
                 return;
             }
@@ -49,12 +56,12 @@ namespace DrinkDb_Auth.OAuthProviders
             {
                 // Exchange code for an access token
                 var token = await ExchangeCodeForToken(code);
-                var result = GitHubOAuth2Provider.Authenticate(string.Empty, token);
-                authTask.SetResult(result);
+                var result = gitHubOAuth2Provider.Authenticate(string.Empty, token);
+                taskCompletionSource.SetResult(result);
             }
             catch (Exception exception)
             {
-                authTask.SetException(exception);
+                taskCompletionSource.SetException(exception);
             }
         }
 
@@ -64,7 +71,7 @@ namespace DrinkDb_Auth.OAuthProviders
         /// </summary>
         public async Task<AuthenticationResponse> AuthenticateAsync()
         {
-            authTask = new TaskCompletionSource<AuthenticationResponse>();
+            taskCompletionSource = new TaskCompletionSource<AuthenticationResponse>();
 
             var authorizeUri = new Uri(BuildAuthorizeUrl());
             Process.Start(new ProcessStartInfo
@@ -73,7 +80,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 UseShellExecute = true
             });
 
-            return await authTask.Task;
+            return await taskCompletionSource.Task;
         }
 
         /// <summary>
@@ -97,7 +104,6 @@ namespace DrinkDb_Auth.OAuthProviders
                 var response = await client.SendAsync(request);
                 var responseBody = await response.Content.ReadAsStringAsync();
 
-                // GitHub returns JSON like: {"access_token":"...","token_type":"bearer","scope":"..."}
                 using var responseDocument = JsonDocument.Parse(responseBody);
                 if (responseDocument.RootElement.TryGetProperty("access_token", out var tokenProperty))
                 {
