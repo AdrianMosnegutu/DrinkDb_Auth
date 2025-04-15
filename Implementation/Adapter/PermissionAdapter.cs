@@ -13,7 +13,7 @@ namespace DrinkDb_Auth.Adapter
         // TODO delete constructor since it has 0 references
         public PermissionAdapter()
         {
-            connectionString = ConfigurationManager.ConnectionStrings["DrinkDbConnection"].ConnectionString;
+            connectionString = "Data Source=DESKTOP-2OA983C;Initial Catalog=DrinkDB_Test;Integrated Security=True;Trust Server Certificate=True"/*ConfigurationManager.ConnectionStrings["DrinkDbConnection"].ConnectionString*/;
         }
 
         public void CreatePermission(Permission permission)
@@ -35,7 +35,7 @@ namespace DrinkDb_Auth.Adapter
         {
             string query = @"UPDATE Permissions 
                              SET permissionName=@PermissionName, resource=@Role, action=@Action 
-                             WHERE Id=@Id";
+                             WHERE permissionId=@Id";
             using (SqlConnection sqlConnection = new (connectionString))
             using (SqlCommand sqlCommand = new (query, sqlConnection))
             {
@@ -50,7 +50,7 @@ namespace DrinkDb_Auth.Adapter
 
         public void DeletePermission(Permission permission)
         {
-            string query = "DELETE FROM Permissions WHERE Id=@Id";
+            string query = "DELETE FROM Permissions WHERE permissionId=@Id";
             using (SqlConnection sqlConnection = new (connectionString))
             using (SqlCommand sqlCommand = new (query, sqlConnection))
             {
@@ -60,9 +60,9 @@ namespace DrinkDb_Auth.Adapter
             }
         }
 
-        public Permission GetPermissionById(int id)
+        public Permission GetPermissionById(Guid id)
         {
-            string query = "SELECT Id, permissionName, resource, action FROM Permissions WHERE Id=@Id";
+            string query = "SELECT permissionId, permissionName, resource, action FROM Permissions WHERE permissionId=@Id";
             using (SqlConnection sqlConnection = new (connectionString))
             using (SqlCommand sqlCommand = new (query, sqlConnection))
             {
@@ -74,7 +74,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         return new Permission
                         {
-                            PermissionId = Guid.Parse(reader.GetString(0)),
+                            PermissionId = reader.GetGuid(0),
                             PermissionName = reader.GetString(1),
                             Resource = reader.GetString(2),
                             Action = reader.GetString(3)
@@ -88,7 +88,7 @@ namespace DrinkDb_Auth.Adapter
         public List<Permission> GetPermissions()
         {
             List<Permission> permissions = new ();
-            string query = "SELECT Id, permissionName, resource, action FROM Permissions";
+            string query = "SELECT permissionId, permissionName, resource, action FROM Permissions";
             using (SqlConnection sqlConnection = new (connectionString))
             using (SqlCommand sqlCommand = new (query, sqlConnection))
             {
@@ -99,7 +99,7 @@ namespace DrinkDb_Auth.Adapter
                     {
                         Permission permission = new ()
                         {
-                            PermissionId = Guid.Parse(reader.GetString(0)),
+                            PermissionId = reader.GetGuid(0),
                             PermissionName = reader.GetString(1),
                             Resource = reader.GetString(2),
                             Action = reader.GetString(3)
