@@ -34,7 +34,7 @@ namespace Tests
 
             AuthenticationResponse response = provider.Authenticate("me", "token");
 
-            Assert.IsTrue(response.AuthenticationSuccesfull);
+            Assert.IsTrue(response.AuthenticationSuccessful);
         }
 
         [TestMethod]
@@ -44,7 +44,7 @@ namespace Tests
 
             AuthenticationResponse response = provider.Authenticate("me", string.Empty);
 
-            Assert.IsFalse(response.AuthenticationSuccesfull);
+            Assert.IsFalse(response.AuthenticationSuccessful);
         }
     }
 }
