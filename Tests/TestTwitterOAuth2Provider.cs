@@ -10,6 +10,7 @@ using System.Security.Cryptography;
 using System.Text;
 using DrinkDb_Auth.OAuthProviders;
 using DrinkDb_Auth.Model;
+using DrinkDb_Auth.AuthProviders.Twitter;
 using System.Collections.Generic;
 
 namespace Tests
@@ -55,8 +56,8 @@ namespace Tests
         {
             var provider = new TwitterOAuth2Provider();
             var result = provider.Authenticate("id", "token123");
-            Assert.IsTrue(result.AuthenticationSuccesfull);
-            Assert.AreEqual("token123", result.OAuthenticationToken);
+            Assert.IsTrue(result.AuthenticationSuccessful);
+            Assert.AreEqual("token123", result.OAuthToken);
         }
 
         [TestMethod]
@@ -64,7 +65,7 @@ namespace Tests
         {
             var provider = new TwitterOAuth2Provider();
             var result = provider.Authenticate("id", "");
-            Assert.IsFalse(result.AuthenticationSuccesfull);
+            Assert.IsFalse(result.AuthenticationSuccessful);
         }
 
         [TestMethod]
@@ -72,7 +73,7 @@ namespace Tests
         {
             var provider = new TwitterOAuth2Provider();
             var result = provider.Authenticate("id", null!);
-            Assert.IsFalse(result.AuthenticationSuccesfull);
+            Assert.IsFalse(result.AuthenticationSuccessful);
         }
 
         [TestMethod]
@@ -133,7 +134,7 @@ namespace Tests
             };
             var provider = BuildProvider(mockHandler);
             var result = await provider.ExchangeCodeForTokenAsync("badcode");
-            Assert.IsFalse(result.AuthenticationSuccesfull);
+            Assert.IsFalse(result.AuthenticationSuccessful);
             Assert.AreEqual(Guid.Empty, result.SessionId);
         }
 
@@ -161,7 +162,7 @@ namespace Tests
             };
             var provider = BuildProvider(mockHandler);
             var result = await provider.ExchangeCodeForTokenAsync("validcode");
-            Assert.IsFalse(result.AuthenticationSuccesfull);
+            Assert.IsFalse(result.AuthenticationSuccessful);
         }
 
         [TestMethod]
@@ -173,7 +174,7 @@ namespace Tests
             };
             var provider = BuildProvider(mockHandler);
             var result = await provider.ExchangeCodeForTokenAsync("anycode");
-            Assert.IsFalse(result.AuthenticationSuccesfull);
+            Assert.IsFalse(result.AuthenticationSuccessful);
             Assert.AreEqual(Guid.Empty, result.SessionId);
         }
 
@@ -189,7 +190,7 @@ namespace Tests
             };
             var provider = BuildProvider(mockHandler);
             var result = await provider.ExchangeCodeForTokenAsync("anycode");
-            Assert.IsFalse(result.AuthenticationSuccesfull);
+            Assert.IsFalse(result.AuthenticationSuccessful);
             Assert.AreEqual(Guid.Empty, result.SessionId);
         }
 

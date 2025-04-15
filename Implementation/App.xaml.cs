@@ -10,7 +10,6 @@ using Microsoft.UI.Xaml.Controls;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
-
 namespace DrinkDb_Auth
 {
     /// <summary>
@@ -18,7 +17,7 @@ namespace DrinkDb_Auth
     /// </summary>
     sealed partial class App : Application
     {
-        public static Window? m_window;
+        public static Window? Window;
 
         public static Guid CurrentUserId { get; set; } = Guid.Empty;
         public static Guid CurrentSessionId { get; set; } = Guid.Empty;
@@ -34,8 +33,8 @@ namespace DrinkDb_Auth
 
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs e)
         {
-            m_window = new MainWindow();
-            m_window.Activate();
+            Window = new MainWindow();
+            Window.Activate();
         }
 
         private void OnActivated(IActivatedEventArgs args)
