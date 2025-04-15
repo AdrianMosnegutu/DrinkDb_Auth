@@ -9,26 +9,26 @@ namespace DrinkDb_Auth.AuthProviders.Facebook
 {
     public class FacebookLocalOAuthServer : IFacebookLocalOAuthServer
     {
-        private readonly HttpListener _listener;
+        private readonly HttpListener listener;
 
         public static event Action<string>? OnTokenReceived;
 
         public FacebookLocalOAuthServer(string prefix)
         {
-            _listener = new HttpListener();
-            _listener.Prefixes.Add(prefix);
+            listener = new HttpListener();
+            listener.Prefixes.Add(prefix);
         }
 
         public async Task StartAsync()
         {
-            _listener.Start();
-            Console.WriteLine("Serverul local ascultă la: " + string.Join(", ", _listener.Prefixes));
+            listener.Start();
+            Console.WriteLine("Serverul local ascultă la: " + string.Join(", ", listener.Prefixes));
 
-            while (_listener.IsListening)
+            while (listener.IsListening)
             {
                 try
                 {
-                    var context = await _listener.GetContextAsync();
+                    var context = await listener.GetContextAsync();
 
                     if (context.Request.Url?.AbsolutePath.Equals("/auth", StringComparison.OrdinalIgnoreCase) == true)
                     {
@@ -81,7 +81,7 @@ namespace DrinkDb_Auth.AuthProviders.Facebook
 
         public void Stop()
         {
-            _listener.Stop();
+            listener.Stop();
         }
 
         private string GetHtmlResponse()

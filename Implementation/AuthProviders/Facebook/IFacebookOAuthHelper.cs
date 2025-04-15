@@ -1,5 +1,5 @@
-﻿using DrinkDb_Auth.OAuthProviders;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using DrinkDb_Auth.OAuthProviders;
 
 namespace DrinkDb_Auth.AuthProviders.Facebook
 {
