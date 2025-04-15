@@ -74,7 +74,7 @@ namespace DrinkDb_Auth.OAuthProviders
                 {
                     AuthenticationSuccessful = true,
                     OAuthToken = token,
-                    SessionId = user.UserId,
+                    SessionId = session.SessionId,
                     NewAccount = false
                 };
             }

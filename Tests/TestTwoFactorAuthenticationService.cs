@@ -4,6 +4,8 @@ using Tests.CoraMockUps;
 using DrinkDb_Auth.View;
 using DrinkDb_Auth.ViewModel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Threading.Tasks;
+using System;
 
 namespace Tests
 {

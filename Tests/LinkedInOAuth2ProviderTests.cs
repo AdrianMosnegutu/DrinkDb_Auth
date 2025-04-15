@@ -68,9 +68,9 @@ namespace DrinkDb_Auth.Tests
             var response = _provider.Authenticate("", TestToken);
             
             // Assert
-            Assert.IsTrue(response.AuthenticationSuccesfull);
+            Assert.IsTrue(response.AuthenticationSuccessful);
             Assert.IsTrue(response.NewAccount);
-            Assert.AreEqual(TestToken, response.OAuthenticationToken);
+            Assert.AreEqual(TestToken, response.OAuthToken);
         }
 
         [Test]
@@ -105,9 +105,9 @@ namespace DrinkDb_Auth.Tests
             var response = _provider.Authenticate("", TestToken);
             
             // Assert
-            Assert.IsTrue(response.AuthenticationSuccesfull);
+            Assert.IsTrue(response.AuthenticationSuccessful);
             Assert.IsFalse(response.NewAccount);
-            Assert.AreEqual(TestToken, response.OAuthenticationToken);
+            Assert.AreEqual(TestToken, response.OAuthToken);
         }
 
         [Test]
@@ -170,8 +170,8 @@ namespace DrinkDb_Auth.Tests
             var response = _provider.Authenticate("", TestToken);
             
             // Assert
-            Assert.IsFalse(response.AuthenticationSuccesfull);
-            Assert.AreEqual(string.Empty, response.OAuthenticationToken);
+            Assert.IsFalse(response.AuthenticationSuccessful);
+            Assert.AreEqual(string.Empty, response.OAuthToken);
             Assert.AreEqual(Guid.Empty, response.SessionId);
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DrinkDb_Auth.AuthProviders;
 using DrinkDb_Auth.OAuthProviders;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tests
 {

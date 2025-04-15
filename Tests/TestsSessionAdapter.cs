@@ -1,5 +1,7 @@
 ﻿using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.Model;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 
 namespace Tests
 {

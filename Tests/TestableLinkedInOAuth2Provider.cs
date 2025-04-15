@@ -80,8 +80,8 @@ namespace DrinkDb_Auth.Tests
                 {
                     return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = false,
-                        OAuthenticationToken = string.Empty,
+                        AuthenticationSuccessful = false,
+                        OAuthToken = string.Empty,
                         SessionId = Guid.Empty,
                         NewAccount = false
                     };
@@ -92,8 +92,8 @@ namespace DrinkDb_Auth.Tests
                 {
                     return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = true,
-                        OAuthenticationToken = token,
+                        AuthenticationSuccessful = true,
+                        OAuthToken = token,
                         SessionId = Guid.NewGuid(),
                         NewAccount = true
                     };
@@ -130,8 +130,8 @@ namespace DrinkDb_Auth.Tests
                     
                     return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = true,
-                        OAuthenticationToken = token,
+                        AuthenticationSuccessful = true,
+                        OAuthToken = token,
                         SessionId = sessionId,
                         NewAccount = true
                     };
@@ -151,8 +151,8 @@ namespace DrinkDb_Auth.Tests
                     
                     return new AuthenticationResponse
                     {
-                        AuthenticationSuccesfull = true,
-                        OAuthenticationToken = token,
+                        AuthenticationSuccessful = true,
+                        OAuthToken = token,
                         SessionId = sessionId,
                         NewAccount = false
                     };

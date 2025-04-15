@@ -1,6 +1,7 @@
 ﻿using DrinkDb_Auth.View;
 using DrinkDb_Auth.ViewModel;
 using Microsoft.UI.Xaml.Controls;
+using System;
 namespace Tests.CoraMockUps
 {
     public class MockUpDialog : IDialog
