@@ -85,14 +85,14 @@ namespace DrinkDb_Auth.Service
             return authResponse;
         }
 
-        public void Logout()
+        public virtual void Logout()
         {
             sessionAdapter.EndSession(App.CurrentSessionId);
             App.CurrentSessionId = Guid.Empty;
             App.CurrentUserId = Guid.Empty;
         }
 
-        public User GetUser(Guid sessionId)
+        public virtual User GetUser(Guid sessionId)
         {
             Session session = sessionAdapter.GetSession(sessionId);
             return userAdapter.GetUserById(session.UserId) ?? throw new UserNotFoundException("User not found");
