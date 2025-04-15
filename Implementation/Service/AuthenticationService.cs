@@ -3,6 +3,11 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
 using DrinkDb_Auth.AuthProviders;
+using DrinkDb_Auth.AuthProviders.Facebook;
+using DrinkDb_Auth.AuthProviders.Github;
+using DrinkDb_Auth.AuthProviders.Google;
+using DrinkDb_Auth.AuthProviders.LinkedIn;
+using DrinkDb_Auth.AuthProviders.Twitter;
 using DrinkDb_Auth.Model;
 using DrinkDb_Auth.OAuthProviders;
 using Microsoft.UI.Xaml;
@@ -80,14 +85,14 @@ namespace DrinkDb_Auth.Service
             return authResponse;
         }
 
-        public void Logout()
+        public virtual void Logout()
         {
             sessionAdapter.EndSession(App.CurrentSessionId);
             App.CurrentSessionId = Guid.Empty;
             App.CurrentUserId = Guid.Empty;
         }
 
-        public User GetUser(Guid sessionId)
+        public virtual User GetUser(Guid sessionId)
         {
             Session session = sessionAdapter.GetSession(sessionId);
             return userAdapter.GetUserById(session.UserId) ?? throw new UserNotFoundException("User not found");

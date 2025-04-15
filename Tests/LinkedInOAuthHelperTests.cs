@@ -2,7 +2,7 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using DrinkDb_Auth.Adapter;
-using DrinkDb_Auth.OAuthProviders;
+using DrinkDb_Auth.AuthProviders.LinkedIn;
 using Moq;
 using NUnit.Framework;
 
